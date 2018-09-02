@@ -1,26 +1,33 @@
-CC := g++ -std=c++11# This is the main compiler
-# CC := clang --analyze # and comment out the linker last line for sanity
-SRCDIR := src
+CC := g++-8 -std=c++11# This is the main compiler
+
 BUILDDIR := build
 TARGET = bin/runner.exe
+INCLUDE = include
+LIB := -framework OpenCL
 
-SRCEXT := cpp
-SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
-OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
-CFLAGS := -g -Wall
-LIB :=
-INC := -I include
+all: subdirs $(TARGET)
 
-$(TARGET): $(OBJECTS)
+geometric_objects:
+	$(MAKE) -C $(INCLUDE)/GeometricObjects
+
+materials:
+	$(MAKE) -C $(INCLUDE)/Materials
+
+tracers:
+	$(MAKE) -C $(INCLUDE)/Tracers
+
+utilities:
+	$(MAKE) -C $(INCLUDE)/Utilities
+
+subdirs:
+	$(MAKE) -C $(INCLUDE)
+
+$(TARGET):
 	@echo " Linking..."
-	@echo " $(CC) $^ -o $(TARGET) $(LIB)"; $(CC) $^ -o $(TARGET) $(LIB)
-
-$(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
-	@mkdir -p $(BUILDDIR)
-	@echo " $(CC) $(CFLAGS) $(INC) -c -o $@ $<"; $(CC) $(CFLAGS) $(INC) -c -o $@ $<
+	@echo " $(CC) $(wildcard $(BUILDDIR)/*.o) -o $(TARGET) $(LIB)"; $(CC) $(wildcard $(BUILDDIR)/*.o) -o $(TARGET) $(LIB)
 
 clean:
 	@echo " Cleaning...";
 	@echo " $(RM) -r $(BUILDDIR) $(TARGET)"; $(RM) -r $(BUILDDIR) $(TARGET)
 
-.PHONY: clean
+.PHONY: clean all subdirs geometric_objects materials tracers utilities

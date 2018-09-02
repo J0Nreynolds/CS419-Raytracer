@@ -1,3 +1,10 @@
+### Personal ignores         ###
+
+.DS_Store
+RTftGUSourceCode/
+
+### GitHub generated ignores ###
+
 # Prerequisites
 *.d
 
