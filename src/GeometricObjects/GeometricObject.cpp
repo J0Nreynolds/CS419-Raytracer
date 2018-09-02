@@ -7,15 +7,13 @@
 // this file contains the definition of the class GeometricObject
 
 #include "Constants.h"
-#include "Material.h"
 #include "GeometricObject.h"
 
 
 // ---------------------------------------------------------------------- default constructor
 
 GeometricObject::GeometricObject(void)
-	: 	color(black),
-		material_ptr(NULL)
+	: 	color(black)
 {}
 
 
@@ -23,10 +21,6 @@ GeometricObject::GeometricObject(void)
 
 GeometricObject::GeometricObject (const GeometricObject& object)
 	: 	color(object.color) {
-	if(object.material_ptr)
-		material_ptr = object.material_ptr->clone();
-	else
-		material_ptr = NULL;
 }
 
 
@@ -39,14 +33,6 @@ GeometricObject::operator= (const GeometricObject& rhs) {
 
 	color = rhs.color;
 
-	if (material_ptr) {
-		delete material_ptr;
-		material_ptr = NULL;
-	}
-
-	if (rhs.material_ptr)
-		material_ptr = rhs.material_ptr->clone();
-
 	return (*this);
 }
 
@@ -54,10 +40,6 @@ GeometricObject::operator= (const GeometricObject& rhs) {
 // ---------------------------------------------------------------------- destructor
 
 GeometricObject::~GeometricObject (void) {
-	if (material_ptr) {
-		delete material_ptr;
-		material_ptr = NULL;
-	}
 }
 
 
@@ -76,41 +58,11 @@ GeometricObject::get_normal(void) const{
 }
 
 
-// ----------------------------------------------------------------------- set_material
-
-void
-GeometricObject::set_material(Material* mPtr) {
-	material_ptr = mPtr;
-}
-
-
-// ----------------------------------------------------------------------- get_material
-
-Material*
-GeometricObject::get_material(void) const {
-	return (material_ptr);
-}
-
-
 // ----------------------------------------------------------------------- compute_normal
 
 Normal
 GeometricObject::get_normal(const Point3D& p) {
 	return (Normal());
-}
-
-
-// ----------------------------------------------------------------------- set_bounding_box
-
-void
-GeometricObject::set_bounding_box (void) {}
-
-
-// ----------------------------------------------------------------------- set_bounding_box
-
-BBox
-GeometricObject::get_bounding_box (void) {
-	return BBox();
 }
 
 

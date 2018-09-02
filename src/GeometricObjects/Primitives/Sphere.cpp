@@ -1,4 +1,5 @@
 // 	Copyright (C) Kevin Suffern 2000-2007.
+//  Modified work Copyright (C) Jonathan Reynolds 2018
 //	This C++ code is for non-commercial purposes only.
 //	This C++ code is licensed under the GNU General Public License Version 2.
 //	See the file COPYING.txt for the full license.
@@ -8,11 +9,11 @@
 #include "Sphere.h"
 #include "math.h"
 
-const double Sphere::kEpsilon = 0.001;
-					
+const double Sphere::kEpsilon = 10e-6;
+
 // ---------------------------------------------------------------- default constructor
 
-Sphere::Sphere(void)	
+Sphere::Sphere(void)
 	: 	GeometricObject(),
 		center(0.0),
 		radius(1.0)
@@ -30,7 +31,7 @@ Sphere::Sphere(Point3D c, double r)
 
 // ---------------------------------------------------------------- clone
 
-Sphere* 
+Sphere*
 Sphere::clone(void) const {
 	return (new Sphere(*this));
 }
@@ -48,8 +49,8 @@ Sphere::Sphere (const Sphere& sphere)
 
 // ---------------------------------------------------------------- assignment operator
 
-Sphere& 
-Sphere::operator= (const Sphere& rhs)		
+Sphere&
+Sphere::operator= (const Sphere& rhs)
 {
 	if (this == &rhs)
 		return (*this);
@@ -78,31 +79,31 @@ Sphere::hit(const Ray& ray, double& tmin, ShadeRec& sr) const {
 	double 		b 		= 2.0 * temp * ray.d;
 	double 		c 		= temp * temp - radius * radius;
 	double 		disc	= b * b - 4.0 * a * c;
-	
+
 	if (disc < 0.0)
 		return(false);
-	else {	
+	else {
 		double e = sqrt(disc);
 		double denom = 2.0 * a;
 		t = (-b - e) / denom;    // smaller root
-	
+
 		if (t > kEpsilon) {
 			tmin = t;
 			sr.normal 	 = (temp + t * ray.d) / radius;
 			sr.local_hit_point = ray.o + t * ray.d;
 			return (true);
-		} 
-	
+		}
+
 		t = (-b + e) / denom;    // larger root
-	
+
 		if (t > kEpsilon) {
 			tmin = t;
 			sr.normal   = (temp + t * ray.d) / radius;
 			sr.local_hit_point = ray.o + t * ray.d;
 			return (true);
-		} 
+		}
 	}
-	
+
 	return (false);
 }
 

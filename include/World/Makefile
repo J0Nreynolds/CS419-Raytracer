@@ -1,13 +1,13 @@
 CC := g++-8 -std=c++11# This is the main compiler
 
-SRCDIR := ../../src/Materials
+SRCDIR := ../../src/World
 BUILDDIR := ../../build
 
 SRCEXT := cpp
 SOURCES := $(wildcard $(SRCDIR)/*.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CFLAGS := -g -Wall
-INC := -I . -I .. -I ../Utilities -I ../GeometricObjects -I ../GeometricObjects/Primitives
+INC := -I . -I ../Utilities -I ../GeometricObjects -I ../GeometricObjects/Primitives
 
 all: $(OBJECTS)
 

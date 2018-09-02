@@ -8,8 +8,8 @@ SUBDIRS := $(wildcard */.)
 SRCEXT := cpp
 SOURCES := $(wildcard $(SRCDIR)/*.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
-CFLAGS := -g -Wall -framework OpenCL
-INC := -I . -I Utilities -I GeometricObjects -I GeometricObjects/Primitives
+CFLAGS := -g -Wall
+INC := -I/Library/Frameworks/SDL2.framework/Headers
 
 all: $(SUBDIRS) $(OBJECTS)
 

@@ -10,7 +10,6 @@
 #include <math.h>  // a lot of hit functions use use maths functions
 
 #include "Constants.h"
-#include "BBox.h"
 #include "RGBColor.h"
 #include "Point3D.h"
 #include "Vector3D.h"
@@ -39,12 +38,6 @@ class GeometricObject {
 		virtual bool
 		hit(const Ray& ray, double& t, ShadeRec& s) const = 0;
 
-		virtual void 							// This needs to be virtual so that it can be overridden in Compound
-		set_material(Material* mPtr); 			// It therefore shouldn't be inlined
-
-		Material*
-		get_material(void) const;
-
 
 		// The following three functions are only required for Chapter 3
 
@@ -57,15 +50,9 @@ class GeometricObject {
 		RGBColor
 		get_color(void);
 
-		virtual void
-		set_bounding_box(void);
-
-		virtual BBox
-		get_bounding_box(void);
-
 		virtual void 										// required for compound objects
 		add_object(GeometricObject* object_ptr);
-				
+
 
 		// The following two functions are only required for objects that are light sources, eg disks, rectangles, and spheres
 
@@ -87,7 +74,6 @@ class GeometricObject {
 
 	protected:
 
-		mutable Material*   material_ptr;   	// mutable allows the const functions Compound::hit, Instance::hit, and RegularGrid::hit to assign to material_ptr
 		RGBColor   			color;				// only used for Bare Bones ray tracing
 
 		GeometricObject&
