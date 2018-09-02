@@ -5,24 +5,18 @@ TARGET = bin/runner.exe
 INCLUDE = include
 LIB := -framework OpenCL
 
+SRCDIR := src
+SRCEXT := cpp
+
+SOURCES := $(wildcard $(SRCDIR)/*.$(SRCEXT))
+OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
+
 all: subdirs $(TARGET)
-
-geometric_objects:
-	$(MAKE) -C $(INCLUDE)/GeometricObjects
-
-materials:
-	$(MAKE) -C $(INCLUDE)/Materials
-
-tracers:
-	$(MAKE) -C $(INCLUDE)/Tracers
-
-utilities:
-	$(MAKE) -C $(INCLUDE)/Utilities
 
 subdirs:
 	$(MAKE) -C $(INCLUDE)
 
-$(TARGET):
+$(TARGET): $(OBJECTS) # updates binary whenever objects have changed
 	@echo " Linking..."
 	@echo " $(CC) $(wildcard $(BUILDDIR)/*.o) -o $(TARGET) $(LIB)"; $(CC) $(wildcard $(BUILDDIR)/*.o) -o $(TARGET) $(LIB)
 

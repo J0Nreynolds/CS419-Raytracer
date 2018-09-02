@@ -11,7 +11,7 @@ OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CFLAGS := -g -Wall -framework OpenCL
 INC := -I . -I Utilities -I GeometricObjects -I GeometricObjects/Primitives
 
-all: $(SUBDIRS) $(OBJECTS) $(CL_SOURCES)
+all: $(SUBDIRS) $(OBJECTS)
 
 $(SUBDIRS):
 	$(MAKE) -C $@
