@@ -3,7 +3,7 @@ CC := g++-8 -std=c++11# This is the main compiler
 BUILDDIR := build
 TARGET = bin/runner.exe
 INCLUDE = include
-LIB := -framework OpenCL -framework SDL2
+LIB := -framework OpenCL -framework SDL2 -lpng
 
 SRCDIR := src
 SRCEXT := cpp

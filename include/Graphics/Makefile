@@ -6,7 +6,7 @@ BUILDDIR := ../../build
 SRCEXT := cpp
 SOURCES := $(wildcard $(SRCDIR)/*.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
-CFLAGS := -g -Wall
+CFLAGS := -g -Wall -lpng
 INC := -I . -I ../Utilities -I ../World -I ../GeometricObjects -I ../Tracers \
 		-I ../GeometricObjects/Primitives \
 		-I /Library/Frameworks/SDL2.framework/Headers

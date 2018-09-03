@@ -18,10 +18,10 @@ class SDLRenderer : public Renderer {
 							const int column,
 							const RGBColor& pixel_color) const;
 		void display() const;
+		void save_bmp(std::string filename) const;
+		void save_png(std::string filename) const;
 
 	protected:
-		int             hres;
-		int             vres;
 		SDL_Window*     window;
 		SDL_Renderer*   renderer;
 		SDL_Texture*    texture;
