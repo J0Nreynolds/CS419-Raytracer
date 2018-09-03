@@ -7,7 +7,9 @@ SRCEXT := cpp
 SOURCES := $(wildcard $(SRCDIR)/*.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CFLAGS := -g -Wall
-INC := -I . -I /Library/Frameworks/SDL2.framework/Headers
+INC := -I . -I ../Utilities -I ../World -I ../GeometricObjects -I ../Tracers \
+		-I ../GeometricObjects/Primitives \
+		-I /Library/Frameworks/SDL2.framework/Headers
 
 all: $(OBJECTS)
 

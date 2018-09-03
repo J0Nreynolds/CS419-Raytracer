@@ -4,9 +4,8 @@
 // 	Copyright (C) Jonathan Reynolds 2018
 //	This C++ code is for non-commercial purposes only.
 //	This C++ code is licensed under the GNU General Public License Version 2.
-#include "SDL.h"
-
 #include "ViewPlane.h"
+#include "Renderer.h"
 #include "RGBColor.h"
 #include "Sphere.h"
 #include "Tracer.h"
@@ -18,9 +17,7 @@ class World {
 		RGBColor        background_color;
 		Sphere          sphere;
 		Tracer*         tracer_ptr;
-		SDL_Window*     window;
-		SDL_Renderer*   renderer;
-		SDL_Texture*    texture;
+		Renderer*       renderer;
 
 		World(void);
 
