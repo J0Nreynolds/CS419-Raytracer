@@ -4,10 +4,15 @@
 
 
 // This file contains the definition of the class World
-#include "World.h"
+#include <cstdlib>
+#include <time.h>
+#include <iostream>
+
+#include "Point2D.h"
 #include "SingleSphere.h"
 #include "MultipleObjects.h"
 #include "SDLRenderer.h"
+#include "World.h"
 
 
 World::World(void):
@@ -45,7 +50,9 @@ void World::build(void){
 	renderer = new SDLRenderer();
 	vp.set_hres(400);
 	vp.set_vres(400);
+	vp.set_num_samples(100);
 	vp.set_pixel_size(0.5);
+	vp.set_sampling_type("jittered");
 
 	background_color = black;
 	tracer_ptr = new MultipleObjects(this);
@@ -226,7 +233,9 @@ void World::render_scene(void) const {
 	RGBColor pixel_color;
 	Ray ray;
 	double zw = 100.0; // hard wired in
-	double x, y;
+
+	int n = (int)sqrt((float)vp.num_samples);
+    Point2D pp; // sample point on a pixel
 
 	open_window(vp.hres, vp.vres);
 
@@ -234,14 +243,61 @@ void World::render_scene(void) const {
 
 	for (int r = 0; r < vp.vres; r++)               // up
 		for (int c = 0; c <= vp.hres; c++) {        // across
-			x = vp.s * (c - 0.5 * (vp.hres - 1.0));
-			y = vp.s * (r - 0.5 * (vp.vres - 1.0));
-			ray.o = Point3D(x, y, zw);
-			pixel_color = tracer_ptr->trace_ray(ray);
-			display_pixel(r, c, pixel_color);
+			if(vp.sampling_type.compare("regular") == 0){
+				pixel_color = black;
+
+				for (int p = 0; p < n; p++)              // up pixel
+					for (int q = 0; q < n; q++) {       // across pixel
+						pp.x = vp.s * (c - 0.5 * vp.hres + (q + 0.5) / n);
+						pp.y = vp.s * (r - 0.5 * vp.vres + (p + 0.5) / n);
+						ray.o = Point3D(pp.x, pp.y, zw);
+						pixel_color += tracer_ptr->trace_ray(ray);
+					}
+				pixel_color /= vp.num_samples;;
+				display_pixel(r, c, pixel_color);
+			}
+			else if(vp.sampling_type.compare("random") == 0){
+				/* initialize random seed: */
+				srand(time(NULL));
+
+				pixel_color = black;
+
+				for (int p = 0; p < vp.num_samples; p++) {
+					float rand1 = (float) rand() / RAND_MAX;
+					float rand2 = (float) rand() / RAND_MAX;
+					pp.x = vp.s * (c - 0.5 * vp.hres + rand1);
+					pp.y = vp.s * (r - 0.5 * vp.vres + rand2);
+					ray.o = Point3D(pp.x, pp.y, zw);
+					pixel_color += tracer_ptr->trace_ray(ray);
+				}
+				pixel_color /= vp.num_samples;;
+				display_pixel(r, c, pixel_color);
+			}
+			else if(vp.sampling_type.compare("jittered") == 0){
+				pixel_color = black;
+
+				for (int p = 0; p < n; p++)              // up pixel
+					for (int q = 0; q < n; q++) {       // across pixel
+						float rand1 = (float) rand() / RAND_MAX;
+						float rand2 = (float) rand() / RAND_MAX;
+						pp.x = vp.s * (c - 0.5 * vp.hres + (q + rand1) / n);
+						pp.y = vp.s * (r - 0.5 * vp.vres + (p + rand2) / n);
+						ray.o = Point3D(pp.x, pp.y, zw);
+						pixel_color += tracer_ptr->trace_ray(ray);
+					}
+				pixel_color /= vp.num_samples;;
+				display_pixel(r, c, pixel_color);
+			}
+			else {
+				double x = vp.s * (c - 0.5 * (vp.hres - 1.0));
+				double y = vp.s * (r - 0.5 * (vp.vres - 1.0));
+				ray.o = Point3D(x, y, zw);
+				pixel_color = tracer_ptr->trace_ray(ray);
+				display_pixel(r, c, pixel_color);
+			}
 		}
 	renderer->display();
-	renderer->save_png("renders/output.png");
+	renderer->save_png("renders/barebones-sampling-jittered.png");
 }
 
 void World::open_window(const int hres, const int vres) const {
