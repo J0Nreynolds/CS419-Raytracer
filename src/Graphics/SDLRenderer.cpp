@@ -11,7 +11,7 @@
 #include "SDLRenderer.h"
 
 Uint32 last_render = 0;
-const Uint32 FPS = 30;
+const Uint32 FPS = 60;
 
 SDLRenderer::SDLRenderer():
 	window(NULL), renderer(NULL), texture(NULL)
@@ -26,7 +26,7 @@ void SDLRenderer::initialize(const int hres, const int vres){
 		printf( "Couldn't initialize SDL: %s\n", SDL_GetError() );
 		exit(-1);
 	}
-	window = SDL_CreateWindow("CS419 Ray Tracer", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, hres, vres, SDL_WINDOW_OPENGL);
+	window = SDL_CreateWindow("CS419 Ray Tracer", 0, 0, hres, vres, SDL_WINDOW_OPENGL);
 	if( window == NULL )
 	{
 		printf( "Window could not be created! SDL Error: %s\n", SDL_GetError() );
@@ -60,7 +60,7 @@ void SDLRenderer::display() const{
     SDL_RenderClear( renderer );
     SDL_RenderCopy(renderer, texture, NULL, NULL);
     SDL_RenderPresent(renderer);
-    SDL_Delay(1000);
+    // SDL_Delay(1000);
 }
 
 SDLRenderer::~SDLRenderer(){
@@ -89,7 +89,16 @@ SDLRenderer::~SDLRenderer(){
 void SDLRenderer::draw_pixel(const int row,
 					const int column,
 					const RGBColor& color) const{
-
+						//Handle events on queue
+	SDL_Event e;
+	while( SDL_PollEvent( &e ) != 0 )
+	{
+		//User requests quit
+		if( e.type == SDL_QUIT )
+		{
+			exit(-1);
+		}
+	}
 	if(SDL_GetTicks()-last_render > 1000/FPS){
 	    //Show rendered to texture
 	    SDL_SetRenderDrawColor( renderer, 0x00, 0x00, 0x00, 0xFF );
@@ -202,4 +211,5 @@ void SDLRenderer::save_png(std::string filename) const{
 	SDL_SetRenderTarget( renderer, NULL );
 
 	save_surface_to_png(sshot, filename.c_str());
+	SDL_FreeSurface(sshot);
 }

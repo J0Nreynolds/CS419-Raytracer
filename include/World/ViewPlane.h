@@ -6,6 +6,8 @@
 //	This C++ code is licensed under the GNU General Public License Version 2.
 #include <string>
 
+#include "Sampler.h"
+
 class ViewPlane {
 	public:
 
@@ -15,14 +17,15 @@ class ViewPlane {
 		float       s;            // pixel size
 		float       gamma;        // monitor gamma factor
 		float       inv_gamma;    // one over gamma
-		std::string sampling_type;
+		Sampler*    sampler_ptr;  // Sampler used for rendering
 
 		void set_hres(const int h_res);
 		void set_vres(const int v_res);
-		void set_num_samples(const int num);
 		void set_pixel_size(const double size);
 		void set_gamma(const double g);
-		void set_sampling_type(const std::string type);
+		
+		void set_sampler(Sampler* sp);
+		void set_samples(const int n);
 };
 
 inline void ViewPlane::set_hres(const int h_res) {
@@ -33,10 +36,6 @@ inline void ViewPlane::set_vres(const int v_res) {
 	vres = v_res;
 }
 
-inline void ViewPlane::set_num_samples(const int num) {
-	num_samples = num;
-}
-
 inline void ViewPlane::set_pixel_size(const double size) {
 	s = size;
 }
@@ -44,10 +43,6 @@ inline void ViewPlane::set_pixel_size(const double size) {
 inline void ViewPlane::set_gamma(const double g) {
 	gamma = g;
 	inv_gamma = 1.0 / gamma;
-}
-
-inline void ViewPlane::set_sampling_type(const std::string type) {
-	sampling_type = type;
 }
 
 

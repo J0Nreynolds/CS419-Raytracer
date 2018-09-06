@@ -1,4 +1,4 @@
-CC := g++-8 -std=c++11# This is the main compiler
+CC := g++-8 -std=c++11 -g # This is the main compiler
 
 BUILDDIR := build
 TARGET = bin/runner.exe
