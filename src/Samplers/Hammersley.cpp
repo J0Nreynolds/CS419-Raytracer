@@ -7,7 +7,7 @@
 #include "Hammersley.h"
 
 Hammersley::Hammersley()
-: Sampler() {
+: Sampler(1, 1) {
 }
 
 Hammersley::Hammersley(int num_samples)
