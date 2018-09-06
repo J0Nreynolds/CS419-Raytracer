@@ -7,6 +7,7 @@
 #include  <vector>
 
 #include "Point2D.h"
+#include "Point3D.h"
 
 class Sampler {
 	 public:
@@ -21,17 +22,24 @@ class Sampler {
 			int get_num_samples();
 			void set_num_sets(const int n_sets);
 
-			virtual void        // generate sample patterns in a unit square
-			generate_samples() = 0;
+			// generate sample patterns in a unit square
+			virtual void generate_samples() = 0;
+			// set up the randomly shuffled indices
+			void setup_shuffled_indices();
+			// randomly shuffle the samples in each pattern
+			void shuffle_samples();
+			// get next sample on unit square
+			Point2D sample_unit_square();
 
-			void                // set up the randomly shuffled indices
-			setup_shuffled_indices();
+			//Converts the unit square samples to unit disk samples
+			void map_samples_to_unit_disk();
+			// get next sample on unit disc
+			Point2D sample_unit_disk();
 
-			void                // randomly shuffle the samples in each pattern
-			shuffle_samples();
-
-			Point2D             // get next sample on unit square
-			sample_unit_square();
+			//Converts the unit square samples to hemisphere samples
+			void map_samples_to_hemisphere(const float e);
+			// get next sample on unit hemisphere
+			Point3D sample_hemisphere();
 
 	  protected:
 
@@ -41,6 +49,9 @@ class Sampler {
 			std::vector<int> shuffled_indices;  // shuffled samples array indices
 			unsigned long count;    // the current number of sample points used
 			int jump;              // random index jump
+
+			std::vector<Point2D> disk_samples; // sample points on a unit disk
+			std::vector<Point3D> hemisphere_samples;
 };
 
 inline int Sampler::get_num_samples(){
