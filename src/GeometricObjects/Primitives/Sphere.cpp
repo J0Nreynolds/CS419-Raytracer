@@ -108,6 +108,14 @@ Sphere::hit(const Ray& ray, double& tmin, ShadeRec& sr) const {
 }
 
 
+CLSphere Sphere::get_cl_sphere(){
+	CLSphere ret;
+	ret.color = (cl_float3){color.r, color.g, color.b};
+	ret.center = (cl_double3){center.x, center.y, center.z};
+	ret.radius = radius;
+	return ret;
+}
+
 
 
 

@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <time.h>
 #include <math.h>
+#include <algorithm>  // required for random_shuffle
 
 #include "Sampler.h"
 
@@ -17,6 +18,7 @@ Sampler::Sampler ()
 		jump(0)
 {
 	samples.reserve(num_samples * num_sets);
+	setup_shuffled_indices();
 }
 
 Sampler::Sampler (int ns)
@@ -26,6 +28,7 @@ Sampler::Sampler (int ns)
 		jump(0)
 {
 	samples.reserve(num_samples * num_sets);
+	setup_shuffled_indices();
 }
 
 Sampler::Sampler (int ns, int n_sets)
@@ -35,6 +38,7 @@ Sampler::Sampler (int ns, int n_sets)
 		jump(0)
 {
 	samples.reserve(num_samples * num_sets);
+	setup_shuffled_indices();
 }
 
 Sampler::Sampler(const Sampler& s)
@@ -66,11 +70,25 @@ void Sampler::set_num_sets(const int n_sets) {
 	num_sets = n_sets;
 }
 
-Point2D Sampler::sample_unit_square() {
-	 if (count % num_samples == 0)      // start of a new pixel
-		  jump = ((int) rand() % num_sets) * num_samples;
+void Sampler::setup_shuffled_indices(void) {
+	shuffled_indices.reserve(num_samples * num_sets);
+	std::vector<int> indices;
 
-	 return (samples[jump + count++ % num_samples]);
+	for (int j = 0; j < num_samples; j++)
+		indices.push_back(j);
+
+	for (int p = 0; p < num_sets; p++) {
+		std::random_shuffle(indices.begin(), indices.end());
+		for (int j = 0; j < num_samples; j++)
+			shuffled_indices.push_back(indices[j]);
+	}
+}
+
+Point2D Sampler::sample_unit_square() {
+	if (count % num_samples == 0)
+		jump = ((int) rand() % num_sets) * num_samples;
+
+	return (samples[jump + shuffled_indices[jump + count++ % num_samples]]);
 }
 
 void Sampler::map_samples_to_unit_disk() {
@@ -144,4 +162,22 @@ Point3D Sampler::sample_hemisphere() {
 		  jump = ((int) rand() % num_sets) * num_samples;
 
 	 return (hemisphere_samples[jump + count++ % num_samples]);
+}
+
+cl_double2* Sampler::get_cl_samples(int& count) {
+	count = samples.size();
+	cl_double2* cl_samples = new cl_double2[count];
+	for(int i = 0; i < count; i ++){
+		cl_samples[i] = (cl_double2){samples[i].x, samples[i].y};
+	}
+	return cl_samples;
+}
+
+cl_int* Sampler::get_cl_shuffled_indices(int& count) {
+	count = shuffled_indices.size();
+	cl_int* cl_indices = new cl_int[count];
+	for(int i = 0; i < count; i ++){
+		cl_indices[i] = shuffled_indices[i];
+	}
+	return cl_indices;
 }

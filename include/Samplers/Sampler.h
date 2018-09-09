@@ -6,6 +6,12 @@
 //	This C++ code is licensed under the GNU General Public License Version 2.
 #include  <vector>
 
+#ifdef __APPLE__
+#include <OpenCL/cl.hpp> /* read cpp_wrapper_fix.txt */
+#else
+#include <CL/cl.hpp>
+#endif
+
 #include "Point2D.h"
 #include "Point3D.h"
 
@@ -21,6 +27,11 @@ class Sampler {
 			virtual ~Sampler();
 			int get_num_samples();
 			void set_num_sets(const int n_sets);
+
+			// Used for OpenCL rendering
+			int get_num_sets();
+			cl_double2* get_cl_samples(int& count);
+			cl_int* get_cl_shuffled_indices(int& count);
 
 			// generate sample patterns in a unit square
 			virtual void generate_samples() = 0;
@@ -56,6 +67,10 @@ class Sampler {
 
 inline int Sampler::get_num_samples(){
 	return num_samples;
+}
+
+inline int Sampler::get_num_sets(){
+	return num_sets;
 }
 
 #endif

@@ -15,7 +15,7 @@ int main() {
     signal(SIGINT, signalHandler);
     srand(time(NULL));
     w.build();
-    w.render_scene();
+    w.opencl_render_scene();
 
     return(0);
 }

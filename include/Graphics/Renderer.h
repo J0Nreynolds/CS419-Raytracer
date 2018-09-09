@@ -1,6 +1,12 @@
 #ifndef __RENDERER__
 #define __RENDERER__
 
+#ifdef __APPLE__
+#include <OpenCL/cl.hpp> /* read cpp_wrapper_fix.txt */
+#else
+#include <CL/cl.hpp>
+#endif
+
 // 	Copyright (C) Jonathan Reynolds 2018
 //	This C++ code is for non-commercial purposes only.
 //	This C++ code is licensed under the GNU General Public License Version 2.
@@ -17,6 +23,10 @@ class Renderer {
 		virtual void display() const = 0;
 		virtual void save_bmp(std::string filename) const = 0;
 		virtual void save_png(std::string filename) const = 0;
+
+		virtual void cl_draw(const int width,
+							const int height,
+							const cl_float3* buf) const = 0;
 };
 
 #endif

@@ -60,7 +60,7 @@ void SDLRenderer::display() const{
     SDL_RenderClear( renderer );
     SDL_RenderCopy(renderer, texture, NULL, NULL);
     SDL_RenderPresent(renderer);
-    // SDL_Delay(1000);
+    SDL_Delay(3000);
 }
 
 SDLRenderer::~SDLRenderer(){
@@ -211,5 +211,32 @@ void SDLRenderer::save_png(std::string filename) const{
 	SDL_SetRenderTarget( renderer, NULL );
 
 	save_surface_to_png(sshot, filename.c_str());
+	SDL_FreeSurface(sshot);
+}
+
+void SDLRenderer::cl_draw(const int width, const int height, const cl_float3* buf) const {
+	SDL_Surface *sshot = SDL_CreateRGBSurfaceWithFormat(0, width, height, 8, SDL_PIXELFORMAT_RGB888);
+	for(int i = 0; i < width; i ++)
+		for(int j = 0; j < height; j ++){
+			// Index to get color from
+			int idx = i + j*width;
+			cl_float3 color = buf[idx];
+			// Assign to different idx to flip vertically
+			idx = i + (height-1-j)*width;
+			// Recall surfaces are laid out BGRA
+			((unsigned char*)sshot->pixels)[4*idx + 0] = (unsigned char) (255*color.s[2]);
+			((unsigned char*)sshot->pixels)[4*idx + 1] = (unsigned char) (255*color.s[1]);
+			((unsigned char*)sshot->pixels)[4*idx + 2] = (unsigned char) (255*color.s[0]);
+		}
+
+	SDL_Texture *surface_texture = SDL_CreateTextureFromSurface(renderer, sshot);
+
+	SDL_SetRenderTarget( renderer, texture );
+	SDL_SetRenderDrawColor( renderer, 0x00, 0x00, 0x00, 0xFF );
+	SDL_RenderClear( renderer );
+	SDL_RenderCopy(renderer, surface_texture, NULL, NULL);
+	SDL_SetRenderTarget( renderer, NULL );
+
+	SDL_DestroyTexture(surface_texture);
 	SDL_FreeSurface(sshot);
 }

@@ -4,7 +4,22 @@
 
 
 // This file contains the definition of the class World
+#include <time.h>
 #include <iostream>
+#include <vector>
+#include <string>
+#include <fstream>
+#include <streambuf>
+
+#define __CL_ENABLE_EXCEPTIONS
+
+#ifdef __APPLE__
+#include <OpenCL/cl.hpp> /* read cpp_wrapper_fix.txt */
+#else
+#include <CL/cl.hpp>
+#endif
+
+using namespace std;
 
 #include "Point2D.h"
 #include "SingleSphere.h"
@@ -18,6 +33,7 @@
 #include "Hammersley.h"
 #include "World.h"
 
+#include "CLSphere.h"
 
 World::World(void):
 	tracer_ptr(NULL), renderer(NULL)
@@ -261,6 +277,180 @@ void World::render_scene(void) const {
 	   }
 	renderer->display(); // Display for a second before saving
 	renderer->save_png("renders/output.png");
+}
+
+CLSphere* get_cl_spheres(const World* world){
+	int num_objects = world->objects.size();
+	CLSphere* ret = new CLSphere[num_objects];
+	for(int i = 0; i < num_objects; i ++){
+		Sphere* sphere = (Sphere*) world->objects[i];
+		ret[i] = sphere->get_cl_sphere();
+	}
+	return ret;
+}
+
+void World::opencl_render_scene() const {
+	// Find all available OpenCL platforms (e.g. AMD, Nvidia, Intel)
+    vector<cl::Platform> platforms;
+    cl::Platform::get(&platforms);
+
+    // Show the names of all available OpenCL platforms
+    cout << "Available OpenCL platforms: \n\n";
+    for (unsigned int i = 0; i < platforms.size(); i++)
+        cout << "\t" << i + 1 << ": " << platforms[i].getInfo<CL_PLATFORM_NAME>() << endl;
+
+    // Choose and create an OpenCL platform
+    cout << endl << "Enter the number of the OpenCL platform you want to use: ";
+    unsigned int input = 0;
+    cin >> input;
+    // Handle incorrect user input
+    while (input < 1 || input > platforms.size()){
+        cin.clear(); //clear errors/bad flags on cin
+        cin.ignore(cin.rdbuf()->in_avail(), '\n'); // ignores exact number of chars in cin buffer
+        cout << "No such platform." << endl << "Enter the number of the OpenCL platform you want to use: ";
+        cin >> input;
+    }
+
+    cl::Platform platform = platforms[input - 1];
+
+    // Print the name of chosen OpenCL platform
+    cout << "Using OpenCL platform: \t" << platform.getInfo<CL_PLATFORM_NAME>() << endl;
+
+    // Find all available OpenCL devices (e.g. CPU, GPU or integrated GPU)
+    vector<cl::Device> devices;
+    platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
+
+    // Print the names of all available OpenCL devices on the chosen platform
+    cout << "Available OpenCL devices on this platform: " << endl << endl;
+    for (unsigned int i = 0; i < devices.size(); i++)
+        cout << "\t" << i + 1 << ": " << devices[i].getInfo<CL_DEVICE_NAME>() << endl;
+
+    // Choose an OpenCL device
+    cout << endl << "Enter the number of the OpenCL device you want to use: ";
+    input = 0;
+    cin >> input;
+    // Handle incorrect user input
+    while (input < 1 || input > devices.size()){
+        cin.clear(); //clear errors/bad flags on cin
+        cin.ignore(cin.rdbuf()->in_avail(), '\n'); // ignores exact number of chars in cin buffer
+        cout << "No such device. Enter the number of the OpenCL device you want to use: ";
+        cin >> input;
+    }
+
+    cl::Device device = devices[input - 1];
+
+    // Print the name of the chosen OpenCL device
+    cout << endl << "Using OpenCL device: \t" << device.getInfo<CL_DEVICE_NAME>() << endl << endl;
+
+    // Create an OpenCL context on that device.
+    // the context manages all the OpenCL resources
+    cl::Context context = cl::Context(device);
+
+    ///////////////////
+    // OPENCL KERNEL //
+    ///////////////////
+
+    // the OpenCL kernel in this tutorial is a simple program that adds two float arrays in parallel
+    // the source code of the OpenCL kernel is passed as a string to the host
+    // the "__global" keyword denotes that "global" device memory is used, which can be read and written
+    // to by all work items (threads) and all work groups on the device and can also be read/written by the host (CPU)
+
+    std::ifstream t("./src/tracer.cl");
+    std::string str((std::istreambuf_iterator<char>(t)),
+                  std::istreambuf_iterator<char>());
+    // std::cout << str << std::endl;
+    const char* source_string = str.c_str();
+
+    // Create an OpenCL program by performing runtime source compilation
+    cl::Program program = cl::Program(context, source_string);
+
+    // Build the program and check for compilation errors
+    cl_int result = program.build({ device }, "");
+    if (result) cout << "Error during compilation! (" << result << ")" << endl;
+
+    // Create a kernel (entry point in the OpenCL source program)
+    // kernels are the basic units of executable code that run on the OpenCL device
+    // the kernel forms the starting point into the OpenCL program, analogous to main() in CPU code
+    // kernels can be called from the host (CPU)
+    cl::Kernel kernel = cl::Kernel(program, "tracer");
+
+    // Constructs the arguments for the kernel
+    struct CLSceneInfo {
+		cl_float3 background_color; // background color of scene
+    	cl_float s;          // pixel size
+		cl_int hres;         // horizontal image resolution
+    	cl_int vres;         // vertical image resolution
+    	cl_int num_spheres;  // number of spheres in scene
+    	cl_int num_samples;  // number of samples per pixel
+    	cl_int num_sets;     // number of samples patterns
+		cl_int seed;         // seed for random num generation
+    };
+	Sampler* sampler = vp.sampler_ptr;
+
+	struct CLSceneInfo clInfo = {
+		(cl_float3){background_color.r,background_color.g,background_color.b},
+		vp.s,
+		vp.hres,
+		vp.vres,
+		objects.size(),
+		vp.num_samples,
+		sampler->get_num_sets(),
+		time(NULL)
+	};
+
+	int samples_count;
+	int indices_count;
+	int num_objects = objects.size();
+	cl_double2* cl_samples = sampler->get_cl_samples(samples_count);
+	cl_int* cl_shuffled_indices = sampler->get_cl_shuffled_indices(indices_count);
+	CLSphere* cl_spheres = get_cl_spheres(this);
+
+    // Create buffers (memory objects) on the OpenCL device, allocate memory and copy input data to device.
+    // Flags indicate how the buffer should be used e.g. read-only, write-only, read-write
+	cl::Buffer clOutput = cl::Buffer(context, CL_MEM_WRITE_ONLY, vp.hres * vp.vres * sizeof(cl_float3), NULL);
+	cout << "Created output buffer" << endl;
+	cl::Buffer clBufferA = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, samples_count * sizeof(cl_double2), cl_samples);
+	cout << "Created buffer A" << endl;
+    cl::Buffer clBufferB = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, indices_count * sizeof(cl_int), cl_shuffled_indices);
+	cout << "Created buffer B" << endl;
+    cl::Buffer clBufferC = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_objects * sizeof(CLSphere), cl_spheres);
+	cout << "Created buffer C" << endl;
+
+    // Specify the arguments for the OpenCL kernel
+    // (the arguments are __global float* x, __global float* y and __global float* z)
+    kernel.setArg(0, clOutput);  // third argument
+    kernel.setArg(1, clInfo); // first argument
+    kernel.setArg(2, clBufferA); // second argument
+    kernel.setArg(3, clBufferB); // second argument
+    kernel.setArg(4, clBufferC); // second argument
+
+    // Create a command queue for the OpenCL device
+    // the command queue allows kernel execution commands to be sent to the device
+    cl::CommandQueue queue = cl::CommandQueue(context, device);
+
+    // Determine the global and local number of "work items"
+    // The global work size is the total number of work items (threads) that execute in parallel
+    // Work items executing together on the same compute unit are grouped into "work groups"
+    // The local work size defines the number of work items in each work group
+    // Important: global_work_size must be an integer multiple of local_work_size
+    std::size_t global_work_size = vp.vres * vp.hres;
+    std::size_t local_work_size = 1; // could also be 1, 2 or 5 in this example
+    // when local_work_size equals 10, all ten number pairs from both arrays will be added together in one go
+
+	// Open the renderer
+	open_window(vp.hres, vp.vres);
+
+    // Launch the kernel and specify the global and local number of work items (threads)
+    queue.enqueueNDRangeKernel(kernel, NULL, global_work_size);
+
+    // Read and copy OpenCL output to CPU
+    // the "CL_TRUE" flag blocks the read operation until all work items have finished their computation
+    cl_float3* cpuOutput = (cl_float3*) queue.enqueueMapBuffer(clOutput, CL_TRUE, CL_MAP_READ, 0, global_work_size * sizeof(cl_float3) );
+	// queue.enqueueReadBuffer(clOutput, CL_TRUE, 0, global_work_size * sizeof(cl_float3), cpuOutput);
+
+    renderer->cl_draw(vp.hres, vp.vres, cpuOutput);
+    renderer->display();
+	renderer->save_png("renders/cl_output.png");
 }
 
 void World::open_window(const int hres, const int vres) const {

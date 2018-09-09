@@ -41,6 +41,8 @@ class World {
 
 		void render_scene(void) const;
 
+		void opencl_render_scene() const;
+
 		void open_window(const int hres, const int vres) const;
 
 		void display_pixel(	const int row,

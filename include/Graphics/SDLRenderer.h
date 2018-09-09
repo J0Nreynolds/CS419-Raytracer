@@ -21,6 +21,8 @@ class SDLRenderer : public Renderer {
 		void save_bmp(std::string filename) const;
 		void save_png(std::string filename) const;
 
+		void cl_draw(const int width, const int height, const cl_float3* buf) const;
+
 	protected:
 		SDL_Window*     window;
 		SDL_Renderer*   renderer;
