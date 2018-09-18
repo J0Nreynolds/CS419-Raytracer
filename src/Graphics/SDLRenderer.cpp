@@ -56,6 +56,16 @@ void SDLRenderer::initialize(const int hres, const int vres){
  * render texture contents will be displayed in the viewport
  */
 void SDLRenderer::display() const{
+
+	SDL_Event e;
+	while( SDL_PollEvent( &e ) != 0 )
+	{
+		//User requests quit
+		if( e.type == SDL_QUIT )
+		{
+			exit(-1);
+		}
+	}
     SDL_SetRenderDrawColor( renderer, 0x00, 0x00, 0x00, 0xFF );
     SDL_RenderClear( renderer );
     SDL_RenderCopy(renderer, texture, NULL, NULL);
@@ -214,28 +224,46 @@ void SDLRenderer::save_png(std::string filename) const{
 	SDL_FreeSurface(sshot);
 }
 
-void SDLRenderer::cl_draw(const int width, const int height, const cl_float3* buf) const {
-	SDL_Surface *sshot = SDL_CreateRGBSurfaceWithFormat(0, width, height, 8, SDL_PIXELFORMAT_RGB888);
-	for(int i = 0; i < width; i ++)
-		for(int j = 0; j < height; j ++){
+void SDLRenderer::cl_draw(const cl_float3* buf) const {
+	int hres, vres;
+	SDL_GetRendererOutputSize(renderer, &hres, &vres);
+
+	SDL_Surface *sshot = SDL_CreateRGBSurfaceWithFormat(0, hres, vres, 8, SDL_PIXELFORMAT_RGB888);
+	for(int i = 0; i < hres; i ++)
+		for(int j = 0; j < vres; j ++){
 			// Index to get color from
-			int idx = i + j*width;
+			int idx = i + j*hres;
 			cl_float3 color = buf[idx];
 			// Assign to different idx to flip vertically
-			idx = i + (height-1-j)*width;
+			idx = i + (vres-1-j)*hres;
 			// Recall surfaces are laid out BGRA
 			((unsigned char*)sshot->pixels)[4*idx + 0] = (unsigned char) (255*color.s[2]);
 			((unsigned char*)sshot->pixels)[4*idx + 1] = (unsigned char) (255*color.s[1]);
 			((unsigned char*)sshot->pixels)[4*idx + 2] = (unsigned char) (255*color.s[0]);
 		}
-
 	SDL_Texture *surface_texture = SDL_CreateTextureFromSurface(renderer, sshot);
 
+	// SDL_Event e;
+	// while( SDL_PollEvent( &e ) != 0 )
+	// {
+	// 	//User requests quit
+	// 	if( e.type == SDL_QUIT )
+	// 	{
+	// 		exit(-1);
+	// 	}
+	// }
 	SDL_SetRenderTarget( renderer, texture );
-	SDL_SetRenderDrawColor( renderer, 0x00, 0x00, 0x00, 0xFF );
-	SDL_RenderClear( renderer );
 	SDL_RenderCopy(renderer, surface_texture, NULL, NULL);
 	SDL_SetRenderTarget( renderer, NULL );
+
+	if(SDL_GetTicks()-last_render > 1000/FPS){
+		//Show rendered to texture
+		SDL_SetRenderDrawColor( renderer, 0x00, 0x00, 0x00, 0xFF );
+		SDL_RenderClear( renderer );
+		SDL_RenderCopy(renderer, texture, NULL, NULL);
+		last_render = SDL_GetTicks();
+		SDL_RenderPresent(renderer);
+	}
 
 	SDL_DestroyTexture(surface_texture);
 	SDL_FreeSurface(sshot);

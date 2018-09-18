@@ -13,9 +13,9 @@ void signalHandler( int signum ) {
 
 int main() {
     signal(SIGINT, signalHandler);
-    srand(time(NULL));
+    srand((int) time(NULL));
     w.build();
-    w.opencl_render_scene();
+    w.camera_ptr->opencl_render_scene(w);
 
     return(0);
 }

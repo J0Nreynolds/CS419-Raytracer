@@ -1,15 +1,15 @@
 CC := g++-8 -std=c++11# This is the main compiler
 
-SRCDIR := ../../src/Graphics
+SRCDIR := ../../src/Cameras
 BUILDDIR := ../../build
 
 SRCEXT := cpp
 SOURCES := $(wildcard $(SRCDIR)/*.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
-CFLAGS := -g -Wall -lpng
-INC := -I . -I ../Utilities -I ../World -I ../GeometricObjects -I ../Tracers \
-		-I ../GeometricObjects/Primitives -I ../Samplers  -I ../Cameras \
-		-I ../OpenCL/CLObjects -I /Library/Frameworks/SDL2.framework/Headers
+CFLAGS := -g -Wall
+INC := -I . -I ../Utilities -I ../World -I ../Samplers -I ../Graphics -I \
+	../GeometricObjects/Primitives -I ../GeometricObjects -I ../Tracers \
+	-I ../OpenCL/CLObjects -I ../OpenCL -I /Library/Frameworks/SDL2.framework/Headers
 
 all: $(OBJECTS)
 

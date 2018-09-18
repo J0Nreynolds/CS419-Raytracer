@@ -24,9 +24,7 @@ class Renderer {
 		virtual void save_bmp(std::string filename) const = 0;
 		virtual void save_png(std::string filename) const = 0;
 
-		virtual void cl_draw(const int width,
-							const int height,
-							const cl_float3* buf) const = 0;
+		virtual void cl_draw(const cl_float3* buf) const = 0;
 };
 
 #endif

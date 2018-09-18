@@ -1,17 +1,22 @@
 CC := g++-8 -std=c++11# This is the main compiler
 
-SRCDIR := ../../src/Graphics
+SRCDIR := ../../src/OpenCL
 BUILDDIR := ../../build
+SUBDIRS := $(wildcard */.)
+
 
 SRCEXT := cpp
 SOURCES := $(wildcard $(SRCDIR)/*.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
-CFLAGS := -g -Wall -lpng
-INC := -I . -I ../Utilities -I ../World -I ../GeometricObjects -I ../Tracers \
-		-I ../GeometricObjects/Primitives -I ../Samplers  -I ../Cameras \
-		-I ../OpenCL/CLObjects -I /Library/Frameworks/SDL2.framework/Headers
+CFLAGS := -g -Wall
+INC := -I . -I ./CLObjects -I ../World -I ../Samplers -I ../Utilities \
+	-I ../Graphics -I ../GeometricObjects/Primitives -I ../GeometricObjects \
+	-I ../Tracers -I ../Cameras
 
-all: $(OBJECTS)
+all: $(SUBDIRS) $(OBJECTS)
+
+$(SUBDIRS):
+	$(MAKE) -C $@
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(BUILDDIR)
@@ -21,4 +26,4 @@ clean:
 	@echo " Cleaning...";
 	@echo "$(RM) $(OBJECTS)"; $(RM) $(OBJECTS)
 
-.PHONY: clean all
+.PHONY: clean all $(SUBDIRS)

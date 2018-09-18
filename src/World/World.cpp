@@ -4,12 +4,12 @@
 
 
 // This file contains the definition of the class World
+using namespace std;
+
+#include "SDL.h"
 #include <time.h>
 #include <iostream>
-#include <vector>
-#include <string>
 #include <fstream>
-#include <streambuf>
 
 #define __CL_ENABLE_EXCEPTIONS
 
@@ -18,8 +18,6 @@
 #else
 #include <CL/cl.hpp>
 #endif
-
-using namespace std;
 
 #include "Point2D.h"
 #include "SingleSphere.h"
@@ -33,7 +31,10 @@ using namespace std;
 #include "Hammersley.h"
 #include "World.h"
 
+#include "CLUtil.h"
 #include "CLSphere.h"
+
+#include "Pinhole.h"
 
 World::World(void):
 	tracer_ptr(NULL), renderer(NULL)
@@ -74,12 +75,20 @@ void World::build(void){
 	vp.set_hres(400);
 	vp.set_vres(400);
 	vp.set_pixel_size(0.5);
-	vp.set_sampler(new Hammersley(25));
+	vp.set_sampler(new MultiJittered(25));
 
 	background_color = black;
 	tracer_ptr = new MultipleObjects(this);
 
-	// colours
+	Pinhole* pinhole_ptr = new Pinhole();
+	pinhole_ptr->set_eye(0, 0, -500);
+	pinhole_ptr->set_lookat(0, 0, -50);
+	pinhole_ptr->set_view_distance(400); // set d
+	pinhole_ptr->set_roll_angle(0); //rotate camera
+	pinhole_ptr->compute_uvw();
+	set_camera(pinhole_ptr);
+
+	// colors
 
 	RGBColor yellow(1, 1, 0);										// yellow
 	RGBColor brown(0.71, 0.40, 0.16);								// brown
@@ -279,68 +288,19 @@ void World::render_scene(void) const {
 	renderer->save_png("renders/output.png");
 }
 
-CLSphere* get_cl_spheres(const World* world){
-	int num_objects = world->objects.size();
-	CLSphere* ret = new CLSphere[num_objects];
-	for(int i = 0; i < num_objects; i ++){
-		Sphere* sphere = (Sphere*) world->objects[i];
-		ret[i] = sphere->get_cl_sphere();
-	}
-	return ret;
-}
-
 void World::opencl_render_scene() const {
-	// Find all available OpenCL platforms (e.g. AMD, Nvidia, Intel)
-    vector<cl::Platform> platforms;
-    cl::Platform::get(&platforms);
-
-    // Show the names of all available OpenCL platforms
-    cout << "Available OpenCL platforms: \n\n";
-    for (unsigned int i = 0; i < platforms.size(); i++)
-        cout << "\t" << i + 1 << ": " << platforms[i].getInfo<CL_PLATFORM_NAME>() << endl;
-
-    // Choose and create an OpenCL platform
-    cout << endl << "Enter the number of the OpenCL platform you want to use: ";
-    unsigned int input = 0;
-    cin >> input;
-    // Handle incorrect user input
-    while (input < 1 || input > platforms.size()){
-        cin.clear(); //clear errors/bad flags on cin
-        cin.ignore(cin.rdbuf()->in_avail(), '\n'); // ignores exact number of chars in cin buffer
-        cout << "No such platform." << endl << "Enter the number of the OpenCL platform you want to use: ";
-        cin >> input;
-    }
-
-    cl::Platform platform = platforms[input - 1];
-
-    // Print the name of chosen OpenCL platform
-    cout << "Using OpenCL platform: \t" << platform.getInfo<CL_PLATFORM_NAME>() << endl;
-
-    // Find all available OpenCL devices (e.g. CPU, GPU or integrated GPU)
-    vector<cl::Device> devices;
-    platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
-
-    // Print the names of all available OpenCL devices on the chosen platform
-    cout << "Available OpenCL devices on this platform: " << endl << endl;
-    for (unsigned int i = 0; i < devices.size(); i++)
-        cout << "\t" << i + 1 << ": " << devices[i].getInfo<CL_DEVICE_NAME>() << endl;
-
-    // Choose an OpenCL device
-    cout << endl << "Enter the number of the OpenCL device you want to use: ";
-    input = 0;
-    cin >> input;
-    // Handle incorrect user input
-    while (input < 1 || input > devices.size()){
-        cin.clear(); //clear errors/bad flags on cin
-        cin.ignore(cin.rdbuf()->in_avail(), '\n'); // ignores exact number of chars in cin buffer
-        cout << "No such device. Enter the number of the OpenCL device you want to use: ";
-        cin >> input;
-    }
-
-    cl::Device device = devices[input - 1];
-
-    // Print the name of the chosen OpenCL device
-    cout << endl << "Using OpenCL device: \t" << device.getInfo<CL_DEVICE_NAME>() << endl << endl;
+	struct CLSceneInfo {
+		cl_float3 background_color; // background color of scene
+		cl_float s;          // pixel size
+		cl_float zw;         // z-position of viewplane
+		cl_int hres;         // horizontal image resolution
+		cl_int vres;         // vertical image resolution
+		cl_int num_spheres;  // number of spheres in scene
+		cl_int num_samples;  // number of samples per pixel
+		cl_int num_sets;     // number of samples patterns
+		cl_int seed;         // seed for random num generation
+	};
+	cl::Device device = CLUtil::choose_platform_and_device();
 
     // Create an OpenCL context on that device.
     // the context manages all the OpenCL resources
@@ -349,11 +309,6 @@ void World::opencl_render_scene() const {
     ///////////////////
     // OPENCL KERNEL //
     ///////////////////
-
-    // the OpenCL kernel in this tutorial is a simple program that adds two float arrays in parallel
-    // the source code of the OpenCL kernel is passed as a string to the host
-    // the "__global" keyword denotes that "global" device memory is used, which can be read and written
-    // to by all work items (threads) and all work groups on the device and can also be read/written by the host (CPU)
 
     std::ifstream t("./src/tracer.cl");
     std::string str((std::istreambuf_iterator<char>(t)),
@@ -369,60 +324,50 @@ void World::opencl_render_scene() const {
     if (result) cout << "Error during compilation! (" << result << ")" << endl;
 
     // Create a kernel (entry point in the OpenCL source program)
-    // kernels are the basic units of executable code that run on the OpenCL device
-    // the kernel forms the starting point into the OpenCL program, analogous to main() in CPU code
-    // kernels can be called from the host (CPU)
     cl::Kernel kernel = cl::Kernel(program, "tracer");
 
     // Constructs the arguments for the kernel
-    struct CLSceneInfo {
-		cl_float3 background_color; // background color of scene
-    	cl_float s;          // pixel size
-		cl_int hres;         // horizontal image resolution
-    	cl_int vres;         // vertical image resolution
-    	cl_int num_spheres;  // number of spheres in scene
-    	cl_int num_samples;  // number of samples per pixel
-    	cl_int num_sets;     // number of samples patterns
-		cl_int seed;         // seed for random num generation
-    };
 	Sampler* sampler = vp.sampler_ptr;
 
-	struct CLSceneInfo clInfo = {
+	struct CLSceneInfo cl_info = {
 		(cl_float3){background_color.r,background_color.g,background_color.b},
 		vp.s,
+		75.0,
 		vp.hres,
 		vp.vres,
-		objects.size(),
+		(int) objects.size(),
 		vp.num_samples,
 		sampler->get_num_sets(),
-		time(NULL)
+		(int) time(NULL)
 	};
+	// std::cout << cl_info.seed <<std::endl;
+	// std::cout << cl_info.s <<std::endl;
+	// std::cout << cl_info.hres <<std::endl;
+	// std::cout << cl_info.vres <<std::endl;
+	// std::cout << cl_info.num_spheres <<std::endl;
+	// std::cout << cl_info.num_samples <<std::endl;
+	// std::cout << cl_info.num_sets <<std::endl;
 
 	int samples_count;
 	int indices_count;
 	int num_objects = objects.size();
 	cl_double2* cl_samples = sampler->get_cl_samples(samples_count);
 	cl_int* cl_shuffled_indices = sampler->get_cl_shuffled_indices(indices_count);
-	CLSphere* cl_spheres = get_cl_spheres(this);
+	CLSphere* cl_spheres = CLUtil::get_cl_spheres(*this);
 
     // Create buffers (memory objects) on the OpenCL device, allocate memory and copy input data to device.
     // Flags indicate how the buffer should be used e.g. read-only, write-only, read-write
-	cl::Buffer clOutput = cl::Buffer(context, CL_MEM_WRITE_ONLY, vp.hres * vp.vres * sizeof(cl_float3), NULL);
-	cout << "Created output buffer" << endl;
-	cl::Buffer clBufferA = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, samples_count * sizeof(cl_double2), cl_samples);
-	cout << "Created buffer A" << endl;
-    cl::Buffer clBufferB = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, indices_count * sizeof(cl_int), cl_shuffled_indices);
-	cout << "Created buffer B" << endl;
-    cl::Buffer clBufferC = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_objects * sizeof(CLSphere), cl_spheres);
-	cout << "Created buffer C" << endl;
+	cl::Buffer cl_output = cl::Buffer(context, CL_MEM_WRITE_ONLY, vp.hres * vp.vres * sizeof(cl_float3), NULL);
+	cl::Buffer cl_buffer_a = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, samples_count * sizeof(cl_double2), cl_samples);
+    cl::Buffer cl_buffer_b = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, indices_count * sizeof(cl_int), cl_shuffled_indices);
+    cl::Buffer cl_buffer_c = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_objects * sizeof(CLSphere), cl_spheres);
 
     // Specify the arguments for the OpenCL kernel
-    // (the arguments are __global float* x, __global float* y and __global float* z)
-    kernel.setArg(0, clOutput);  // third argument
-    kernel.setArg(1, clInfo); // first argument
-    kernel.setArg(2, clBufferA); // second argument
-    kernel.setArg(3, clBufferB); // second argument
-    kernel.setArg(4, clBufferC); // second argument
+    kernel.setArg(0, cl_output);
+    kernel.setArg(1, cl_info);
+    kernel.setArg(2, cl_buffer_a);
+    kernel.setArg(3, cl_buffer_b);
+    kernel.setArg(4, cl_buffer_c);
 
     // Create a command queue for the OpenCL device
     // the command queue allows kernel execution commands to be sent to the device
@@ -433,29 +378,48 @@ void World::opencl_render_scene() const {
     // Work items executing together on the same compute unit are grouped into "work groups"
     // The local work size defines the number of work items in each work group
     // Important: global_work_size must be an integer multiple of local_work_size
-    std::size_t global_work_size = vp.vres * vp.hres;
-    std::size_t local_work_size = 1; // could also be 1, 2 or 5 in this example
-    // when local_work_size equals 10, all ten number pairs from both arrays will be added together in one go
+	std::size_t global_work_size = vp.vres * vp.hres;
 
 	// Open the renderer
 	open_window(vp.hres, vp.vres);
+	int stop = time(NULL) + 10;
+	int num_draws = 0;
+	SDL_Event e;
+	while(time(NULL) < stop){
+		while( SDL_PollEvent( &e ) != 0 )
+		{
+			//User requests quit
+	     	if(e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_UP){
+				cl_info.zw -= 10;
+			    kernel.setArg(1, cl_info);
+			}
+	     	if(e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_DOWN){
+				cl_info.zw += 10;
+			    kernel.setArg(1, cl_info);
+			}
+			//User requests quit
+			if( e.type == SDL_QUIT )
+			{
+				exit(-1);
+			}
+		}
+	    // Launch the kernel and specify the global and local number of work items (threads)
+	    queue.enqueueNDRangeKernel(kernel, 0, global_work_size);
 
-    // Launch the kernel and specify the global and local number of work items (threads)
-    queue.enqueueNDRangeKernel(kernel, NULL, global_work_size);
+	    // Read and copy OpenCL output to CPU
+	    // the "CL_TRUE" flag blocks the read operation until all work items have finished their computation
+	    cl_float3* cpu_output = (cl_float3*) queue.enqueueMapBuffer(cl_output, CL_TRUE, CL_MAP_READ, 0, global_work_size * sizeof(cl_float3) );
 
-    // Read and copy OpenCL output to CPU
-    // the "CL_TRUE" flag blocks the read operation until all work items have finished their computation
-    cl_float3* cpuOutput = (cl_float3*) queue.enqueueMapBuffer(clOutput, CL_TRUE, CL_MAP_READ, 0, global_work_size * sizeof(cl_float3) );
-	// queue.enqueueReadBuffer(clOutput, CL_TRUE, 0, global_work_size * sizeof(cl_float3), cpuOutput);
-
-    renderer->cl_draw(vp.hres, vp.vres, cpuOutput);
+	    renderer->cl_draw(cpu_output);
+		num_draws ++;
+	}
+	cout << num_draws << " draws" << endl;
     renderer->display();
 	renderer->save_png("renders/cl_output.png");
 }
 
 void World::open_window(const int hres, const int vres) const {
 	renderer->initialize(hres, vres);
-	// renderer->display(); //display for a second before rendering
 }
 
 void World::display_pixel(	const int row,

@@ -14,6 +14,7 @@ using namespace std;
 #include "Ray.h"
 #include "Sphere.h"
 #include "Tracer.h"
+class Camera; //fwd declaration
 
 class World {
 	public:
@@ -24,6 +25,7 @@ class World {
 		Sphere          sphere;
 		Tracer*         tracer_ptr;
 		Renderer*       renderer;
+		Camera*         camera_ptr;
 
 		World(void);
 
@@ -45,13 +47,20 @@ class World {
 
 		void open_window(const int hres, const int vres) const;
 
+		void set_camera(Camera* camera);
+
 		void display_pixel(	const int row,
 							const int column,
 							const RGBColor& pixel_color) const;
 };
 
+#include "Camera.h"
 inline void World::add_object(GeometricObject* object_ptr) {
       objects.push_back(object_ptr);
+}
+
+inline void World::set_camera(Camera* camera) {
+    camera_ptr = camera;
 }
 
 #endif
