@@ -25,7 +25,9 @@ typedef struct SceneInfo {
 	double3 w;        // w vector of camera ONB
 	float3 background_color; // background color of scene
 	float s;          // pixel size
+	float radius;     // lens radius
 	float d;          // viewplane distance
+	float f;          // focal plane distance
 	float zoom;       // zoom factor
 	float exposure_time; // exposure time
 	int hres;         // horizontal image resolution
@@ -115,13 +117,16 @@ float3 trace_ray(__private const Ray* ray, __private float3 bg_color, __private 
 		return (bg_color);
 }
 
-double3 ray_direction(__private double2 pp, __private double3 u,
-	__private double3 v, __private double3 w, __private float d)
+double3 ray_direction(__private double2 pp, __private double2 lp, __private double3 u,
+	__private double3 v, __private double3 w, __private float f, __private float d)
 {
-	return (double3)(pp.s0 * u + pp.s1 * v - d * w);
+	double2 p = pp * f / d;  // hit point on focal plane
+
+	double3 dir = (p.s0 - lp.s0) * u + (p.s1 - lp.s1) * v - f * w;
+	return normalize(dir);
 }
 
-double2 sample_unit_square(__global double2* samples, __global int* shuffled_indices,
+double2 sample_double2_array(__global double2* samples, __global int* shuffled_indices,
 	 __private int num_samples, __private int num_sets, __private int* count_ptr,
 	 __private int* jump_ptr, __private ulong* seed_ptr)
 {
@@ -139,33 +144,44 @@ double2 sample_unit_square(__global double2* samples, __global int* shuffled_ind
 	return (samples[jump + shuffled_indices[jump + (count % num_samples)]]);
 }
 
-__kernel void pinhole_tracer(__global float3 *dst,
+__kernel void thin_lens_tracer(__global float3 *dst,
 	__private SceneInfo scene_info, __global double2* samples,
-	__global int* shuffled_indices, __global Sphere* spheres)
+	__global int* shuffled_indices, __global double2* disc_samples,
+	__global int* disc_shuffled_indices, __global Sphere* spheres)
 {
 	const int id = get_global_id(0);
 
 	int c = id % scene_info.hres;
 	int r = id / scene_info.hres;
-	int jump = 0;
-	int count = 0;
+	int jump1 = 0;
+	int jump2 = jump1;
+	int count1 = 0;
+	int count2 = count1;
 
 	Ray ray;
 	double2 sp; // sample point in [0, 1] x [0, 1]
 	double2 pp; // sample point on a pixel
+	double2 dp; // sample point on unit disk
+	double2 lp; // sample point on lens
+
 	float3 pixel_color = (float3)(0, 0, 0);
 
 	float s = scene_info.s / scene_info.zoom;
-	ray.o = scene_info.eye;
-	ulong seed = 7;
+	ulong seed1 = 7;
+	ulong seed2 = seed1;
 
 	for (int j = 0; j < scene_info.num_samples; j++) {
-		sp = sample_unit_square(samples, shuffled_indices, scene_info.num_samples, scene_info.num_sets, &count, &jump, &seed);
+		sp = sample_double2_array(samples, shuffled_indices, scene_info.num_samples, scene_info.num_sets, &count1, &jump1, &seed1);
 		pp.s0 = s * (c - 0.5 * scene_info.hres + sp.s0);
 		pp.s1 = s * (r - 0.5 * scene_info.vres + sp.s1);
-		ray.d = ray_direction(pp, scene_info.u, scene_info.v, scene_info.w, scene_info.d);
+
+		dp = sample_double2_array(disc_samples, disc_shuffled_indices, scene_info.num_samples, scene_info.num_sets, &count2, &jump2, &seed2);
+		lp = dp * scene_info.radius;
+
+		ray.o = scene_info.eye + lp.s0 * scene_info.u + lp.s1 * scene_info.v;
+		ray.d = ray_direction(pp, lp, scene_info.u, scene_info.v, scene_info.w, scene_info.f, scene_info.d);
 		pixel_color = pixel_color + trace_ray(&ray, scene_info.background_color, scene_info.num_spheres, spheres);
 	}
-	pixel_color = pixel_color / scene_info.num_samples * scene_info.exposure_time;;  // average the colors
+	pixel_color = pixel_color / scene_info.num_samples * scene_info.exposure_time;  // average the colors
 	dst[id] = pixel_color;
 }

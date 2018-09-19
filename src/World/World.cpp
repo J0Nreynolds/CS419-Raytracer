@@ -35,6 +35,7 @@ using namespace std;
 #include "CLSphere.h"
 
 #include "Pinhole.h"
+#include "ThinLens.h"
 
 World::World(void):
 	tracer_ptr(NULL), renderer(NULL)
@@ -55,21 +56,6 @@ World::~World(void){
 	}
 }
 
-
-void World::build_red_sphere(void){
-	vp.set_hres(200);
-	vp.set_vres(200);
-	vp.set_pixel_size(1.0);
-	vp.set_gamma(1.0);
-
-	background_color = black;
-	renderer = new SDLRenderer();
-	tracer_ptr = new SingleSphere(this);
-
-	sphere.set_center(0.0);
-	sphere.set_radius(85.0);
-}
-
 void World::build(void){
 	renderer = new SDLRenderer();
 	vp.set_hres(400);
@@ -80,13 +66,16 @@ void World::build(void){
 	background_color = black;
 	tracer_ptr = new MultipleObjects(this);
 
-	Pinhole* pinhole_ptr = new Pinhole();
-	pinhole_ptr->set_eye(0, 0, -500);
-	pinhole_ptr->set_lookat(0, 0, -50);
-	pinhole_ptr->set_view_distance(400); // set d
-	pinhole_ptr->set_roll_angle(0); //rotate camera
-	pinhole_ptr->compute_uvw();
-	set_camera(pinhole_ptr);
+	ThinLens* thinlens_ptr = new ThinLens();
+	thinlens_ptr->set_eye(0, 0, -500);
+	thinlens_ptr->set_lookat(0, 0, -50);
+	thinlens_ptr->set_view_distance(400); // set d
+	thinlens_ptr->set_lens_radius(5); // set d
+	thinlens_ptr->set_focal_plane_distance(500); // set d
+	thinlens_ptr->set_roll_angle(0); //rotate camera
+	thinlens_ptr->set_sampler(new MultiJittered(25));
+	thinlens_ptr->compute_uvw();
+	set_camera(thinlens_ptr);
 
 	// colors
 
@@ -285,7 +274,7 @@ void World::render_scene(void) const {
 			display_pixel(r, c, pixel_color);
 	   }
 	renderer->display(); // Display for a second before saving
-	renderer->save_png("renders/output.png");
+	renderer->save_png("renders/thin_lens.png");
 }
 
 void World::opencl_render_scene() const {

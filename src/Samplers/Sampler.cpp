@@ -122,9 +122,9 @@ void Sampler::map_samples_to_unit_disk() {
 				else {                               // sector 4
 					r = -sp.y;
 					if (sp.y != 0.0)               // avoid division by zero at origin
-							phi = 6 - sp.x / sp.y;
+						phi = 6 - sp.x / sp.y;
 					else
-							phi = 0.0;
+						phi = 0.0;
 				}
 		}
 
@@ -139,7 +139,7 @@ Point2D Sampler::sample_unit_disk() {
 	 if (count % num_samples == 0)      // start of a new pixel
 		  jump = ((int) rand() % num_sets) * num_samples;
 
-	 return (disk_samples[jump + count++ % num_samples]);
+	 return (disk_samples[jump + shuffled_indices[jump + count++ % num_samples]]);
 }
 
 void Sampler::map_samples_to_hemisphere(const float e) {
@@ -161,7 +161,7 @@ Point3D Sampler::sample_hemisphere() {
 	 if (count % num_samples == 0)      // start of a new pixel
 		  jump = ((int) rand() % num_sets) * num_samples;
 
-	 return (hemisphere_samples[jump + count++ % num_samples]);
+	 return (hemisphere_samples[jump + shuffled_indices[jump + count++ % num_samples]]);
 }
 
 cl_double2* Sampler::get_cl_samples(int& count) {

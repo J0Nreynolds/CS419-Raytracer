@@ -35,8 +35,6 @@ class World {
 
 		void build(void);
 
-		void build_red_sphere(void);
-
 		void add_object(GeometricObject* object_ptr);
 
 		ShadeRec hit_bare_bones_objects(const Ray& ray) const;

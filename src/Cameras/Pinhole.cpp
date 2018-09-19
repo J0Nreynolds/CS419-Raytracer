@@ -70,6 +70,7 @@ void Pinhole::opencl_render_scene(World& w) {
 		cl_float s;          // pixel size
 		cl_float d;          // viewplane distance
 		cl_float zoom;       // zoom factor
+		cl_float exposure_time; // exposure time
 		cl_int hres;         // horizontal image resolution
 		cl_int vres;         // vertical image resolution
 		cl_int num_spheres;  // number of spheres in scene
