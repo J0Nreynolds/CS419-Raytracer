@@ -18,6 +18,7 @@ class CLUtil {
 	public:
         static cl::Device choose_platform_and_device();
 		static CLSphere* get_cl_spheres(const World& world);
+		static void attempt_build_program(cl::Program program, cl::Device device);
 };
 
 #endif

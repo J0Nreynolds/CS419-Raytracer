@@ -96,20 +96,7 @@ void Pinhole::opencl_render_scene(World& w) {
     // Create an OpenCL program by performing runtime source compilation
     cl::Program program = cl::Program(context, source_string);
 
-	// Build the program and check for compilation errors
-	cl_int result = program.build({ device }, "");
-	if (result == CL_BUILD_PROGRAM_FAILURE)
-	{
-		// Check the build status
-		cl_build_status status = program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(device);
-		if (status == CL_BUILD_ERROR){
-			// Get the build log
-			std::string name     = device.getInfo<CL_DEVICE_NAME>();
-			std::string buildlog = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
-			std::cerr << "Build log for " << name << ":" << std::endl
-			        << buildlog << std::endl;
-		}
-	}
+	CLUtil::attempt_build_program(program, device);
 
     // Create a kernel (entry point in the OpenCL source program)
     cl::Kernel kernel = cl::Kernel(program, "pinhole_tracer");

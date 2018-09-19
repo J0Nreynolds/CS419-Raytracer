@@ -319,9 +319,7 @@ void World::opencl_render_scene() const {
     // Create an OpenCL program by performing runtime source compilation
     cl::Program program = cl::Program(context, source_string);
 
-    // Build the program and check for compilation errors
-    cl_int result = program.build({ device }, "");
-    if (result) cout << "Error during compilation! (" << result << ")" << endl;
+	CLUtil::attempt_build_program(program, device);
 
     // Create a kernel (entry point in the OpenCL source program)
     cl::Kernel kernel = cl::Kernel(program, "tracer");
