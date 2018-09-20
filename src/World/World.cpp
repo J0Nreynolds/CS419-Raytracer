@@ -34,6 +34,7 @@ using namespace std;
 #include "CLSphere.h"
 
 #include "Triangle.h"
+#include "Plane.h"
 
 #include "Pinhole.h"
 #include "ThinLens.h"
@@ -52,8 +53,15 @@ World::~World(void){
 		delete renderer;
 		renderer = NULL;
 	}
+	if(camera_ptr != NULL){
+		delete camera_ptr;
+		camera_ptr = NULL;
+	}
 	for(GeometricObject* object: objects){
 		delete object;
+	}
+	for(Light* light: lights){
+		delete light;
 	}
 }
 
@@ -85,6 +93,8 @@ void World::build(void){
 	RGBColor dark_green(0.0, 0.41, 0.41);							// dark_green
 	RGBColor orange(1.0, 0.75, 0.0);								// orange
 	RGBColor green(0.0, 0.6, 0.3);									// green
+	RGBColor blue(0.0, 0.3, 0.9);									// green
+	RGBColor white(1.0, 1.0, 1.0);									// green
 	RGBColor light_green(0.65, 1.0, 0.30);							// light green
 	RGBColor dark_yellow(0.61, 0.61, 0.0);							// dark yellow
 	RGBColor light_purple(0.65, 0.3, 1.0);							// light purple
@@ -100,9 +110,25 @@ void World::build(void){
 	// l2->set_color(RGBColor(0.75, 0.75, 0.75));
 	// add_light(l2);
 
-	// Triangle* triangle_ptr = new Triangle(Point3D(0, 30, 100), Point3D(40, 0, 100),  Point3D(0, 0, 100));
-	// triangle_ptr->set_color(yellow);	   								// yellow
-	// add_object(triangle_ptr);
+	Triangle* triangle_ptr = new Triangle(Point3D(-70, -40, -80), Point3D(40, 20, -40),  Point3D(100, -100, -20));
+	triangle_ptr->set_color(orange);	   							// orange
+	add_object(triangle_ptr);
+
+	Sphere*	sphere_ptr_a = new Sphere(Point3D(-70, -40, -200), 2);
+	sphere_ptr_a->set_color(white);	   								// white
+	add_object(sphere_ptr_a);
+
+	Sphere*	sphere_ptr_b = new Sphere(Point3D(40, 20, -200), 2);
+	sphere_ptr_b->set_color(white);	   								// white
+	add_object(sphere_ptr_b);
+
+	Sphere*	sphere_ptr_c = new Sphere(Point3D(100, -100, -200), 2);
+	sphere_ptr_c->set_color(white);	   								// white
+	add_object(sphere_ptr_c);
+
+	Plane* plane_ptr = new Plane(Point3D(0, 0, 0), Vector3D(0, 1, -1));
+	plane_ptr->set_color(blue);
+	add_object(plane_ptr);
 
 	Sphere*	sphere_ptr1 = new Sphere(Point3D(0, 30, 100), 2);
 	sphere_ptr1->set_color(yellow);	   								// yellow
@@ -285,5 +311,5 @@ void World::open_window(const int hres, const int vres) const {
 void World::display_pixel(	const int row,
 					const int column,
 					const RGBColor& color) const {
-	renderer->draw_pixel(vp.vres-row, column, color);
+	renderer->draw_pixel(vp.vres-1-row, column, color);
 }

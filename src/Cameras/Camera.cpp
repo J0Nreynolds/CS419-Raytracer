@@ -32,6 +32,8 @@ Camera::Camera(Point3D e, Point3D l, Vector3D u, float exp)
 : eye(e), lookat(l), up(u), exposure_time(exp){
 }
 
+Camera::~Camera() {}
+
 /**
  * Computes orthonormal basis for local view space
  */

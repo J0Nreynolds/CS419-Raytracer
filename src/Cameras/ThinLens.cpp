@@ -16,16 +16,23 @@ using namespace std;
 #include "ThinLens.h"
 
 ThinLens::ThinLens()
-: Camera(), lens_radius(0.0), zoom(1.0) {}
+: Camera(), lens_radius(0.0), zoom(1.0), sampler_ptr(NULL) {}
 
 ThinLens::ThinLens(Point3D e, Point3D l)
-: Camera(e, l), lens_radius(0.0), zoom(1.0) {}
+: Camera(e, l), lens_radius(0.0), zoom(1.0), sampler_ptr(NULL) {}
 
 ThinLens::ThinLens(Point3D e, Point3D l, Vector3D u)
-: Camera(e, l, u), lens_radius(0.0), zoom(1.0) {}
+: Camera(e, l, u), lens_radius(0.0), zoom(1.0), sampler_ptr(NULL) {}
 
 ThinLens::ThinLens(Point3D e, Point3D l, Vector3D u, float exp)
 : Camera(e, l, u, exp), lens_radius(0.0), zoom(1.0) {}
+
+ThinLens::~ThinLens() {
+	if(sampler_ptr != NULL){
+		delete sampler_ptr;
+		sampler_ptr = NULL;
+	}
+}
 
 void ThinLens::render_scene(World& w) {
 	RGBColor L;
@@ -40,8 +47,8 @@ void ThinLens::render_scene(World& w) {
 	w.open_window(vp.hres, vp.vres);
 	vp.s /= zoom;
 
-	for (int r = 0; r < vp.vres - 1; r++)        // up
-		for (int c = 0; c < vp.hres - 1; c++) {  // across
+	for (int r = 0; r < vp.vres; r++)        // up
+		for (int c = 0; c < vp.hres; c++) {  // across
 			L = black;
 
 			for (int n = 0; n < vp.num_samples; n++) {
@@ -61,6 +68,7 @@ void ThinLens::render_scene(World& w) {
 			L *= exposure_time;
 			w.display_pixel(r, c, L);
 		}
+	w.renderer->display();
 	w.renderer->save_png("renders/thin_lens.png");
 }
 

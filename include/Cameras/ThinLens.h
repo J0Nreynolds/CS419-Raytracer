@@ -11,6 +11,8 @@ class ThinLens: public Camera {   public:
 		ThinLens(Point3D e, Point3D l);
 		ThinLens(Point3D e, Point3D l, Vector3D u);
 		ThinLens(Point3D e, Point3D l, Vector3D u, float exp);
+		~ThinLens();
+
 
 		void set_lens_radius(float radius);
 		float get_lens_radius();

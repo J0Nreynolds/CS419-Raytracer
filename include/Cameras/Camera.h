@@ -15,6 +15,7 @@ class Camera {
         Camera(Point3D e, Point3D l);
         Camera(Point3D e, Point3D l, Vector3D u);
         Camera(Point3D e, Point3D l, Vector3D u, float exp);
+        virtual ~Camera();
 
         void set_eye(Point3D e);
         void set_eye(double x, double y, double z);

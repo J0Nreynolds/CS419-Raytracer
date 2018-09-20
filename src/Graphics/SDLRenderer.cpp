@@ -109,6 +109,10 @@ void SDLRenderer::draw_pixel(const int row,
 			exit(-1);
 		}
 	}
+	SDL_SetRenderTarget( renderer, texture );
+	SDL_SetRenderDrawColor(renderer, 255*color.r, 255*color.g, 255*color.b, 255);
+	SDL_RenderDrawPoint(renderer, column, row);
+	SDL_SetRenderTarget( renderer, NULL );
 	if(SDL_GetTicks()-last_render > 1000/FPS){
 	    //Show rendered to texture
 	    SDL_SetRenderDrawColor( renderer, 0x00, 0x00, 0x00, 0xFF );
@@ -117,10 +121,6 @@ void SDLRenderer::draw_pixel(const int row,
 		last_render = SDL_GetTicks();
 	    SDL_RenderPresent(renderer);
 	}
-	SDL_SetRenderTarget( renderer, texture );
-	SDL_SetRenderDrawColor(renderer, 255*color.r, 255*color.g, 255*color.b, 255);
-	SDL_RenderDrawPoint(renderer, column, row);
-	SDL_SetRenderTarget( renderer, NULL );
 }
 
 /**
