@@ -1,11 +1,8 @@
-// 	Copyright (C) Kevin Suffern 2000-2007.
-//  Modified work Copyright (C) Jonathan Reynolds 2018
+// 	Copyright (C) Jonathan Reynolds 2018
 //	This C++ code is for non-commercial purposes only.
 //	This C++ code is licensed under the GNU General Public License Version 2.
-//	See the file COPYING.txt for the full license.
 
-
-// This file contains the definition of the class triangle
+// This file contains the definition of the class Triangle
 #include "CLTriangle.h"
 
 #include "Triangle.h"
@@ -20,7 +17,6 @@ Triangle::Triangle(void)
 		v1(Point3D(0, 0, 0)),
 		v2(Point3D(1, 0, 0))
 {
-	calculate_normal();
 }
 
 
@@ -32,7 +28,6 @@ Triangle::Triangle(Point3D u1, Point3D u2, Point3D u3)
 		v1(u2),
 		v2(u3)
 {
-	calculate_normal();
 }
 
 
@@ -50,8 +45,7 @@ Triangle::Triangle (const Triangle& triangle)
 	: 	GeometricObject(triangle),
 		v0(triangle.v0),
 		v1(triangle.v0),
-		v2(triangle.v1),
-		normal(triangle.normal)
+		v2(triangle.v1)
 {}
 
 
@@ -69,7 +63,6 @@ Triangle::operator= (const Triangle& rhs)
 	v0 	= rhs.v0;
 	v1	= rhs.v1;
 	v2	= rhs.v2;
-	normal = rhs.normal;
 
 	return (*this);
 }
@@ -78,11 +71,6 @@ Triangle::operator= (const Triangle& rhs)
 // ---------------------------------------------------------------- destructor
 
 Triangle::~Triangle(void) {}
-
-void Triangle::calculate_normal() {
-	normal = Vector3D(v1 - v0) ^ Vector3D(v2 - v0);
-	normal.normalize();
-}
 
 
 //---------------------------------------------------------------- hit
@@ -146,6 +134,5 @@ CLTriangle Triangle::get_cl_triangle(){
 	ret.v0 = (cl_double3){v0.x, v0.y, v0.z};
 	ret.v1 = (cl_double3){v1.x, v1.y, v1.z};
 	ret.v2 = (cl_double3){v2.x, v2.y, v2.z};
-	ret.normal = (cl_double3){normal.x, normal.y, normal.z};
 	return ret;
 }

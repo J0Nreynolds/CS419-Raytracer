@@ -41,7 +41,6 @@ class Triangle: public GeometricObject {
 		Point3D 	v0;   			// first corner of triangle
 		Point3D 	v1;   			// second corner of triangle
 		Point3D 	v2;   			// third corner of triangle
-		Vector3D 	normal;   		// normal of triangle
 
 		static const double kEpsilon;   // for shadows and secondary rays
 };

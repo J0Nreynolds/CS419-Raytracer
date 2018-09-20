@@ -3,7 +3,7 @@
 //	This C++ code is licensed under the GNU General Public License Version 2.
 
 
-// This file contains the definition of the class ThinLens
+// This file contains the definition of the class Pinhole
 using namespace std;
 
 #include "SDL.h"
@@ -13,66 +13,49 @@ using namespace std;
 
 #include "CLUtil.h"
 
-#include "ThinLens.h"
+#include "Orthographic.h"
 
-ThinLens::ThinLens()
-: Camera(), lens_radius(0.0), zoom(1.0), sampler_ptr(NULL) {}
+Orthographic::Orthographic()
+: Camera() {}
 
-ThinLens::ThinLens(Point3D e, Point3D l)
-: Camera(e, l), lens_radius(0.0), zoom(1.0), sampler_ptr(NULL) {}
+Orthographic::Orthographic(Point3D e, Point3D l)
+: Camera(e, l) {}
 
-ThinLens::ThinLens(Point3D e, Point3D l, Vector3D u)
-: Camera(e, l, u), lens_radius(0.0), zoom(1.0), sampler_ptr(NULL) {}
+Orthographic::Orthographic(Point3D e, Point3D l, Vector3D u)
+: Camera(e, l, u) {}
 
-ThinLens::ThinLens(Point3D e, Point3D l, Vector3D u, float exp)
-: Camera(e, l, u, exp), lens_radius(0.0), zoom(1.0) {}
+Orthographic::Orthographic(Point3D e, Point3D l, Vector3D u, float exp)
+: Camera(e, l, u, exp) {}
 
-ThinLens::~ThinLens() {
-	if(sampler_ptr != NULL){
-		delete sampler_ptr;
-		sampler_ptr = NULL;
-	}
-}
-
-void ThinLens::render_scene(World& w) {
-	RGBColor L;
-	Ray ray;
+void Orthographic::render_scene(World& w) {
+	RGBColor pixel_color;
 	ViewPlane vp(w.vp);
+	Ray ray;
 
-	Point2D sp;               // sample point in [0, 1] X [0, 1]
-	Point2D pp;               // sample point on a pixel
-	Point2D dp;               // sample point on unit disk
-	Point2D lp;               // sample point on lens
+	Point2D sp;           // sample point in [0, 1] x [0, 1]
+	Point2D pp;           // sample point on a pixel
 
 	w.open_window(vp.hres, vp.vres);
-	vp.s /= zoom;
+	ray.d = -this->w;
 
-	for (int r = 0; r < vp.vres; r++)        // up
-		for (int c = 0; c < vp.hres; c++) {  // across
-			L = black;
-
-			for (int n = 0; n < vp.num_samples; n++) {
-				sp = vp.sampler_ptr->sample_unit_square();
-				pp.x = vp.s * (c - 0.5 * vp.hres + sp.x);
-				pp.y = vp.s * (r - 0.5 * vp.vres + sp.y);
-
-				dp = sampler_ptr->sample_unit_disk();
-				lp = dp * lens_radius;
-
-				ray.o = eye + lp.x * u + lp.y * v;
-				ray.d = ray_direction(pp, lp);
-				L += w.tracer_ptr->trace_ray(ray);
+	for (int r = 0; r < vp.vres; r++)               // up
+		for (int c = 0; c <= vp.hres; c++) {       // across
+			pixel_color = black;
+			for (int j = 0; j < vp.num_samples; j++) {
+				 sp = vp.sampler_ptr->sample_unit_square();
+				 pp.x = vp.s * (c - 0.5 * vp.hres + sp.x);
+				 pp.y = vp.s * (r - 0.5 * vp.vres + sp.y);
+				 ray.o = eye + pp.x * u + pp.y * v;
+				 pixel_color += w.tracer_ptr->trace_ray(ray);
 			}
-
-			L /= vp.num_samples;
-			L *= exposure_time;
-			w.display_pixel(r, c, L);
-		}
-	w.renderer->display();
-	w.renderer->save_png("renders/thin_lens.png");
+			pixel_color /= vp.num_samples;  // average the colors
+			w.display_pixel(r, c, pixel_color);
+	   }
+	w.renderer->display(); // Display for a second before saving
+	w.renderer->save_png("renders/orthographic.png");
 }
 
-void ThinLens::opencl_render_scene(World& w) {
+void Orthographic::opencl_render_scene(World& w) {
 	struct CLSceneInfo {
 		cl_double3 eye; 	// origin of the camera
 		cl_double3 u; 		// u vector of camera ONB
@@ -80,11 +63,6 @@ void ThinLens::opencl_render_scene(World& w) {
 		cl_double3 w; 		// w vector of camera ONB
 		cl_float3 background_color; // background color of scene
 		cl_float s;          // pixel size
-		cl_float radius;     // lens radius
-		cl_float d;          // viewplane distance
-		cl_float f;          // focal plane distance
-		cl_float zoom;       // zoom factor
-		cl_float exposure_time; // exposure time
 		cl_int hres;         // horizontal image resolution
 		cl_int vres;         // vertical image resolution
 		cl_int num_spheres;  // number of spheres in scene
@@ -102,7 +80,7 @@ void ThinLens::opencl_render_scene(World& w) {
 	// OPENCL KERNEL //
 	///////////////////
 
-	std::ifstream t("./src/thin_lens_tracer.cl");
+	std::ifstream t("./src/orthographic_tracer.cl");
 	std::string str((std::istreambuf_iterator<char>(t)),
 				  std::istreambuf_iterator<char>());
 	// std::cout << str << std::endl;
@@ -114,7 +92,7 @@ void ThinLens::opencl_render_scene(World& w) {
 	CLUtil::attempt_build_program(program, device);
 
 	// Create a kernel (entry point in the OpenCL source program)
-	cl::Kernel kernel = cl::Kernel(program, "thin_lens_tracer");
+	cl::Kernel kernel = cl::Kernel(program, "orthographic_tracer");
 
 	ViewPlane vp(w.vp);
 	// Constructs the arguments for the kernel
@@ -122,12 +100,8 @@ void ThinLens::opencl_render_scene(World& w) {
 
 	int samples_count;
 	int indices_count;
-	int disc_samples_count;
-	int disc_indices_count;
 	cl_double2* cl_samples = sampler->get_cl_samples(samples_count);
 	cl_int* cl_shuffled_indices = sampler->get_cl_shuffled_indices(indices_count);
-	cl_double2* cl_disc_samples = sampler_ptr->get_cl_samples(disc_samples_count);
-	cl_int* cl_disc_shuffled_indices = sampler_ptr->get_cl_shuffled_indices(disc_indices_count);
 	CLSphere* cl_spheres;
 	int num_spheres;
 	CLUtil::get_cl_spheres(w, cl_spheres, num_spheres);
@@ -139,11 +113,6 @@ void ThinLens::opencl_render_scene(World& w) {
 		(cl_double3){this->w.x, this->w.y, this->w.z},
 		(cl_float3){w.background_color.r, w.background_color.g, w.background_color.b},
 		vp.s,
-		lens_radius,
-		d,
-		f,
-		zoom,
-		exposure_time,
 		vp.hres,
 		vp.vres,
 		num_spheres,
@@ -157,9 +126,7 @@ void ThinLens::opencl_render_scene(World& w) {
 	cl::Buffer cl_output = cl::Buffer(context, CL_MEM_WRITE_ONLY, vp.hres * vp.vres * sizeof(cl_float3), NULL);
 	cl::Buffer cl_buffer_a = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, samples_count * sizeof(cl_double2), cl_samples);
 	cl::Buffer cl_buffer_b = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, indices_count * sizeof(cl_int), cl_shuffled_indices);
-	cl::Buffer cl_buffer_c = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, disc_samples_count * sizeof(cl_double2), cl_disc_samples);
-	cl::Buffer cl_buffer_d = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, disc_indices_count * sizeof(cl_int), cl_disc_shuffled_indices);
-	cl::Buffer cl_buffer_e = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_spheres * sizeof(CLSphere), cl_spheres);
+	cl::Buffer cl_buffer_c = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_spheres * sizeof(CLSphere), cl_spheres);
 
 	// Specify the arguments for the OpenCL kernel
 	kernel.setArg(0, cl_output);
@@ -167,8 +134,6 @@ void ThinLens::opencl_render_scene(World& w) {
 	kernel.setArg(2, cl_buffer_a);
 	kernel.setArg(3, cl_buffer_b);
 	kernel.setArg(4, cl_buffer_c);
-	kernel.setArg(5, cl_buffer_d);
-	kernel.setArg(6, cl_buffer_e);
 
 	// Create a command queue for the OpenCL device
 	// the command queue allows kernel execution commands to be sent to the device
@@ -218,27 +183,5 @@ void ThinLens::opencl_render_scene(World& w) {
 	}
 	cout << num_draws << " draws" << endl;
 	w.renderer->display();
-	w.renderer->save_png("renders/cl_thin_lens.png");
-}
-
-Vector3D ThinLens::ray_direction(const Point2D& pixel_point,
-	const Point2D& lens_point) const {
-	Point2D p;                     // hit point on focal plane
-	p.x = pixel_point.x * f / d;
-	p.y = pixel_point.y * f / d;
-
-	Vector3D dir = (p.x - lens_point.x) * u + (p.y - lens_point.y) * v - f * w;
-	dir.normalize();
-
-	return (dir);
-}
-
-void ThinLens::set_sampler(Sampler* sp) {
-	if (sampler_ptr) {
-		delete sampler_ptr;
-		sampler_ptr = NULL;
-	}
-
-	sampler_ptr = sp;
-	sampler_ptr->map_samples_to_unit_disk();
+	w.renderer->save_png("renders/cl_orthographic.png");
 }

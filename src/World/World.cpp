@@ -38,6 +38,7 @@ using namespace std;
 
 #include "Pinhole.h"
 #include "ThinLens.h"
+#include "Orthographic.h"
 
 World::World(void):
 	tracer_ptr(NULL), renderer(NULL)
@@ -75,16 +76,23 @@ void World::build(void){
 	background_color = black;
 	tracer_ptr = new MultipleObjects(this);
 
-	ThinLens* thinlens_ptr = new ThinLens();
-	thinlens_ptr->set_eye(0, 0, -600);
-	thinlens_ptr->set_lookat(0, 0, -50);
-	thinlens_ptr->set_view_distance(400); // set d
-	thinlens_ptr->set_lens_radius(15); // set d
-	thinlens_ptr->set_focal_plane_distance(500); // set d
-	thinlens_ptr->set_roll_angle(0); //rotate camera
-	thinlens_ptr->set_sampler(new MultiJittered(25));
-	thinlens_ptr->compute_uvw();
-	set_camera(thinlens_ptr);
+	// ThinLens* thinlens_ptr = new ThinLens();
+	// thinlens_ptr->set_eye(0, 0, -600);
+	// thinlens_ptr->set_lookat(0, 0, -50);
+	// thinlens_ptr->set_view_distance(400); // set d
+	// thinlens_ptr->set_lens_radius(15); // set d
+	// thinlens_ptr->set_focal_plane_distance(500); // set d
+	// thinlens_ptr->set_roll_angle(0); //rotate camera
+	// thinlens_ptr->set_sampler(new MultiJittered(25));
+	// thinlens_ptr->compute_uvw();
+	// set_camera(thinlens_ptr);
+
+	Orthographic* ortho_ptr = new Orthographic();
+	ortho_ptr->set_eye(0, 0, -600);
+	ortho_ptr->set_lookat(0, 0, -50);
+	ortho_ptr->set_roll_angle(0); //rotate camera
+	ortho_ptr->compute_uvw();
+	set_camera(ortho_ptr);
 
 	// colors
 

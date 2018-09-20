@@ -11,7 +11,6 @@ typedef struct CLTriangle{
 	cl_double3 v0;
 	cl_double3 v1;
 	cl_double3 v2;
-	cl_double3 normal;
 } CLTriangle;
 
 #endif

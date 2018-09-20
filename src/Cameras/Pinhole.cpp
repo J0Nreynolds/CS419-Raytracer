@@ -106,6 +106,14 @@ void Pinhole::opencl_render_scene(World& w) {
     // Constructs the arguments for the kernel
 	Sampler* sampler = w.vp.sampler_ptr;
 
+	int samples_count;
+	int indices_count;
+	cl_double2* cl_samples = sampler->get_cl_samples(samples_count);
+	cl_int* cl_shuffled_indices = sampler->get_cl_shuffled_indices(indices_count);
+	CLSphere* cl_spheres;
+	int num_spheres;
+	CLUtil::get_cl_spheres(w, cl_spheres, num_spheres);
+
 	struct CLSceneInfo cl_info = {
 		(cl_double3){eye.x, eye.y, eye.z},
 		(cl_double3){u.x, u.y, u.z},
@@ -115,29 +123,21 @@ void Pinhole::opencl_render_scene(World& w) {
 		vp.s,
 		d,
 		zoom,
+		exposure_time,
 		vp.hres,
 		vp.vres,
-		(int) w.objects.size(),
+		num_spheres,
 		vp.num_samples,
 		sampler->get_num_sets(),
 		(int) time(NULL)
 	};
-
-	int samples_count;
-	int indices_count;
-	int num_objects = w.objects.size();
-	cl_double2* cl_samples = sampler->get_cl_samples(samples_count);
-	cl_int* cl_shuffled_indices = sampler->get_cl_shuffled_indices(indices_count);
-	CLSphere* cl_spheres;
-	int num_spheres;
-	CLUtil::get_cl_spheres(w, cl_spheres, num_spheres);
 
     // Create buffers (memory objects) on the OpenCL device, allocate memory and copy input data to device.
     // Flags indicate how the buffer should be used e.g. read-only, write-only, read-write
 	cl::Buffer cl_output = cl::Buffer(context, CL_MEM_WRITE_ONLY, vp.hres * vp.vres * sizeof(cl_float3), NULL);
 	cl::Buffer cl_buffer_a = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, samples_count * sizeof(cl_double2), cl_samples);
     cl::Buffer cl_buffer_b = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, indices_count * sizeof(cl_int), cl_shuffled_indices);
-    cl::Buffer cl_buffer_c = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_objects * sizeof(CLSphere), cl_spheres);
+    cl::Buffer cl_buffer_c = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_spheres * sizeof(CLSphere), cl_spheres);
 
     // Specify the arguments for the OpenCL kernel
     kernel.setArg(0, cl_output);
