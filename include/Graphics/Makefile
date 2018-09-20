@@ -8,8 +8,8 @@ SOURCES := $(wildcard $(SRCDIR)/*.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CFLAGS := -g -Wall -lpng
 INC := -I . -I ../Utilities -I ../World -I ../GeometricObjects -I ../Tracers \
-		-I ../GeometricObjects/Primitives -I ../Samplers  -I ../Cameras \
-		-I ../OpenCL/CLObjects -I /Library/Frameworks/SDL2.framework/Headers
+	-I ../GeometricObjects/Primitives -I ../Samplers  -I ../Cameras -I ../Lights \
+	-I ../OpenCL/CLObjects -I /Library/Frameworks/SDL2.framework/Headers
 
 all: $(OBJECTS)
 

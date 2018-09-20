@@ -128,7 +128,9 @@ void Pinhole::opencl_render_scene(World& w) {
 	int num_objects = w.objects.size();
 	cl_double2* cl_samples = sampler->get_cl_samples(samples_count);
 	cl_int* cl_shuffled_indices = sampler->get_cl_shuffled_indices(indices_count);
-	CLSphere* cl_spheres = CLUtil::get_cl_spheres(w);
+	CLSphere* cl_spheres;
+	int num_spheres;
+	CLUtil::get_cl_spheres(w, cl_spheres, num_spheres);
 
     // Create buffers (memory objects) on the OpenCL device, allocate memory and copy input data to device.
     // Flags indicate how the buffer should be used e.g. read-only, write-only, read-write

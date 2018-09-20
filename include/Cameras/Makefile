@@ -8,7 +8,7 @@ SOURCES := $(wildcard $(SRCDIR)/*.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CFLAGS := -g -Wall
 INC := -I . -I ../Utilities -I ../World -I ../Samplers -I ../Graphics -I \
-	../GeometricObjects/Primitives -I ../GeometricObjects -I ../Tracers \
+	../GeometricObjects/Primitives -I ../GeometricObjects -I ../Tracers -I ../Lights \
 	-I ../OpenCL/CLObjects -I ../OpenCL -I /Library/Frameworks/SDL2.framework/Headers
 
 all: $(OBJECTS)

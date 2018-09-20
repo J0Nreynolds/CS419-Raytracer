@@ -14,12 +14,14 @@ using namespace std;
 #include "Ray.h"
 #include "Sphere.h"
 #include "Tracer.h"
+#include "Light.h"
 class Camera; //fwd declaration
 
 class World {
 	public:
 
 		vector <GeometricObject*> objects;
+		vector <Light*> lights;
 		ViewPlane       vp;
 		RGBColor        background_color;
 		Sphere          sphere;
@@ -36,6 +38,8 @@ class World {
 		void build(void);
 
 		void add_object(GeometricObject* object_ptr);
+
+		void add_light(Light* light_ptr);
 
 		ShadeRec hit_bare_bones_objects(const Ray& ray) const;
 
@@ -55,6 +59,10 @@ class World {
 #include "Camera.h"
 inline void World::add_object(GeometricObject* object_ptr) {
       objects.push_back(object_ptr);
+}
+
+inline void World::add_light(Light* light_ptr) {
+      lights.push_back(light_ptr);
 }
 
 inline void World::set_camera(Camera* camera) {

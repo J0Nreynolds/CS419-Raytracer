@@ -71,16 +71,28 @@ cl::Device CLUtil::choose_platform_and_device(){
     return device;
 }
 
+// template <typename To, template From>
+// To* void convert_all(From f) {
+//
+// }
 
-
-CLSphere* CLUtil::get_cl_spheres(const World& world){
-	int num_objects = world.objects.size();
-	CLSphere* ret = new CLSphere[num_objects];
+void CLUtil::get_cl_spheres(const World& world, CLSphere*& spheres, int& num_spheres){
+	num_spheres = 0;
+    int num_objects = world.objects.size();
 	for(int i = 0; i < num_objects; i ++){
-		Sphere* sphere = (Sphere*) world.objects[i];
-		ret[i] = sphere->get_cl_sphere();
+        Sphere* sphere = dynamic_cast<Sphere*> (world.objects[i]);
+        if(sphere != NULL){
+            num_spheres ++;
+        }
 	}
-	return ret;
+    spheres = new CLSphere[num_spheres];
+    int j = 0;
+    for(int i = 0; i < num_objects && j < num_spheres; i++){
+        Sphere* sphere = dynamic_cast<Sphere*> (world.objects[i]);
+        if(sphere != NULL){
+            spheres[j++] = sphere->get_cl_sphere();
+        }
+    }
 }
 
 void CLUtil::attempt_build_program(cl::Program program, cl::Device device){

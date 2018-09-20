@@ -1,22 +1,15 @@
 CC := g++-8 -std=c++11# This is the main compiler
 
-SRCDIR := ../../src/OpenCL
+SRCDIR := ../../src/Lights
 BUILDDIR := ../../build
-SUBDIRS := $(wildcard */.)
-
 
 SRCEXT := cpp
 SOURCES := $(wildcard $(SRCDIR)/*.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CFLAGS := -g -Wall
-INC := -I . -I ./CLObjects -I ../World -I ../Samplers -I ../Utilities \
-	-I ../Graphics -I ../GeometricObjects/Primitives -I ../GeometricObjects \
-	-I ../Tracers -I ../Cameras -I ../Lights
+INC := -I . -I ../Utilities
 
-all: $(SUBDIRS) $(OBJECTS)
-
-$(SUBDIRS):
-	$(MAKE) -C $@
+all: $(OBJECTS)
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(BUILDDIR)
@@ -26,4 +19,4 @@ clean:
 	@echo " Cleaning...";
 	@echo "$(RM) $(OBJECTS)"; $(RM) $(OBJECTS)
 
-.PHONY: clean all $(SUBDIRS)
+.PHONY: clean all

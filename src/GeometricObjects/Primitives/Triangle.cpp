@@ -16,20 +16,24 @@ const double Triangle::kEpsilon = 10e-6;
 
 Triangle::Triangle(void)
 	: 	GeometricObject(),
-		p1(Point3D(0, 1, 0)),
-        p2(Point3D(0, 0, 0)),
-        p3(Point3D(1, 0, 0))
-{}
+		v0(Point3D(0, 1, 0)),
+		v1(Point3D(0, 0, 0)),
+		v2(Point3D(1, 0, 0))
+{
+	calculate_normal();
+}
 
 
 // ---------------------------------------------------------------- constructor
 
-Triangle::Triangle(Point3D q1, Point3D q2, Point3D q3)
+Triangle::Triangle(Point3D u1, Point3D u2, Point3D u3)
 	: 	GeometricObject(),
-		p1(q1),
-		p2(q2),
-		p3(q3)
-{}
+		v0(u1),
+		v1(u2),
+		v2(u3)
+{
+	calculate_normal();
+}
 
 
 // ---------------------------------------------------------------- clone
@@ -44,9 +48,10 @@ Triangle::clone(void) const {
 
 Triangle::Triangle (const Triangle& triangle)
 	: 	GeometricObject(triangle),
-		p1(triangle.p1),
-		p2(triangle.p2),
-		p3(triangle.p3)
+		v0(triangle.v0),
+		v1(triangle.v0),
+		v2(triangle.v1),
+		normal(triangle.normal)
 {}
 
 
@@ -61,9 +66,10 @@ Triangle::operator= (const Triangle& rhs)
 
 	GeometricObject::operator= (rhs);
 
-	p1 	= rhs.p1;
-	p2	= rhs.p2;
-	p3	= rhs.p3;
+	v0 	= rhs.v0;
+	v1	= rhs.v1;
+	v2	= rhs.v2;
+	normal = rhs.normal;
 
 	return (*this);
 }
@@ -73,48 +79,73 @@ Triangle::operator= (const Triangle& rhs)
 
 Triangle::~Triangle(void) {}
 
+void Triangle::calculate_normal() {
+	normal = Vector3D(v1 - v0) ^ Vector3D(v2 - v0);
+	normal.normalize();
+}
+
 
 //---------------------------------------------------------------- hit
 
 bool
 Triangle::hit(const Ray& ray, double& tmin, ShadeRec& sr) const {
-    // Find plane intersection
-    Vector3D p21 = Vector3D(p2 - p1);
-    Vector3D p31 = Vector3D(p3 - p1);
-    Vector3D n =  p21 ^ p31; // cross product gives normal of triangle's plane
-    double area = n.length() / 2;
-	float t = (p1 - ray.o) * n / (ray.d * n);
-
+	// Find plane intersection
+	Vector3D v10 = Vector3D(v1 - v0);
+	Vector3D v20 = Vector3D(v2 - v0);
+	Vector3D n =  v10 ^ v20; // cross product gives normal of triangle's plane
+	double nlen = n.length();
+	float t = (v0 - ray.o) * n / (ray.d * n);
 	if (t > kEpsilon) { // plane hit
-        Point3D p = ray.o + t * ray.d;
-        Vector3D diff = Vector3D(p3 - p);
-        double area_A = (Vector3D(p2 - p3) ^ diff).length() / 2;
-        double area_B = (p31 ^ diff).length() / 2;
-        double area_C = (p21 ^ Vector3D(p2 - p)).length() / 2;
-        double lambda1 = area_A / area;
-        double lambda2 = area_B / area;
-        double lambda3 = area_C / area;
-        double lambdaSum = lambda1 + lambda2 + lambda3;
-        if( lambda1 <= 1 && lambda1 >= 0 &&
-            lambda2 <= 1 && lambda2 >= 0 &&
-            lambda3 <= 1 && lambda3 >= 0 &&
-            lambdaSum - 1 <= kEpsilon
-        ){                                      // triangle hit
-    		tmin = t;
-    		sr.normal = n;
-    		sr.local_hit_point = p;
-            return (true);
-        }
-    }
+		Point3D p = ray.o + t * ray.d;
+		/**
+		 * Based on fast barycentric coordinate calculation from
+		 * https://gamedev.stackexchange.com/questions/23743/whats-the-most-efficient-way-to-find-barycentric-coordinates
+		 */
+		// Vector3D e0 = Vector3D(v1 - v0);    .   .
+		// Vector3D e1 = Vector3D(v2 - v0);
+		// Vector3D e2 = Vector3D(p  - v0);    .
+		// double d00 = e0 * e0;
+		// double d01 = e0 * e1;
+		// double d11 = e1 * e1;
+		// double d20 = e2 * e0;
+		// double d21 = e2 * e1;
+		// double denom = d00 * d11 - d01 * d01;
+		// double lambda1 = (d11 * d20 - d01 * d21) / denom;
+		// double lambda2 = (d00 * d21 - d01 * d20) / denom;
+		// double lambda0 = 1.0 - lambda1 - lambda2;
+		Vector3D A = Vector3D(v2 - v1) ^ Vector3D(p - v1);
+		Vector3D B = (-v20) ^ Vector3D(p - v2);
+		Vector3D C = v10 ^ Vector3D(p - v0);
+		double signA = (A * n) > 0 ? 1 : -1;
+		double signB = (B * n) > 0 ? 1 : -1;
+		double signC = (C * n) > 0 ? 1 : -1;
+		double lambda0 = signA * A.length() / nlen;
+		double lambda1 = signB * B.length() / nlen;
+		double lambda2 = signC * C.length() / nlen;
+		if(
+			lambda0 <= 1 && lambda0 >= 0 &&
+			lambda1 <= 1 && lambda1 >= 0 &&
+			lambda2 <= 1 && lambda2 >= 0
+		){                                      // triangle hit
+			tmin = t;
+			sr.normal = n;
+			if(n * ray.d > 0){
+				sr.normal = -sr.normal;
+			}
+			sr.local_hit_point = p;
+			return (true);
+		}
+	}
 
-	return(false);
+	   return(false);
 }
 
 
 CLTriangle Triangle::get_cl_triangle(){
 	CLTriangle ret;
-	ret.p1 = (cl_double3){p1.x, p1.y, p1.z};
-	ret.p2 = (cl_double3){p2.x, p2.y, p2.z};
-	ret.p3 = (cl_double3){p3.x, p3.y, p3.z};
+	ret.v0 = (cl_double3){v0.x, v0.y, v0.z};
+	ret.v1 = (cl_double3){v1.x, v1.y, v1.z};
+	ret.v2 = (cl_double3){v2.x, v2.y, v2.z};
+	ret.normal = (cl_double3){normal.x, normal.y, normal.z};
 	return ret;
 }

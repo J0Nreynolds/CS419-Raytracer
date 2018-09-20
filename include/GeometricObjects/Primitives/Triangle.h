@@ -30,15 +30,18 @@ class Triangle: public GeometricObject {
 		Triangle& 											// assignment operator
 		operator= (const Triangle& triangle);
 
+		void calculate_normal();
+
 		virtual bool
 		hit(const Ray& ray, double& t, ShadeRec& s) const;
 
 		CLTriangle get_cl_triangle();
 
 	private:
-		Point3D 	p1;   			// first corner of triangle
-        Point3D 	p2;   			// second corner of triangle
-        Point3D 	p3;   			// third corner of triangle
+		Point3D 	v0;   			// first corner of triangle
+		Point3D 	v1;   			// second corner of triangle
+		Point3D 	v2;   			// third corner of triangle
+		Vector3D 	normal;   		// normal of triangle
 
 		static const double kEpsilon;   // for shadows and secondary rays
 };
