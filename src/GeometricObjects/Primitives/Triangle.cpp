@@ -134,5 +134,6 @@ CLTriangle Triangle::get_cl_triangle(){
 	ret.v0 = (cl_double3){v0.x, v0.y, v0.z};
 	ret.v1 = (cl_double3){v1.x, v1.y, v1.z};
 	ret.v2 = (cl_double3){v2.x, v2.y, v2.z};
+	ret.color = (cl_float3){color.r, color.g, color.b};
 	return ret;
 }

@@ -18,6 +18,24 @@ typedef struct Sphere{
 	double radius;
 } Sphere;
 
+typedef struct Triangle{
+	double3 v0;
+	double3 v1;
+	double3 v2;
+	float3 color;
+} Triangle;
+
+typedef struct Plane{
+	double3 a;
+	double3 n;
+	float3 color;
+} Plane;
+
+typedef struct Light{
+	double3 dir;
+	float3 color;
+} Light;
+
 typedef struct SceneInfo {
 	double3 eye;
 	double3 u;
@@ -27,7 +45,10 @@ typedef struct SceneInfo {
 	float s;          // pixel size
 	int hres;         // horizontal image resolution
 	int vres;         // vertical image resolution
+	int num_planes;  // number of planes in scene
+	int num_triangles;  // number of triangles in scene
 	int num_spheres;  // number of spheres in scene
+	int num_lights;  // number of lights in scene
 	int num_samples;  // number of samples per pixel
 	int num_sets;     // number of samples patterns
 	int seed;         // seed for random number generation
@@ -86,24 +107,127 @@ bool intersect_sphere(__global const Sphere* sphere, __private const Ray* ray, _
 	return (false);
 }
 
-ShadeRec hit_bare_bones_objects(__private const Ray* ray, __private const int num_spheres, __global const Sphere* spheres) {
+bool intersect_plane(__global const Plane* plane, __private const Ray* ray, __private double* tmin, __private ShadeRec* sr){
+	float t = dot((plane->a - ray->o), plane->n) / (dot(ray->d, plane->n));
+
+	if (t > EPSILON && t < (*tmin)) {
+		(*tmin) = t;
+		if(dot(plane->n, ray->d) > 0){
+			sr->normal = - plane->n;
+		}
+		else {
+			sr->normal = plane->n;
+		}
+		sr->local_hit_point = ray->o + t * ray->d;
+
+		return (true);
+	}
+
+	return(false);
+}
+
+bool intersect_triangle(__global const Triangle* triangle, __private const Ray* ray, __private double* tmin, __private ShadeRec* sr){
+	// Find plane intersection
+	double3 v10 = triangle->v1 - triangle->v0;
+	double3 v20 = triangle->v2 - triangle->v0;
+	double3 n = cross(v10, v20); // cross product gives normal of triangle's plane
+	double nlen = length(n);
+	float t = dot((triangle->v0 - ray->o), n) / (dot(ray->d, n));
+
+	if (t > EPSILON && t < (*tmin)) {
+		double3 p = ray->o + t * ray->d;
+
+		double3 A = cross((triangle->v2 - triangle->v1), (p - triangle->v1));
+		double3 B = cross(-v20, (p - triangle->v2));
+		double3 C = cross(v10, (p - triangle->v0));
+
+		double signA = dot(A, n) > 0 ? 1 : -1; // in triangle?
+		double signB = dot(B, n) > 0 ? 1 : -1; // in triangle?
+		double signC = dot(C, n) > 0 ? 1 : -1; // in triangle?
+
+		double lambda0 = signA * length(A) / nlen;
+		double lambda1 = signB * length(B) / nlen;
+		double lambda2 = signC * length(C) / nlen;
+		if(
+			lambda0 <= 1 && lambda0 >= 0 &&
+			lambda1 <= 1 && lambda1 >= 0 &&
+			lambda2 <= 1 && lambda2 >= 0
+		){
+			(*tmin) = t;
+			if(dot(n, ray->d) > 0){
+				sr->normal = - n;
+			}
+			else{
+				sr->normal = n;
+			}
+			sr->local_hit_point = p;
+
+			return (true);
+		}
+	}
+
+	return(false);
+}
+
+ShadeRec hit_bare_bones_objects(__private const Ray* ray,
+	__private const int num_planes, __global const Plane* planes,
+	__private const int num_triangles, __global const Triangle* triangles,
+	__private const int num_spheres, __global const Sphere* spheres,
+	__private const int num_lights, __global const Light* lights) {
 	ShadeRec sr;
 	sr.hit_an_object = false;
 	double tmin = 10e20f;
 	double t = tmin;
 
 	for (int j = 0; j < num_spheres; j++){
-		if (intersect_sphere(&spheres[j], ray, &t, &sr) && (t < tmin)) {
+		if (intersect_sphere(&spheres[j], ray, &t, &sr)) {
 			sr.hit_an_object = true;
 			tmin = t;
 			sr.color = spheres[j].color;
 		}
 	}
+
+	for (int j = 0; j < num_triangles; j++){
+		if (intersect_triangle(&triangles[j], ray, &t, &sr)) {
+			sr.hit_an_object = true;
+			tmin = t;
+			sr.color = triangles[j].color;
+		}
+	}
+
+	for (int j = 0; j < num_planes; j++){
+		if (intersect_plane(&planes[j], ray, &t, &sr)) {
+			sr.hit_an_object = true;
+			tmin = t;
+			sr.color = planes[j].color;
+		}
+	}
+	//calculate shading
+	if(sr.hit_an_object){
+		float3 temp = (float3)(0,0,0);
+		double kd = 0.8;
+		for (int j = 0; j < num_lights; j++){
+			Light l = lights[j];
+			double3 L = -l.dir;
+			L = normalize(L);
+			double3 N = sr.normal;
+			N = normalize(N);
+			float c = kd * max(0.0, dot(L, N));
+			temp += c * sr.color;
+		}
+		temp /= num_lights;
+		sr.color = (0.2f * sr.color) + temp;
+	}
 	return sr;
 }
 
-float3 trace_ray(__private const Ray* ray, __private float3 bg_color, __private const int num_spheres, __global const Sphere* spheres) {
-	ShadeRec sr = hit_bare_bones_objects(ray, num_spheres, spheres);
+float3 trace_ray(__private const Ray* ray, __private float3 bg_color,
+	__private const int num_planes, __global const Plane* planes,
+	__private const int num_triangles, __global const Triangle* triangles,
+	__private const int num_spheres, __global const Sphere* spheres,
+	__private const int num_lights, __global const Light* lights) {
+	ShadeRec sr = hit_bare_bones_objects(ray, num_planes, planes, num_triangles,
+		triangles, num_spheres, spheres, num_lights, lights );
 
 	if (sr.hit_an_object)
 		return (sr.color);
@@ -131,7 +255,9 @@ double2 sample_unit_square(__global double2* samples, __global int* shuffled_ind
 
 __kernel void orthographic_tracer(__global float3 *dst,
 	__private SceneInfo scene_info, __global double2* samples,
-	__global int* shuffled_indices, __global Sphere* spheres)
+	__global int* shuffled_indices, __global Plane* planes,
+	__global Triangle* triangles, __global Sphere* spheres,
+	__global Light* lights)
 {
 	const int id = get_global_id(0);
 
@@ -153,7 +279,9 @@ __kernel void orthographic_tracer(__global float3 *dst,
 		pp.s0 = scene_info.s * (c - 0.5 * scene_info.hres + sp.s0);
 		pp.s1 = scene_info.s * (r - 0.5 * scene_info.vres + sp.s1);
 		ray.o = scene_info.eye + pp.s0 * scene_info.u + pp.s1 * scene_info.v;
-		pixel_color = pixel_color + trace_ray(&ray, scene_info.background_color, scene_info.num_spheres, spheres);
+		pixel_color = pixel_color + trace_ray(&ray, scene_info.background_color,
+			scene_info.num_planes, planes, scene_info.num_triangles, triangles,
+			scene_info.num_spheres, spheres, scene_info.num_lights, lights);
 	}
 	pixel_color = pixel_color / scene_info.num_samples;  // average the colors
 	dst[id] = pixel_color;

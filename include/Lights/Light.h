@@ -3,6 +3,7 @@
 
 #include "Vector3D.h"
 #include "RGBColor.h"
+#include "CLLight.h"
 
 class Light {
 	public:
@@ -14,6 +15,8 @@ class Light {
 
 		Vector3D get_direction();
 		RGBColor get_color();
+
+		CLLight get_cl_light();
 
 	protected:
 		Vector3D d;

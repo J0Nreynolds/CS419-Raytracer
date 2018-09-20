@@ -12,12 +12,18 @@
 #endif
 
 #include "CLSphere.h"
+#include "CLTriangle.h"
+#include "CLPlane.h"
 #include "World.h"
 
 class CLUtil {
 	public:
         static cl::Device choose_platform_and_device();
+		// template <> static void get_all_cl<CLSphere, Sphere>(const World& world, CLSphere*& output, int& num_type);
 		static void get_cl_spheres(const World& world, CLSphere*& spheres, int& num_spheres);
+		static void get_cl_triangles(const World& world, CLTriangle*& triangles, int& num_triangles);
+		static void get_cl_planes(const World& world, CLPlane*& planes, int& num_planes);
+		static void get_cl_lights(const World& world, CLLight*& lights, int& num_lights);
 		static void attempt_build_program(cl::Program program, cl::Device device);
 };
 

@@ -12,9 +12,9 @@ using namespace std;
 #include "RGBColor.h"
 #include "ShadeRec.h"
 #include "Ray.h"
-#include "Sphere.h"
 #include "Tracer.h"
 #include "Light.h"
+#include "GeometricObject.h"
 class Camera; //fwd declaration
 
 class World {
@@ -24,7 +24,6 @@ class World {
 		vector <Light*> lights;
 		ViewPlane       vp;
 		RGBColor        background_color;
-		Sphere          sphere;
 		Tracer*         tracer_ptr;
 		Renderer*       renderer;
 		Camera*         camera_ptr;

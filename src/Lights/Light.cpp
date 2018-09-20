@@ -13,3 +13,12 @@ Light::Light()
 Light::Light(Vector3D dir)
 : d(dir), color(RGBColor(1, 1, 1))
 {}
+
+
+CLLight Light::get_cl_light()
+{
+	CLLight ret;
+	ret.dir = (cl_double3){d.x, d.y, d.z};
+	ret.color = (cl_float3){color.r, color.g, color.b};
+	return ret;
+}

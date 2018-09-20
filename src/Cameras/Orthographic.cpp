@@ -65,7 +65,10 @@ void Orthographic::opencl_render_scene(World& w) {
 		cl_float s;          // pixel size
 		cl_int hres;         // horizontal image resolution
 		cl_int vres;         // vertical image resolution
+		cl_int num_planes;  // number of planes in scene
+		cl_int num_triangles;  // number of triangles in scene
 		cl_int num_spheres;  // number of spheres in scene
+		cl_int num_lights;  // number of lights in scene
 		cl_int num_samples;  // number of samples per pixel
 		cl_int num_sets;     // number of samples patterns
 		cl_int seed;         // seed for random num generation
@@ -102,9 +105,18 @@ void Orthographic::opencl_render_scene(World& w) {
 	int indices_count;
 	cl_double2* cl_samples = sampler->get_cl_samples(samples_count);
 	cl_int* cl_shuffled_indices = sampler->get_cl_shuffled_indices(indices_count);
+	CLPlane* cl_planes;
+	int num_planes;
+	CLUtil::get_cl_planes(w, cl_planes, num_planes);
+	CLTriangle* cl_triangles;
+	int num_triangles;
+	CLUtil::get_cl_triangles(w, cl_triangles, num_triangles);
 	CLSphere* cl_spheres;
 	int num_spheres;
 	CLUtil::get_cl_spheres(w, cl_spheres, num_spheres);
+	CLLight* cl_lights;
+	int num_lights;
+	CLUtil::get_cl_lights(w, cl_lights, num_lights);
 
 	struct CLSceneInfo cl_info = {
 		(cl_double3){eye.x, eye.y, eye.z},
@@ -115,7 +127,10 @@ void Orthographic::opencl_render_scene(World& w) {
 		vp.s,
 		vp.hres,
 		vp.vres,
+		num_planes,
+		num_triangles,
 		num_spheres,
+		num_lights,
 		vp.num_samples,
 		sampler->get_num_sets(),
 		(int) time(NULL)
@@ -126,7 +141,10 @@ void Orthographic::opencl_render_scene(World& w) {
 	cl::Buffer cl_output = cl::Buffer(context, CL_MEM_WRITE_ONLY, vp.hres * vp.vres * sizeof(cl_float3), NULL);
 	cl::Buffer cl_buffer_a = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, samples_count * sizeof(cl_double2), cl_samples);
 	cl::Buffer cl_buffer_b = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, indices_count * sizeof(cl_int), cl_shuffled_indices);
-	cl::Buffer cl_buffer_c = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_spheres * sizeof(CLSphere), cl_spheres);
+	cl::Buffer cl_buffer_c = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_planes * sizeof(CLPlane), cl_planes);
+	cl::Buffer cl_buffer_d = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_triangles * sizeof(CLTriangle), cl_triangles);
+	cl::Buffer cl_buffer_e = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_spheres * sizeof(CLSphere), cl_spheres);
+	cl::Buffer cl_buffer_f = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_lights * sizeof(CLLight), cl_lights);
 
 	// Specify the arguments for the OpenCL kernel
 	kernel.setArg(0, cl_output);
@@ -134,6 +152,9 @@ void Orthographic::opencl_render_scene(World& w) {
 	kernel.setArg(2, cl_buffer_a);
 	kernel.setArg(3, cl_buffer_b);
 	kernel.setArg(4, cl_buffer_c);
+	kernel.setArg(5, cl_buffer_d);
+	kernel.setArg(6, cl_buffer_e);
+	kernel.setArg(7, cl_buffer_f);
 
 	// Create a command queue for the OpenCL device
 	// the command queue allows kernel execution commands to be sent to the device
