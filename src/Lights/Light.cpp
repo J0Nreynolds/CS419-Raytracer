@@ -7,18 +7,15 @@
 #include "Light.h"
 
 Light::Light()
-: d(Vector3D(0, 0, -1)), color(RGBColor(1, 1, 1))
+: shadows(true)
 {}
 
-Light::Light(Vector3D dir)
-: d(dir), color(RGBColor(1, 1, 1))
-{}
+Light::~Light(){}
 
 
 CLLight Light::get_cl_light()
 {
 	CLLight ret;
-	ret.dir = (cl_double3){d.x, d.y, d.z};
-	ret.color = (cl_float3){color.r, color.g, color.b};
+	ret.shadows = (cl_bool)shadows;
 	return ret;
 }

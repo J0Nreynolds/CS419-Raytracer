@@ -37,6 +37,9 @@ using namespace std;
 #include "Sphere.h"
 #include "Plane.h"
 
+#include "DirectionalLight.h"
+#include "PointLight.h"
+
 #include "Pinhole.h"
 #include "ThinLens.h"
 #include "Orthographic.h"
@@ -121,9 +124,11 @@ void World::build(void){
 
 	// spheres
 
-	Light* l1 = new Light(Vector3D(0, 0, 1));
-	l1->set_color(RGBColor(0.5, 0.5, 0.5));
+	DirectionalLight* l1 = new DirectionalLight(Vector3D(0, 0, 1));
 	add_light(l1);
+
+	Light* l = new PointLight(Point3D(0,0,-40));
+	add_light(l);
 
 	for(int i = 0; i <  vp.hres; i += 40){
 		for(int j = 0; j < vp.vres; j+= 40){
@@ -132,38 +137,6 @@ void World::build(void){
 			add_object(sphere_ptr);
 		}
 	}
-
-	// Light* l2 = new Light(Vector3D(0, -2, 1));
-	// l2->set_color(RGBColor(0.75, 0.75, 0.75));
-	// add_light(l2);
-
-	// Triangle* triangle_ptr_a = new Triangle(Point3D(-70, -40, -110), Point3D(40, 20, -80),  Point3D(100, -100, -150));
-	// triangle_ptr_a->set_color(blue);
-	// add_object(triangle_ptr_a);
-
-	// Triangle* triangle_ptr_b = new Triangle(Point3D(70, 40, -110), Point3D(-40, -20, -80),  Point3D(-100, 100, -150));
-	// triangle_ptr_b->set_color(orange);
-	// add_object(triangle_ptr_b);
-
-	// Sphere*	sphere_ptr_a = new Sphere(Point3D(-70, -40, -200), 2);
-	// sphere_ptr_a->set_color(white);	   								// white
-	// add_object(sphere_ptr_a);
-	//
-	// Sphere*	sphere_ptr_b = new Sphere(Point3D(40, 20, -200), 2);
-	// sphere_ptr_b->set_color(white);	   								// white
-	// add_object(sphere_ptr_b);
-	//
-	// Sphere*	sphere_ptr_c = new Sphere(Point3D(100, -100, -200), 2);
-	// sphere_ptr_c->set_color(white);	   								// white
-	// add_object(sphere_ptr_c);
-
-	// Plane* plane_ptr_a = new Plane(Point3D(0, 0, -50), Vector3D(0, 1, 0.8));
-	// plane_ptr_a->set_color(dark_blue);
-	// add_object(plane_ptr_a);
-	//
-	// Plane* plane_ptr_b = new Plane(Point3D(0, 0, -50), Vector3D(0, 1, -0.8));
-	// plane_ptr_b->set_color(dark_orange);
-	// add_object(plane_ptr_b);
 }
 
 
@@ -187,11 +160,11 @@ ShadeRec World::hit_bare_bones_objects(const Ray& ray) const{
 		double kd = 0.8;
 		for (int j = 0; j < num_lights; j++){
 			Light* l = lights[j];
-			Vector3D L = -l->get_direction();
+			Vector3D L = l->get_direction(sr);
 			L.normalize();
 			Vector3D N = sr.normal;
 			N.normalize();
-			temp += kd * max(0.0, (L * N)) * sr.color * l->get_color();
+			temp += kd * max(0.0, (L * N)) * sr.color * l->L(sr);
 		}
 		temp /= num_lights;
 		sr.color = 0.2 * sr.color + temp;

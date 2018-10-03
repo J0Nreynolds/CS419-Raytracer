@@ -3,40 +3,31 @@
 
 #include "Vector3D.h"
 #include "RGBColor.h"
+#include "ShadeRec.h"
 #include "CLLight.h"
 
 class Light {
 	public:
 		Light();				                // default constructor
-		Light(Vector3D d);		// constructor
+		virtual ~Light();
 
-		void set_direction(Vector3D dir);
-		void set_color(RGBColor color);
+		bool has_shadows();
+		void set_shadows(bool enabled);
 
-		Vector3D get_direction();
-		RGBColor get_color();
-
-		CLLight get_cl_light();
+		virtual CLLight get_cl_light();
+		virtual Vector3D get_direction(ShadeRec sr) = 0;
+		virtual RGBColor L(ShadeRec sr) = 0;
 
 	protected:
-		Vector3D d;
-		RGBColor color;
+		bool shadows;
 };
 
-inline void Light::set_direction(Vector3D dir){
-	d = dir;
+inline void Light::set_shadows(bool enabled){
+	shadows = enabled;
 }
 
-inline void Light::set_color(RGBColor c){
-	color = c;
-}
-
-inline Vector3D Light::get_direction(){
-	return d;
-}
-
-inline RGBColor Light::get_color(){
-	return color;
+inline bool Light::has_shadows(){
+	return shadows;
 }
 
 #endif
