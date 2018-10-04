@@ -10,7 +10,7 @@
 
 class ViewPlane {
 	public:
-
+		bool        show_out_of_gamut = false; // whether to show out-of-gamut colors
 		int         hres;         // horizontal image resolution
 		int         vres;         // vertical image resolution
 		int         num_samples;  // number of samples per pixel
@@ -23,7 +23,8 @@ class ViewPlane {
 		void set_vres(const int v_res);
 		void set_pixel_size(const double size);
 		void set_gamma(const double g);
-		
+		void set_show_out_of_gamut(const bool enabled);
+
 		void set_sampler(Sampler* sp);
 		void set_samples(const int n);
 };
@@ -43,6 +44,10 @@ inline void ViewPlane::set_pixel_size(const double size) {
 inline void ViewPlane::set_gamma(const double g) {
 	gamma = g;
 	inv_gamma = 1.0 / gamma;
+}
+
+inline void ViewPlane::set_show_out_of_gamut(const bool enabled) {
+	show_out_of_gamut = enabled;
 }
 
 

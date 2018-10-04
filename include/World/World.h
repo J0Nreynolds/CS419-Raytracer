@@ -54,6 +54,10 @@ class World {
 
 		void set_ambient_light(Ambient* ambient);
 
+		RGBColor max_to_one(const RGBColor& c) const;
+
+		RGBColor clamp_to_color(const RGBColor& c) const;
+
 		void display_pixel(	const int row,
 							const int column,
 							const RGBColor& pixel_color) const;

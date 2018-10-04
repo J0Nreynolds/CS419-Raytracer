@@ -79,6 +79,8 @@ World::~World(){
 
 void World::build(){
 	renderer = new SDLRenderer();
+	vp.set_gamma(1.0);
+	vp.set_show_out_of_gamut(true);
 	vp.set_hres(400);
 	vp.set_vres(400);
 	vp.set_pixel_size(0.5);
@@ -86,6 +88,7 @@ void World::build(){
 
 	background_color = black;
 	Ambient* ambient = new Ambient();
+	ambient->set_color(black);
 	set_ambient_light(ambient);
 	tracer_ptr = new RayCast(this);
 
@@ -132,6 +135,7 @@ void World::build(){
 	RGBColor dark_purple(0.5, 0.0, 1.0);							// dark purple
 
 	DirectionalLight* l1 = new DirectionalLight(Vector3D(0, 0, 1));
+	l1->set_ls(5.0);
 	add_light(l1);
 
 	// Light* l = new PointLight(Point3D(0,0,-40));
@@ -141,7 +145,7 @@ void World::build(){
 	Matte* red_material = new Matte();
 	red_material->set_kd(0.65);
 	red_material->set_ka(0.25);
-	red_material->set_cd(red);
+	red_material->set_cd(white);
 	for(int i = 0; i <  vp.hres; i += 40){
 		for(int j = 0; j < vp.vres; j+= 40){
 			Sphere*	sphere_ptr = new Sphere(Point3D(5+(2*i-400), 5+(2*j-400), 0), 35);
@@ -217,5 +221,34 @@ void World::open_window(const int hres, const int vres) const {
 void World::display_pixel(	const int row,
 					const int column,
 					const RGBColor& color) const {
-	renderer->draw_pixel(vp.vres-1-row, column, color);
+	RGBColor mapped_color;
+
+	if (vp.show_out_of_gamut)
+		mapped_color = clamp_to_color(color);
+	else
+		mapped_color = max_to_one(color);
+
+	if (vp.gamma != 1.0)
+		mapped_color = mapped_color.powc(vp.inv_gamma);
+
+	renderer->draw_pixel(vp.vres-1-row, column, mapped_color);
+}
+
+RGBColor World::max_to_one(const RGBColor& c) const {
+	float max_value = max(c.r, max(c.g, c.b));
+
+	if (max_value > 1.0)
+		return (c / max_value);
+	else
+		return c;
+}
+
+RGBColor World::clamp_to_color(const RGBColor& raw_color) const {
+	RGBColor c(raw_color);
+
+	if (raw_color.r > 1.0 || raw_color.g > 1.0 || raw_color.b > 1.0) {
+		c.r = 1.0; c.g = 0.0; c.b = 0.0;
+	}
+
+	return (c);
 }
