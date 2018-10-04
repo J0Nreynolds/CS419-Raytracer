@@ -13,7 +13,7 @@ using namespace std;
 #include "ShadeRec.h"
 #include "Ray.h"
 #include "Tracer.h"
-#include "Light.h"
+#include "Ambient.h"
 #include "GeometricObject.h"
 class Camera; //fwd declaration
 
@@ -24,23 +24,25 @@ class World {
 		vector <Light*> lights;
 		ViewPlane       vp;
 		RGBColor        background_color;
+		Ambient*        ambient_ptr;
 		Tracer*         tracer_ptr;
 		Renderer*       renderer;
 		Camera*         camera_ptr;
 
-		World(void);
+		World();
 
-		~World(void);
+		~World();
 
-		void close(void);
+		void close();
 
-		void build(void);
+		void build();
 
 		void add_object(GeometricObject* object_ptr);
 
 		void add_light(Light* light_ptr);
 
 		ShadeRec hit_bare_bones_objects(const Ray& ray) const;
+		ShadeRec hit_objects(const Ray& ray) const;
 
 		void render_scene(void) const;
 
@@ -49,6 +51,8 @@ class World {
 		void open_window(const int hres, const int vres) const;
 
 		void set_camera(Camera* camera);
+
+		void set_ambient_light(Ambient* ambient);
 
 		void display_pixel(	const int row,
 							const int column,
@@ -66,6 +70,10 @@ inline void World::add_light(Light* light_ptr) {
 
 inline void World::set_camera(Camera* camera) {
     camera_ptr = camera;
+}
+
+inline void World::set_ambient_light(Ambient* ambient) {
+    ambient_ptr = ambient;
 }
 
 #endif

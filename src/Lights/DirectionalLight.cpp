@@ -41,5 +41,5 @@ RGBColor DirectionalLight::L(ShadeRec sr)
 
 Vector3D DirectionalLight::get_direction(ShadeRec sr)
 {
-    return -d;
+    return -d.hat();
 }

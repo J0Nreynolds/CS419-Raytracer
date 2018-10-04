@@ -9,7 +9,8 @@ OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CFLAGS := -g -Wall
 INC := -I . -I ../Utilities -I ../Tracers -I ../Graphics -I ../GeometricObjects \
 	-I ../GeometricObjects/Primitives -I ../Samplers -I ../Cameras -I ../Lights \
-	-I ../OpenCL -I ../OpenCL/CLObjects -I /Library/Frameworks/SDL2.framework/Headers
+	-I ../OpenCL -I ../OpenCL/CLObjects  -I ../Materials  -I ../BRDFs \
+	-I /Library/Frameworks/SDL2.framework/Headers
 
 all: $(OBJECTS)
 

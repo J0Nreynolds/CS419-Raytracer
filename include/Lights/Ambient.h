@@ -1,5 +1,5 @@
-#ifndef __DIRECTIONAL_LIGHT__
-#define __DIRECTIONAL_LIGHT__
+#ifndef __AMBIENT__
+#define __AMBIENT__
 
 #include "Vector3D.h"
 #include "Light.h"

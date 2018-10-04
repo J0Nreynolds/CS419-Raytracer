@@ -23,23 +23,19 @@ class World;
 
 class ShadeRec {
 	public:
+		bool hit_an_object;                // did the ray hit an object?
+		Material* material_ptr;            // nearest object’s material
+		Point3D hit_point;                 // world coordinates of hit point
+		Point3D local_hit_point;           // for attaching textures to objects
+		Normal normal;                     // normal at hit point
+		RGBColor color;                    // only used in Chapter 3
+		Ray ray;                           // for specular highlights
+		int depth;                         // recursion depth
+		Vector3D dir;                      // for area lights
+		World& w;                          // world reference
 
-		bool				hit_an_object;		// did the ray hit an object?
-		Material* 			material_ptr;		// pointer to the nearest object's material
-		Point3D 			hit_point;			// world coordinates of intersection
-		Point3D				local_hit_point;	// world coordinates of hit point on untransformed object (used for texture transformations)
-		Normal				normal;				// normal at hit point
-		Ray					ray;				// required for specular highlights and area lights
-		int					depth;				// recursion depth
-		RGBColor			color;				// used in the Chapter 3 only
-		double				t;					// ray parameter
-		float				u;					// texture coordinate
-		float				v;					// texture coordinate
-		const World&		w;					// world reference
-
-		ShadeRec(const World& wr);					// constructor
+		ShadeRec(World& wr);					// constructor
 		ShadeRec(const ShadeRec& sr);			// copy constructor
-		~ShadeRec(void);						// destructor
 };
 
 #endif

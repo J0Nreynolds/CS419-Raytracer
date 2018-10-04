@@ -50,6 +50,12 @@ class GeometricObject {
 		RGBColor
 		get_color(void);
 
+		// The following two functions are only required for Chapter 14 and on
+
+		void set_material(Material* ptr);
+
+		Material* get_material();
+
 		virtual void 										// required for compound objects
 		add_object(GeometricObject* object_ptr);
 
@@ -75,9 +81,8 @@ class GeometricObject {
 	protected:
 
 		RGBColor   			color;				// only used for Bare Bones ray tracing
-
-		GeometricObject&
-		operator= (const GeometricObject& rhs);
+		Material* 			material_ptr;
+		GeometricObject& operator=(const GeometricObject& rhs);
 };
 
 
@@ -102,6 +107,19 @@ GeometricObject::set_color(const float r, const float g, const float b) {
 inline RGBColor
 GeometricObject::get_color(void) {
 	return (color);
+}
+
+
+// --------------------------------------------------------------------  set_material
+
+inline void GeometricObject::set_material(Material* ptr) {
+	material_ptr = ptr;
+}
+
+// --------------------------------------------------------------------  get_material
+
+inline Material* GeometricObject::get_material() {
+	return material_ptr;
 }
 
 #endif
