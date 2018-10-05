@@ -88,7 +88,7 @@ inline Vector3D Camera::get_up(){
  * Rotates the up vector `angle` degrees
  */
 inline void Camera::set_roll_angle(double angle){
-    up = Vector3D(cos(angle / TWO_PI), sin(angle / TWO_PI), 0);
+    up = Vector3D(sin(angle * TWO_PI / 360), cos(angle * TWO_PI / 360), 0);
 }
 
 #endif

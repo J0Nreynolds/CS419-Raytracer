@@ -96,10 +96,8 @@ SDLRenderer::~SDLRenderer(){
 /**
  * Draws a single pixel on our render texture
  */
-void SDLRenderer::draw_pixel(const int row,
-					const int column,
-					const RGBColor& color) const{
-						//Handle events on queue
+void SDLRenderer::draw_pixel(const int x, const int y, const RGBColor& color) const{
+	//Handle events on queue
 	SDL_Event e;
 	while( SDL_PollEvent( &e ) != 0 )
 	{
@@ -111,7 +109,7 @@ void SDLRenderer::draw_pixel(const int row,
 	}
 	SDL_SetRenderTarget( renderer, texture );
 	SDL_SetRenderDrawColor(renderer, 255*color.r, 255*color.g, 255*color.b, 255);
-	SDL_RenderDrawPoint(renderer, column, row);
+	SDL_RenderDrawPoint(renderer, x, y);
 	SDL_SetRenderTarget( renderer, NULL );
 	if(SDL_GetTicks()-last_render > 1000/FPS){
 	    //Show rendered to texture

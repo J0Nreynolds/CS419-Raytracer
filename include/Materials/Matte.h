@@ -27,4 +27,17 @@ class Matte: public Material {
         Lambertian*    diffuse_brdf;
 };
 
+inline void Matte::set_ka(const float ka) {
+    ambient_brdf->set_kd(ka);
+}
+
+inline void Matte::set_kd (const float kd) {
+    diffuse_brdf->set_kd(kd);
+}
+
+inline void Matte::set_cd(const RGBColor& c) {
+    ambient_brdf->set_cd(c);
+    diffuse_brdf->set_cd(c);
+}
+
 #endif

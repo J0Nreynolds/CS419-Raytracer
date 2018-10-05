@@ -14,9 +14,7 @@ class SDLRenderer : public Renderer {
 		SDLRenderer();
 		~SDLRenderer();
 		void initialize(const int h, const int v);
-		void draw_pixel(const int row,
-							const int column,
-							const RGBColor& pixel_color) const;
+		void draw_pixel(const int x, const int y, const RGBColor& pixel_color) const;
 		void display() const;
 		void save_bmp(std::string filename) const;
 		void save_png(std::string filename) const;

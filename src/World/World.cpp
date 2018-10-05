@@ -44,6 +44,7 @@ using namespace std;
 #include "Orthographic.h"
 
 #include "Matte.h"
+#include "Phong.h"
 
 #include "MultipleObjects.h"
 #include "RayCast.h"
@@ -80,10 +81,10 @@ World::~World(){
 void World::build(){
 	renderer = new SDLRenderer();
 	vp.set_gamma(1.0);
-	vp.set_show_out_of_gamut(true);
+	vp.set_show_out_of_gamut(false);
 	vp.set_hres(400);
 	vp.set_vres(400);
-	vp.set_pixel_size(0.5);
+	vp.set_pixel_size(1);
 	vp.set_sampler(new MultiJittered(25));
 
 	background_color = black;
@@ -134,25 +135,33 @@ void World::build(){
 	RGBColor light_purple(0.65, 0.3, 1.0);							// light purple
 	RGBColor dark_purple(0.5, 0.0, 1.0);							// dark purple
 
-	DirectionalLight* l1 = new DirectionalLight(Vector3D(0, 0, 1));
-	l1->set_ls(5.0);
-	add_light(l1);
+	// DirectionalLight* l1 = new DirectionalLight(Vector3D(0, 0, 1));
+	// l1->set_ls(5.0);
+	// add_light(l1);
 
-	// Light* l = new PointLight(Point3D(0,0,-40));
-	// add_light(l);
+	PointLight* l = new PointLight(Point3D(100,0,-40));
+	l->set_ls(5.0);
+	add_light(l);
 
 	// spheres
-	Matte* red_material = new Matte();
-	red_material->set_kd(0.65);
+	Phong* red_material = new Phong();
+	red_material->set_ks(0.15);
+	red_material->set_exp(15);
+	// Matte* red_material = new Matte();
+	red_material->set_kd(0.6);
 	red_material->set_ka(0.25);
-	red_material->set_cd(white);
-	for(int i = 0; i <  vp.hres; i += 40){
-		for(int j = 0; j < vp.vres; j+= 40){
-			Sphere*	sphere_ptr = new Sphere(Point3D(5+(2*i-400), 5+(2*j-400), 0), 35);
-			sphere_ptr->set_material(red_material);	   								// yellow
-			add_object(sphere_ptr);
-		}
-	}
+	red_material->set_cd(red);
+
+	Sphere*	sphere_ptr = new Sphere(Point3D(100, 0, 0), 35);
+	sphere_ptr->set_material(red_material);	   								// yellow
+	add_object(sphere_ptr);
+	// for(int i = 0; i <  vp.hres; i += 40){
+	// 	for(int j = 0; j < vp.vres; j+= 40){
+	// 		Sphere*	sphere_ptr = new Sphere(Point3D(5+(2*i-400), 5+(2*j-400), 0), 35);
+	// 		sphere_ptr->set_material(red_material);	   								// yellow
+	// 		add_object(sphere_ptr);
+	// 	}
+	// }
 }
 
 
@@ -231,7 +240,9 @@ void World::display_pixel(	const int row,
 	if (vp.gamma != 1.0)
 		mapped_color = mapped_color.powc(vp.inv_gamma);
 
-	renderer->draw_pixel(vp.vres-1-row, column, mapped_color);
+	int x = column;
+	int y = vp.hres - row  -1;
+	renderer->draw_pixel(x, y, mapped_color);
 }
 
 RGBColor World::max_to_one(const RGBColor& c) const {
