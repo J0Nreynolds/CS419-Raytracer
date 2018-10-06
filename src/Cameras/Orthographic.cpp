@@ -88,7 +88,6 @@ void Orthographic::opencl_render_scene(World& w) {
 	std::ifstream t("./src/orthographic_raycast_tracer.cl");
 	std::string str((std::istreambuf_iterator<char>(t)),
 				  std::istreambuf_iterator<char>());
-	// std::cout << str << std::endl;
 	const char* source_string = str.c_str();
 
 	// Create an OpenCL program by performing runtime source compilation

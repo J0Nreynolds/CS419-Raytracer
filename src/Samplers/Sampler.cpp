@@ -9,6 +9,8 @@
 #include <math.h>
 #include <algorithm>  // required for random_shuffle
 
+#include <iostream>
+
 #include "Sampler.h"
 
 Sampler::Sampler ()
@@ -96,7 +98,7 @@ void Sampler::map_samples_to_unit_disk() {
 	float r, phi;                                    // polar coordinates
 	Point2D sp;                                      // sample point on unit disk
 
-	disk_samples.reserve(size);
+	disk_samples.resize(size);
 
 	for (int j = 0; j < size; j++) {
 		// map sample point to [-1, 1]  [-1,1]
@@ -171,6 +173,24 @@ cl_double2* Sampler::get_cl_samples(int& count) {
 		cl_samples[i] = (cl_double2){samples[i].x, samples[i].y};
 	}
 	return cl_samples;
+}
+
+cl_double2* Sampler::get_cl_disk_samples(int& count) {
+	count = disk_samples.size();
+	cl_double2* cl_disk_samples = new cl_double2[count];
+	for(int i = 0; i < count; i ++){
+		cl_disk_samples[i] = (cl_double2){disk_samples[i].x, disk_samples[i].y};
+	}
+	return cl_disk_samples;
+}
+
+cl_double3* Sampler::get_cl_hemisphere_samples(int& count) {
+	count = hemisphere_samples.size();
+	cl_double3* cl_hemisphere_samples = new cl_double3[count];
+	for(int i = 0; i < count; i ++){
+		cl_hemisphere_samples[i] = (cl_double3){hemisphere_samples[i].x, hemisphere_samples[i].y, hemisphere_samples[i].z};
+	}
+	return cl_hemisphere_samples;
 }
 
 cl_int* Sampler::get_cl_shuffled_indices(int& count) {

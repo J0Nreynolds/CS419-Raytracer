@@ -25,7 +25,7 @@ ThinLens::ThinLens(Point3D e, Point3D l, Vector3D u)
 : Camera(e, l, u), lens_radius(0.0), zoom(1.0), sampler_ptr(NULL) {}
 
 ThinLens::ThinLens(Point3D e, Point3D l, Vector3D u, float exp)
-: Camera(e, l, u, exp), lens_radius(0.0), zoom(1.0) {}
+: Camera(e, l, u, exp), lens_radius(0.0), zoom(1.0), sampler_ptr(NULL) {}
 
 ThinLens::~ThinLens() {
 	if(sampler_ptr != NULL){
@@ -64,8 +64,7 @@ void ThinLens::render_scene(World& w) {
 				L += w.tracer_ptr->trace_ray(ray);
 			}
 
-			L /= vp.num_samples;
-			L *= exposure_time;
+			L *= exposure_time / vp.num_samples;
 			w.display_pixel(r, c, L);
 		}
 	w.renderer->display();
@@ -106,10 +105,9 @@ void ThinLens::opencl_render_scene(World& w) {
 	// OPENCL KERNEL //
 	///////////////////
 
-	std::ifstream t("./src/thin_lens_tracer.cl");
+	std::ifstream t("./src/thin_lens_raycast_tracer.cl");
 	std::string str((std::istreambuf_iterator<char>(t)),
 				  std::istreambuf_iterator<char>());
-	// std::cout << str << std::endl;
 	const char* source_string = str.c_str();
 
 	// Create an OpenCL program by performing runtime source compilation
@@ -126,12 +124,12 @@ void ThinLens::opencl_render_scene(World& w) {
 
 	int samples_count;
 	int indices_count;
-	int disc_samples_count;
-	int disc_indices_count;
+	int disk_samples_count;
+	int disk_indices_count;
 	cl_double2* cl_samples = sampler->get_cl_samples(samples_count);
 	cl_int* cl_shuffled_indices = sampler->get_cl_shuffled_indices(indices_count);
-	cl_double2* cl_disc_samples = sampler_ptr->get_cl_samples(disc_samples_count);
-	cl_int* cl_disc_shuffled_indices = sampler_ptr->get_cl_shuffled_indices(disc_indices_count);
+	cl_double2* cl_disk_samples = sampler_ptr->get_cl_disk_samples(disk_samples_count);
+	cl_int* cl_disk_shuffled_indices = sampler_ptr->get_cl_shuffled_indices(disk_indices_count);
 
 	CLPlane* cl_planes;
 	int num_planes;
@@ -176,8 +174,8 @@ void ThinLens::opencl_render_scene(World& w) {
 	cl::Buffer cl_output = cl::Buffer(context, CL_MEM_WRITE_ONLY, vp.hres * vp.vres * sizeof(cl_float3), NULL);
 	cl::Buffer cl_buffer_a = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, samples_count * sizeof(cl_double2), cl_samples);
 	cl::Buffer cl_buffer_b = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, indices_count * sizeof(cl_int), cl_shuffled_indices);
-	cl::Buffer cl_buffer_c = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, disc_samples_count * sizeof(cl_double2), cl_disc_samples);
-	cl::Buffer cl_buffer_d = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, disc_indices_count * sizeof(cl_int), cl_disc_shuffled_indices);
+	cl::Buffer cl_buffer_c = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, disk_samples_count * sizeof(cl_double2), cl_disk_samples);
+	cl::Buffer cl_buffer_d = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, disk_indices_count * sizeof(cl_int), cl_disk_shuffled_indices);
 	cl::Buffer cl_buffer_e = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_planes * sizeof(CLPlane), cl_planes);
 	cl::Buffer cl_buffer_f = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_triangles * sizeof(CLTriangle), cl_triangles);
 	cl::Buffer cl_buffer_g = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_spheres * sizeof(CLSphere), cl_spheres);
@@ -259,7 +257,7 @@ Vector3D ThinLens::ray_direction(const Point2D& pixel_point,
 }
 
 void ThinLens::set_sampler(Sampler* sp) {
-	if (sampler_ptr) {
+	if (sampler_ptr != NULL) {
 		delete sampler_ptr;
 		sampler_ptr = NULL;
 	}

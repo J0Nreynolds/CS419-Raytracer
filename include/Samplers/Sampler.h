@@ -32,6 +32,8 @@ class Sampler {
 			int get_num_sets();
 			cl_double2* get_cl_samples(int& count);
 			cl_int* get_cl_shuffled_indices(int& count);
+			cl_double2* get_cl_disk_samples(int& count);
+			cl_double3* get_cl_hemisphere_samples(int& count);
 
 			// generate sample patterns in a unit square
 			virtual void generate_samples() = 0;

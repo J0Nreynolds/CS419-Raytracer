@@ -106,12 +106,12 @@ bool intersect_sphere(__global const Sphere* sphere, __private const Ray* ray, _
 	double a = dot(ray->d, ray->d);
 	double b = 2.0 * dot(temp, ray->d);
 	double c = dot(temp, temp) - (sphere->radius * sphere->radius);
-	double disc = b * b - 4.0 * a * c;
+	double disk = b * b - 4.0 * a * c;
 
-	if (disc < 0.0)
+	if (disk < 0.0)
 		return(false);
 	else {
-		double e = sqrt(disc);
+		double e = sqrt(disk);
 		double denom = 2.0 * a;
 		t = (-b - e) / denom;    // smaller root
 
@@ -141,12 +141,12 @@ bool shadow_intersect_sphere(__global const Sphere* sphere, __private const Ray*
 	float a = dot(ray->d, ray->d);
 	float b = 2.0 * dot(temp, ray->d);
 	float c = dot(temp, temp) - (sphere->radius * sphere->radius);
-	float disc = b * b - 4.0 * a * c;
+	float disk = b * b - 4.0 * a * c;
 
-	if (disc < 0.0)
+	if (disk < 0.0)
 		return(false);
 	else {
-		float e = sqrt(disc);
+		float e = sqrt(disk);
 		float denom = 2.0 * a;
 		t = (-b - e) / denom;    // smaller root
 
@@ -321,7 +321,7 @@ ShadeRec hit_objects(__private const Ray* ray,
 	}
 
 	if (sr.hit_an_object) {
-		sr.normal = normal;
+		sr.normal = normalize(normal);
 		sr.local_hit_point = local_hit_point;
 	}
 
@@ -595,8 +595,8 @@ float3 clamp_to_color(__private const float3 raw_color) {
 
 __kernel void thin_lens_tracer(__global float3 *dst,
 	__private SceneInfo scene_info, __global double2* samples,
-	__global int* shuffled_indices, __global double2* disc_samples,
-	__global int* disc_shuffled_indices, __global Plane* planes,
+	__global int* shuffled_indices, __global double2* disk_samples,
+	__global int* disk_shuffled_indices, __global Plane* planes,
 	__global Triangle* triangles, __global Sphere* spheres,
 	__global Light* lights)
 {
@@ -629,8 +629,9 @@ __kernel void thin_lens_tracer(__global float3 *dst,
 		pp.s0 = s * (c - 0.5 * scene_info.hres + sp.s0);
 		pp.s1 = s * (r - 0.5 * scene_info.vres + sp.s1);
 
-		dp = sample_double2_array(disc_samples, disc_shuffled_indices, scene_info.num_samples, scene_info.num_sets, &count2, &jump2, &seed2);
-		lp = dp * scene_info.radius;
+		dp = sample_double2_array(disk_samples, disk_shuffled_indices, scene_info.num_samples, scene_info.num_sets, &count2, &jump2, &seed2);
+		lp = dp;
+		lp *= scene_info.radius;
 
 		ray.o = scene_info.eye + lp.s0 * scene_info.u + lp.s1 * scene_info.v;
 		ray.d = ray_direction(pp, lp, scene_info.u, scene_info.v, scene_info.w, scene_info.f, scene_info.d);
@@ -638,7 +639,7 @@ __kernel void thin_lens_tracer(__global float3 *dst,
 			scene_info.num_planes, planes, scene_info.num_triangles, triangles,
 			scene_info.num_spheres, spheres, scene_info.num_lights, lights, &scene_info.ambient_light);
 	}
-	pixel_color *= scene_info.exposure_time / scene_info.num_samples; // average the colors
+	pixel_color *= scene_info.exposure_time / scene_info.num_samples;  // average the colors
 
 	dst[id] = max_to_one(pixel_color);
 }

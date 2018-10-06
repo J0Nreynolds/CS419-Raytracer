@@ -142,7 +142,7 @@ void World::build(){
 
 	PointLight* l = new PointLight(Point3D(0,0,500));
 	l->set_shadows(true);
-	l->set_ls(5.0);
+	l->set_ls(3.0);
 	add_light(l);
 
 	// spheres
@@ -220,6 +220,7 @@ ShadeRec World::hit_objects(const Ray& ray) const {
 
 	if (sr.hit_an_object) {
 		sr.normal = normal;
+		sr.normal.normalize();
 		sr.local_hit_point = local_hit_point;
 	}
 
