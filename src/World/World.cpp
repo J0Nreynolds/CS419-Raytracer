@@ -84,7 +84,7 @@ void World::build(){
 	vp.set_show_out_of_gamut(false);
 	vp.set_hres(400);
 	vp.set_vres(400);
-	vp.set_pixel_size(0.5);
+	vp.set_pixel_size(2);
 	vp.set_sampler(new MultiJittered(25));
 
 	background_color = black;
@@ -93,28 +93,28 @@ void World::build(){
 	set_ambient_light(ambient);
 	tracer_ptr = new RayCast(this);
 
-	// ThinLens* thinlens_ptr = new ThinLens();
-	// thinlens_ptr->set_eye(0, 0, -600);
-	// thinlens_ptr->set_lookat(0, 0, -50);
-	// thinlens_ptr->set_view_distance(400); // set d
-	// thinlens_ptr->set_lens_radius(15); // set d
-	// thinlens_ptr->set_focal_plane_distance(500); // set d
-	// thinlens_ptr->set_roll_angle(0); //rotate camera
-	// thinlens_ptr->set_sampler(new MultiJittered(25));
-	// thinlens_ptr->compute_uvw();
-	// set_camera(thinlens_ptr);
+	ThinLens* thinlens_ptr = new ThinLens();
+	thinlens_ptr->set_eye(0, 0, 600);
+	thinlens_ptr->set_lookat(0, 0, 0);
+	thinlens_ptr->set_view_distance(600); // set d
+	thinlens_ptr->set_lens_radius(50); // set d
+	thinlens_ptr->set_focal_plane_distance(550); // set d
+	thinlens_ptr->set_roll_angle(0); //rotate camera
+	thinlens_ptr->set_sampler(new MultiJittered(25));
+	thinlens_ptr->compute_uvw();
+	set_camera(thinlens_ptr);
 
-	Pinhole* pinhole_ptr = new Pinhole();
-	pinhole_ptr->set_eye(0, 0, 200);
-	pinhole_ptr->set_lookat(0, 0, 0);
-	pinhole_ptr->set_view_distance(50); // set d
-	pinhole_ptr->set_roll_angle(0); //rotate camera
-	pinhole_ptr->compute_uvw();
-	set_camera(pinhole_ptr);
+	// Pinhole* pinhole_ptr = new Pinhole();
+	// pinhole_ptr->set_eye(0, 0, 200);
+	// pinhole_ptr->set_lookat(0, 0, 0);
+	// pinhole_ptr->set_view_distance(50); // set d
+	// pinhole_ptr->set_roll_angle(0); //rotate camera
+	// pinhole_ptr->compute_uvw();
+	// set_camera(pinhole_ptr);
 
 	// Orthographic* ortho_ptr = new Orthographic();
-	// ortho_ptr->set_eye(0, 0, -600);
-	// ortho_ptr->set_lookat(0, 0, -50);
+	// ortho_ptr->set_eye(0, 0, 200);
+	// ortho_ptr->set_lookat(0, 0, 0);
 	// ortho_ptr->set_roll_angle(0); //rotate camera
 	// ortho_ptr->compute_uvw();
 	// set_camera(ortho_ptr);
@@ -154,7 +154,7 @@ void World::build(){
 	red_material->set_ka(0.25);
 	red_material->set_cd(white);
 
-	Plane* plane_ptr = new Plane(Point3D(0,0,-50), Vector3D(0,0.1,1));
+	Plane* plane_ptr = new Plane(Point3D(0,0,-150), Vector3D(0,0.1,1));
 	plane_ptr->set_material(red_material);
 	add_object(plane_ptr);
 

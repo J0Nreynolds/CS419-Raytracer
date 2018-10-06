@@ -63,8 +63,6 @@ typedef struct SceneInfo {
 	double3 w;        // w vector of camera ONB
 	float3 background_color; // background color of scene
 	float s;          // pixel size
-	float d;          // viewplane distance
-	float zoom;       // zoom factor
 	float exposure_time; // exposure time
 	int hres;         // horizontal image resolution
 	int vres;         // vertical image resolution
@@ -588,7 +586,7 @@ float3 clamp_to_color(__private const float3 raw_color) {
 	return c;
 }
 
-__kernel void pinhole_tracer(__global float3 *dst,
+__kernel void orthographic_tracer(__global float3 *dst,
 	__private SceneInfo scene_info, __global double2* samples,
 	__global int* shuffled_indices, __global Plane* planes,
 	__global Triangle* triangles, __global Sphere* spheres,
@@ -607,15 +605,16 @@ __kernel void pinhole_tracer(__global float3 *dst,
 	double2 pp; // sample point on a pixel
 	float3 pixel_color = (float3)(0, 0, 0);
 
-	float s = scene_info.s / scene_info.zoom;
-	ray.o = scene_info.eye;
+	float s = scene_info.s;
+
+	ray.d = -scene_info.w; // convention to look in -z direction
 	ulong seed = 7;
 
 	for (int j = 0; j < scene_info.num_samples; j++) {
 		sp = sample_unit_square(samples, shuffled_indices, scene_info.num_samples, scene_info.num_sets, &count, &jump, &seed);
 		pp.s0 = s * (c - 0.5 * scene_info.hres + sp.s0);
 		pp.s1 = s * (r - 0.5 * scene_info.vres + sp.s1);
-		ray.d = ray_direction(pp, scene_info.u, scene_info.v, scene_info.w, scene_info.d);
+		ray.o = scene_info.eye + pp.s0 * scene_info.u + pp.s1 * scene_info.v;
 		pixel_color += trace_ray(&ray, scene_info.background_color,
 			scene_info.num_planes, planes, scene_info.num_triangles, triangles,
 			scene_info.num_spheres, spheres, scene_info.num_lights, lights, &scene_info.ambient_light);

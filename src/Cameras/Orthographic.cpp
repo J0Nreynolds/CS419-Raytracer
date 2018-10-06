@@ -57,12 +57,14 @@ void Orthographic::render_scene(World& w) {
 
 void Orthographic::opencl_render_scene(World& w) {
 	struct CLSceneInfo {
+		CLLight ambient_light; // ambient light coming from background of scene
 		cl_double3 eye; 	// origin of the camera
 		cl_double3 u; 		// u vector of camera ONB
 		cl_double3 v; 		// v vector of camera ONB
 		cl_double3 w; 		// w vector of camera ONB
 		cl_float3 background_color; // background color of scene
 		cl_float s;          // pixel size
+		cl_float exposure_time;          // pixel size
 		cl_int hres;         // horizontal image resolution
 		cl_int vres;         // vertical image resolution
 		cl_int num_planes;  // number of planes in scene
@@ -83,7 +85,7 @@ void Orthographic::opencl_render_scene(World& w) {
 	// OPENCL KERNEL //
 	///////////////////
 
-	std::ifstream t("./src/orthographic_tracer.cl");
+	std::ifstream t("./src/orthographic_raycast_tracer.cl");
 	std::string str((std::istreambuf_iterator<char>(t)),
 				  std::istreambuf_iterator<char>());
 	// std::cout << str << std::endl;
@@ -119,12 +121,14 @@ void Orthographic::opencl_render_scene(World& w) {
 	CLUtil::get_cl_lights(w, cl_lights, num_lights);
 
 	struct CLSceneInfo cl_info = {
+		w.ambient_ptr->get_cl_light(),
 		(cl_double3){eye.x, eye.y, eye.z},
 		(cl_double3){u.x, u.y, u.z},
 		(cl_double3){v.x, v.y, v.z},
 		(cl_double3){this->w.x, this->w.y, this->w.z},
 		(cl_float3){w.background_color.r, w.background_color.g, w.background_color.b},
 		vp.s,
+		exposure_time,
 		vp.hres,
 		vp.vres,
 		num_planes,
