@@ -6,6 +6,7 @@
 #include "Vector3D.h"
 #include "ShadeRec.h"
 #include "Sampler.h"
+#include "CLBRDF.h"
 
 class BRDF {
     public:
@@ -20,6 +21,8 @@ class BRDF {
         virtual RGBColor sample_f(const ShadeRec& sr, Vector3D& wi, const Vector3D& wo) const = 0;
 
         virtual RGBColor rho(const ShadeRec& sr, const Vector3D& wo) const = 0;
+
+        virtual CLBRDF get_cl_brdf() = 0;
 
     protected:
 

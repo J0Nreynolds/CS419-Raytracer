@@ -62,6 +62,7 @@ void Pinhole::render_scene(World& w) {
 
 void Pinhole::opencl_render_scene(World& w) {
 	struct CLSceneInfo {
+		CLLight ambient_light; // ambient light coming from background of scene
 		cl_double3 eye; 	// origin of the camera
 		cl_double3 u; 		// u vector of camera ONB
 		cl_double3 v; 		// v vector of camera ONB
@@ -91,7 +92,7 @@ void Pinhole::opencl_render_scene(World& w) {
     // OPENCL KERNEL //
     ///////////////////
 
-    std::ifstream t("./src/pinhole_tracer.cl");
+    std::ifstream t("./src/pinhole_raycast_tracer.cl");
     std::string str((std::istreambuf_iterator<char>(t)),
                   std::istreambuf_iterator<char>());
     // std::cout << str << std::endl;
@@ -127,6 +128,7 @@ void Pinhole::opencl_render_scene(World& w) {
 	CLUtil::get_cl_lights(w, cl_lights, num_lights);
 
 	struct CLSceneInfo cl_info = {
+		w.ambient_ptr->get_cl_light(),
 		(cl_double3){eye.x, eye.y, eye.z},
 		(cl_double3){u.x, u.y, u.z},
 		(cl_double3){v.x, v.y, v.z},

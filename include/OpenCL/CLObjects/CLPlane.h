@@ -7,10 +7,12 @@
 #include <CL/cl.hpp>
 #endif
 
+#include "CLMaterial.h"
+
 typedef struct CLPlane{
+    CLMaterial material;
 	cl_double3 a;
 	cl_double3 n;
-	cl_float3 color;
 } CLPlane;
 
 #endif

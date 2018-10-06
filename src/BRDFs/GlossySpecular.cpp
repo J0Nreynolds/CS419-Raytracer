@@ -42,3 +42,12 @@ RGBColor GlossySpecular::sample_f(const ShadeRec& sr, Vector3D& wi, const Vector
 RGBColor GlossySpecular::rho(const ShadeRec& sr, const Vector3D& wo) const {
     return black;
 }
+
+CLBRDF GlossySpecular::get_cl_brdf(){
+    CLBRDF ret;
+    ret.cd = (cl_float3){0,0,0};
+    ret.kd = (cl_float) 0;
+    ret.ks = (cl_float) ks;
+    ret.exp = (cl_float) exp;
+    return ret;
+}

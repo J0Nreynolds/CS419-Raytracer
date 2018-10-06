@@ -7,9 +7,11 @@
 #include <CL/cl.hpp>
 #endif
 
+#include "CLMaterial.h"
+
 typedef struct CLSphere{
+    CLMaterial material;
 	cl_double3 center;
-	cl_float3 color;
 	cl_double radius;
 } CLSphere;
 

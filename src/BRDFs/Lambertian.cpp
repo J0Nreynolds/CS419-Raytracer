@@ -37,3 +37,12 @@ RGBColor Lambertian::sample_f(const ShadeRec& sr, Vector3D& wi, const Vector3D& 
 RGBColor Lambertian::rho(const ShadeRec& sr, const Vector3D& wo) const {
     return (kd * cd);
 }
+
+CLBRDF Lambertian::get_cl_brdf(){
+    CLBRDF ret;
+    ret.cd = (cl_float3){cd.r, cd.g, cd.b};
+    ret.kd = (cl_float) kd;
+    ret.ks = (cl_float) 0;
+    ret.exp = (cl_float) 0;
+    return ret;
+}

@@ -7,11 +7,13 @@
 #include <CL/cl.hpp>
 #endif
 
+#include "CLMaterial.h"
+
 typedef struct CLTriangle{
+    CLMaterial material;
 	cl_double3 v0;
 	cl_double3 v1;
 	cl_double3 v2;
-	cl_float3 color;
 } CLTriangle;
 
 #endif

@@ -89,7 +89,7 @@ CLPlane Plane::get_cl_plane(){
 	CLPlane ret;
 	ret.a = (cl_double3){a.x, a.y, a.z};
 	ret.n = (cl_double3){n.x, n.y, n.z};
-	ret.color = (cl_float3){color.r, color.g, color.b};
+	ret.material = material_ptr->get_cl_material();
 	return ret;
 }
 

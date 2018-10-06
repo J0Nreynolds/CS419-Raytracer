@@ -16,8 +16,7 @@
 #include "Normal.h"
 #include "Ray.h"
 #include "ShadeRec.h"
-
-class Material;
+#include "Material.h"
 
 
 //----------------------------------------------------------------------------------------------------- class GeometricObject

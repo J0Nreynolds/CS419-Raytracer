@@ -7,8 +7,6 @@
 #include "World.h"
 #include "Phong.h"
 
-#include <iostream>
-
 Phong::Phong (void)
     : Material(),
     ambient_brdf(new Lambertian),
@@ -31,4 +29,12 @@ RGBColor Phong::shade(ShadeRec& sr) {
     }
 
     return (L);
+}
+
+CLMaterial Phong::get_cl_material(){
+    CLMaterial ret;
+    ret.ambient_brdf = ambient_brdf->get_cl_brdf();
+    ret.diffuse_brdf = diffuse_brdf->get_cl_brdf();
+    ret.specular_brdf = specular_brdf->get_cl_brdf();
+    return ret;
 }

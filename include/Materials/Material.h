@@ -4,6 +4,7 @@
 //	This C++ code is for non-commercial purposes only.
 //	This C++ code is licensed under the GNU General Public License Version 2.
 #include "ShadeRec.h"
+#include "CLMaterial.h"
 
 class Material {
 
@@ -16,6 +17,8 @@ class Material {
         virtual RGBColor area_light_shade(ShadeRec& sr);
 
         virtual RGBColor path_shade(ShadeRec& sr);
+
+		virtual CLMaterial get_cl_material() = 0;
 };
 
 #endif

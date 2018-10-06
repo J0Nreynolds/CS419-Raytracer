@@ -26,6 +26,8 @@ class Phong: public Material {
 
         virtual RGBColor shade(ShadeRec& sr);
 
+		virtual CLMaterial get_cl_material();
+
     private:
 
         Lambertian*      ambient_brdf;

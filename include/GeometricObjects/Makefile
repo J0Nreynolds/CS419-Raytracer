@@ -9,7 +9,8 @@ SRCEXT := cpp
 SOURCES := $(wildcard $(SRCDIR)/*.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CFLAGS := -g -Wall
-INC := -I . -I ../Utilities -I ../World -I Primitives
+INC := -I . -I ../Utilities -I ../World -I Primitives  -I ../Materials \
+	-I ../OpenCL/CLMaterials -I ../OpenCL/CLBRDFs
 
 all: $(SUBDIRS) $(OBJECTS)
 

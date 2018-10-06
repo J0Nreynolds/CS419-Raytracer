@@ -19,7 +19,7 @@ RGBColor Matte::shade(ShadeRec& sr) {
     Vector3D wo = -sr.ray.d;
     RGBColor L = ambient_brdf->rho(sr, wo) * sr.w.ambient_ptr->L(sr);
     int numLights = sr.w.lights.size();
-    
+
     for (int j = 0; j < numLights; j++){
         Vector3D wi = sr.w.lights[j]->get_direction(sr);
         float ndotwi = sr.normal * wi;
@@ -29,4 +29,15 @@ RGBColor Matte::shade(ShadeRec& sr) {
     }
 
     return (L);
+}
+
+CLMaterial Matte::get_cl_material(){
+    CLMaterial ret;
+    ret.ambient_brdf = ambient_brdf->get_cl_brdf();
+    ret.diffuse_brdf = diffuse_brdf->get_cl_brdf();
+    ret.specular_brdf.cd = (cl_float3){0, 0, 0};
+    ret.specular_brdf.kd = 0;
+    ret.specular_brdf.exp = 0;
+    ret.specular_brdf.ks = 0;
+    return ret;
 }
