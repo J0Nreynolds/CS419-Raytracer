@@ -133,8 +133,39 @@ bool intersect_sphere(__global const Sphere* sphere, __private const Ray* ray, _
 	return (false);
 }
 
+bool shadow_intersect_sphere(__global const Sphere* sphere, __private const Ray* ray, __private float* tmin){
+	float t;
+	double3 temp = ray->o - sphere->center;
+	float a = dot(ray->d, ray->d);
+	float b = 2.0 * dot(temp, ray->d);
+	float c = dot(temp, temp) - (sphere->radius * sphere->radius);
+	float disc = b * b - 4.0 * a * c;
+
+	if (disc < 0.0)
+		return(false);
+	else {
+		float e = sqrt(disc);
+		float denom = 2.0 * a;
+		t = (-b - e) / denom;    // smaller root
+
+		if (t > EPSILON) {
+			(*tmin) = t;
+			return (true);
+		}
+
+		t = (-b + e) / denom;    // larger root
+
+		if (t > EPSILON) {
+			(*tmin) = t;
+			return (true);
+		}
+	}
+
+	return (false);
+}
+
 bool intersect_plane(__global const Plane* plane, __private const Ray* ray, __private double* tmin, __private ShadeRec* sr){
-	float t = dot((plane->a - ray->o), plane->n) / (dot(ray->d, plane->n));
+	double t = dot((plane->a - ray->o), plane->n) / (dot(ray->d, plane->n));
 
 	if (t > EPSILON) {
 		(*tmin) = t;
@@ -152,13 +183,24 @@ bool intersect_plane(__global const Plane* plane, __private const Ray* ray, __pr
 	return(false);
 }
 
+bool shadow_intersect_plane(__global const Plane* plane, __private const Ray* ray, __private float* tmin){
+	float t = dot((plane->a - ray->o), plane->n) / (dot(ray->d, plane->n));
+
+	if (t > EPSILON) {
+		(*tmin) = t;
+		return (true);
+	}
+
+	return(false);
+}
+
 bool intersect_triangle(__global const Triangle* triangle, __private const Ray* ray, __private double* tmin, __private ShadeRec* sr){
 	// Find plane intersection
 	double3 v10 = triangle->v1 - triangle->v0;
 	double3 v20 = triangle->v2 - triangle->v0;
 	double3 n = cross(v10, v20); // cross product gives normal of triangle's plane
 	double nlen = length(n);
-	float t = dot((triangle->v0 - ray->o), n) / (dot(ray->d, n));
+	double t = dot((triangle->v0 - ray->o), n) / (dot(ray->d, n));
 
 	if (t > EPSILON) {
 		double3 p = ray->o + t * ray->d;
@@ -188,6 +230,41 @@ bool intersect_triangle(__global const Triangle* triangle, __private const Ray* 
 			}
 			sr->local_hit_point = p;
 
+			return (true);
+		}
+	}
+
+	return(false);
+}
+
+bool shadow_intersect_triangle(__global const Triangle* triangle, __private const Ray* ray, __private float* tmin){
+	// Find plane intersection
+	double3 v10 = triangle->v1 - triangle->v0;
+	double3 v20 = triangle->v2 - triangle->v0;
+	double3 n = cross(v10, v20); // cross product gives normal of triangle's plane
+	float nlen = length(n);
+	float t = dot((triangle->v0 - ray->o), n) / (dot(ray->d, n));
+
+	if (t > EPSILON) {
+		double3 p = ray->o + t * ray->d;
+
+		double3 A = cross((triangle->v2 - triangle->v1), (p - triangle->v1));
+		double3 B = cross(-v20, (p - triangle->v2));
+		double3 C = cross(v10, (p - triangle->v0));
+
+		float signA = dot(A, n) > 0 ? 1 : -1; // in triangle?
+		float signB = dot(B, n) > 0 ? 1 : -1; // in triangle?
+		float signC = dot(C, n) > 0 ? 1 : -1; // in triangle?
+
+		float lambda0 = signA * length(A) / nlen;
+		float lambda1 = signB * length(B) / nlen;
+		float lambda2 = signC * length(C) / nlen;
+		if(
+			lambda0 <= 1 && lambda0 >= 0 &&
+			lambda1 <= 1 && lambda1 >= 0 &&
+			lambda2 <= 1 && lambda2 >= 0
+		){
+			(*tmin) = t;
 			return (true);
 		}
 	}
@@ -257,7 +334,7 @@ float3 pointLight_L(__global const Light* light, __private ShadeRec* sr){
     return light->color * light->ls;
 }
 
-float3 light_L(__global const Light* light, __private ShadeRec* sr){
+float3 Light_L(__global const Light* light, __private ShadeRec* sr){
     if(all(light->dir == 0)){
         return pointLight_L(light, sr);
     }
@@ -278,7 +355,7 @@ double3 pointLight_get_direction(__global const Light* light, __private ShadeRec
     return normalize(light->pos - sr->local_hit_point);
 }
 
-double3 get_direction(__global const Light* light, __private ShadeRec* sr){
+double3 Light_get_direction(__global const Light* light, __private ShadeRec* sr){
     if(all(light->dir == 0)){
         return pointLight_get_direction(light, sr);
     }
@@ -286,6 +363,62 @@ double3 get_direction(__global const Light* light, __private ShadeRec* sr){
         return directionalLight_get_direction(light, sr);
     }
 
+}
+bool directionalLight_in_shadow(__global const Light* light, __private const Ray* ray, __private ShadeRec* sr,
+	__private const int num_planes, __global const Plane* planes,
+	__private const int num_triangles, __global const Triangle* triangles,
+	__private const int num_spheres, __global const Sphere* spheres){
+	float t;
+
+	for (int j = 0; j < num_planes; j++)
+		if (shadow_intersect_plane(&planes[j], ray, &t))
+			return (true);
+
+	for (int j = 0; j < num_triangles; j++)
+		if (shadow_intersect_triangle(&triangles[j], ray, &t))
+			return (true);
+
+	for (int j = 0; j < num_spheres; j++)
+		if (shadow_intersect_sphere(&spheres[j], ray, &t))
+			return (true);
+
+	return false;
+}
+
+bool pointLight_in_shadow(__global const Light* light, __private const Ray* ray, __private ShadeRec* sr,
+	__private const int num_planes, __global const Plane* planes,
+	__private const int num_triangles, __global const Triangle* triangles,
+	__private const int num_spheres, __global const Sphere* spheres){
+    float t;
+	float d = length(light->pos - ray->o);
+
+	for (int j = 0; j < num_planes; j++)
+		if (shadow_intersect_plane(&planes[j], ray, &t) && t < d)
+			return (true);
+
+	for (int j = 0; j < num_triangles; j++)
+		if (shadow_intersect_triangle(&triangles[j], ray, &t) && t < d)
+			return (true);
+
+	for (int j = 0; j < num_spheres; j++)
+		if (shadow_intersect_sphere(&spheres[j], ray, &t) && t < d)
+			return (true);
+
+	return (false);
+}
+
+bool Light_in_shadow(__global const Light* light, __private const Ray* ray, __private ShadeRec* sr,
+	__private const int num_planes, __global const Plane* planes,
+	__private const int num_triangles, __global const Triangle* triangles,
+	__private const int num_spheres, __global const Sphere* spheres){
+    if(all(light->dir == 0)){
+        return pointLight_in_shadow(light, ray, sr, num_planes, planes,
+				num_triangles, triangles, num_spheres, spheres);
+    }
+    else {
+        return directionalLight_in_shadow(light, ray, sr, num_planes, planes,
+				num_triangles, triangles, num_spheres, spheres);
+    }
 }
 
 float3 lambertian_f(BRDF brdf, __private ShadeRec* sr, double3 wo, double3 wi){
@@ -295,8 +428,11 @@ float3 lambertian_rho(BRDF brdf, __private ShadeRec* sr, double3 wo){
 	return brdf.cd * brdf.kd;
 }
 
-float3 shade_matte(__private ShadeRec* sr, __global const Light* lights,
-        __private const int num_lights, __private const Light* ambient_ptr){
+float3 shade_matte(__private ShadeRec* sr, __private const int num_planes,
+	__global const Plane* planes, __private const int num_triangles,
+	__global const Triangle* triangles, __private const int num_spheres,
+	__global const Sphere* spheres,__private const int num_lights,
+	__global const Light* lights, __private const Light* ambient_ptr){
     double3 wo = -sr->ray.d;
 
 	BRDF ambient_brdf = sr->material_ptr->ambient_brdf;
@@ -305,11 +441,21 @@ float3 shade_matte(__private ShadeRec* sr, __global const Light* lights,
     float3 L = lambertian_rho(ambient_brdf, sr, wo) * ambient_L(ambient_ptr, sr);
 
     for (int j = 0; j < num_lights; j++){
-        double3 wi = get_direction(&lights[j], sr);
+        double3 wi = Light_get_direction(&lights[j], sr);
         float ndotwi = dot(sr->normal, wi);
 
-        if (ndotwi > 0.0)
-            L += lambertian_f(diffuse_brdf, sr, wo, wi) * light_L(&lights[j], sr) * ndotwi;
+        if (ndotwi > 0.0){
+			bool in_shadow = false;
+
+			if (lights[j].shadows) {
+				Ray shadow_ray = {sr->hit_point, wi};
+				in_shadow = Light_in_shadow(&lights[j], &shadow_ray, sr, num_planes, planes,
+						num_triangles, triangles, num_spheres, spheres);
+			}
+
+			if (!in_shadow)
+				L += lambertian_f(diffuse_brdf, sr, wo, wi) * Light_L(&lights[j], sr) * ndotwi;
+		}
     }
 
     return (L);
@@ -334,8 +480,11 @@ float3 glossy_specular_rho(BRDF brdf, __private ShadeRec* sr, double3 wo){
     return (float3)(0,0,0);
 }
 
-float3 shade_phong(__private ShadeRec* sr, __global const Light* lights,
-        __private const int num_lights, __private const Light* ambient_ptr){
+float3 shade_phong(__private ShadeRec* sr, __private const int num_planes,
+	__global const Plane* planes, __private const int num_triangles,
+	__global const Triangle* triangles, __private const int num_spheres,
+	__global const Sphere* spheres,__private const int num_lights,
+	__global const Light* lights, __private const Light* ambient_ptr){
     double3 wo = -sr->ray.d;
 
 	BRDF ambient_brdf = sr->material_ptr->ambient_brdf;
@@ -345,24 +494,37 @@ float3 shade_phong(__private ShadeRec* sr, __global const Light* lights,
     float3 L = lambertian_rho(ambient_brdf, sr, wo) * ambient_L(ambient_ptr, sr);
 
     for (int j = 0; j < num_lights; j++) {
-        double3 wi = get_direction(&lights[j], sr);
+        double3 wi = Light_get_direction(&lights[j], sr);
         float ndotwi = dot(sr->normal, wi);
 
-        if (ndotwi > 0.0)
-            L += (lambertian_f(diffuse_brdf, sr, wo, wi) +
-                glossy_specular_f(specular_brdf, sr, wo, wi)) * light_L(&lights[j], sr) * ndotwi;
+        if (ndotwi > 0.0){
+			bool in_shadow = false;
+
+			if (lights[j].shadows) {
+				Ray shadow_ray = {sr->hit_point, wi};
+				in_shadow = Light_in_shadow(&lights[j], &shadow_ray, sr, num_planes, planes,
+						num_triangles, triangles, num_spheres, spheres);
+			}
+
+			if (!in_shadow)
+				L += (lambertian_f(diffuse_brdf, sr, wo, wi) +
+	                glossy_specular_f(specular_brdf, sr, wo, wi)) * Light_L(&lights[j], sr) * ndotwi;
+		}
     }
 
     return (L);
 }
 
-float3 shade(__private ShadeRec* sr, __global const Light* lights,
-        __private const int num_lights, __private const Light* ambient_ptr){
+float3 shade(__private ShadeRec* sr, __private const int num_planes,
+	__global const Plane* planes, __private const int num_triangles,
+	__global const Triangle* triangles, __private const int num_spheres,
+	__global const Sphere* spheres,__private const int num_lights,
+	__global const Light* lights, __private const Light* ambient_ptr){
     if(sr->material_ptr->specular_brdf.ks == 0 && sr->material_ptr->specular_brdf.e == 0){
-        return shade_matte(sr, lights, num_lights, ambient_ptr);
+        return shade_matte(sr, num_planes, planes, num_triangles, triangles, num_spheres, spheres, num_lights, lights, ambient_ptr);
     }
     else {
-        return shade_phong(sr, lights, num_lights, ambient_ptr);
+        return shade_phong(sr, num_planes, planes, num_triangles, triangles, num_spheres, spheres, num_lights, lights, ambient_ptr);
     }
 }
 
@@ -377,7 +539,7 @@ float3 trace_ray(__private const Ray* ray, __private float3 bg_color,
 
     if (sr.hit_an_object) {
 		sr.ray = *ray;
-        return shade(&sr, lights, num_lights, ambient_ptr);
+        return shade(&sr, num_planes, planes, num_triangles, triangles, num_spheres, spheres, num_lights, lights, ambient_ptr);
     }
     else
         return bg_color;

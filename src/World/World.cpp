@@ -140,7 +140,7 @@ void World::build(){
 	// l1->set_ls(5.0);
 	// add_light(l1);
 
-	PointLight* l = new PointLight(Point3D(0,0,200));
+	PointLight* l = new PointLight(Point3D(0,0,500));
 	l->set_shadows(true);
 	l->set_ls(5.0);
 	add_light(l);

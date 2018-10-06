@@ -82,7 +82,7 @@ Triangle::hit(const Ray& ray, double& tmin, ShadeRec& sr) const {
 	Vector3D v20 = Vector3D(v2 - v0);
 	Vector3D n =  v10 ^ v20; // cross product gives normal of triangle's plane
 	double nlen = n.length();
-	float t = (v0 - ray.o) * n / (ray.d * n);
+	double t = (v0 - ray.o) * n / (ray.d * n);
 	if (t > kEpsilon) { // plane hit
 		Point3D p = ray.o + t * ray.d;
 		Vector3D A = Vector3D(v2 - v1) ^ Vector3D(p - v1);
@@ -118,19 +118,19 @@ Triangle::shadow_hit(const Ray& ray, float& tmin) const {
 	Vector3D v10 = Vector3D(v1 - v0);
 	Vector3D v20 = Vector3D(v2 - v0);
 	Vector3D n =  v10 ^ v20; // cross product gives normal of triangle's plane
-	double nlen = n.length();
+	float nlen = n.length();
 	float t = (v0 - ray.o) * n / (ray.d * n);
 	if (t > kEpsilon) { // plane hit
 		Point3D p = ray.o + t * ray.d;
 		Vector3D A = Vector3D(v2 - v1) ^ Vector3D(p - v1);
 		Vector3D B = (-v20) ^ Vector3D(p - v2);
 		Vector3D C = v10 ^ Vector3D(p - v0);
-		double signA = (A * n) > 0 ? 1 : -1; // in triangle?
-		double signB = (B * n) > 0 ? 1 : -1; // in triangle?
-		double signC = (C * n) > 0 ? 1 : -1; // in triangle?
-		double lambda0 = signA * A.length() / nlen;
-		double lambda1 = signB * B.length() / nlen;
-		double lambda2 = signC * C.length() / nlen;
+		float signA = (A * n) > 0 ? 1 : -1; // in triangle?
+		float signB = (B * n) > 0 ? 1 : -1; // in triangle?
+		float signC = (C * n) > 0 ? 1 : -1; // in triangle?
+		float lambda0 = signA * A.length() / nlen;
+		float lambda1 = signB * B.length() / nlen;
+		float lambda2 = signC * C.length() / nlen;
 		if(
 			lambda0 <= 1 && lambda0 >= 0 &&
 			lambda1 <= 1 && lambda1 >= 0 &&
