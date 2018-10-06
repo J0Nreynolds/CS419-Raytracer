@@ -83,24 +83,8 @@ Triangle::hit(const Ray& ray, double& tmin, ShadeRec& sr) const {
 	Vector3D n =  v10 ^ v20; // cross product gives normal of triangle's plane
 	double nlen = n.length();
 	float t = (v0 - ray.o) * n / (ray.d * n);
-	if (t > kEpsilon && t < tmin) { // plane hit
+	if (t > kEpsilon) { // plane hit
 		Point3D p = ray.o + t * ray.d;
-		/**
-		 * Based on fast barycentric coordinate calculation from
-		 * https://gamedev.stackexchange.com/questions/23743/whats-the-most-efficient-way-to-find-barycentric-coordinates
-		 */
-		// Vector3D e0 = Vector3D(v1 - v0);
-		// Vector3D e1 = Vector3D(v2 - v0);
-		// Vector3D e2 = Vector3D(p  - v0);
-		// double d00 = e0 * e0;
-		// double d01 = e0 * e1;
-		// double d11 = e1 * e1;
-		// double d20 = e2 * e0;
-		// double d21 = e2 * e1;
-		// double denom = d00 * d11 - d01 * d01;
-		// double lambda1 = (d11 * d20 - d01 * d21) / denom;
-		// double lambda2 = (d00 * d21 - d01 * d20) / denom;
-		// double lambda0 = 1.0 - lambda1 - lambda2;
 		Vector3D A = Vector3D(v2 - v1) ^ Vector3D(p - v1);
 		Vector3D B = (-v20) ^ Vector3D(p - v2);
 		Vector3D C = v10 ^ Vector3D(p - v0);
@@ -121,6 +105,38 @@ Triangle::hit(const Ray& ray, double& tmin, ShadeRec& sr) const {
 				sr.normal = -sr.normal;
 			}
 			sr.local_hit_point = p;
+			return (true);
+		}
+	}
+
+	   return(false);
+}
+
+bool
+Triangle::shadow_hit(const Ray& ray, float& tmin) const {
+	// Find plane intersection
+	Vector3D v10 = Vector3D(v1 - v0);
+	Vector3D v20 = Vector3D(v2 - v0);
+	Vector3D n =  v10 ^ v20; // cross product gives normal of triangle's plane
+	double nlen = n.length();
+	float t = (v0 - ray.o) * n / (ray.d * n);
+	if (t > kEpsilon) { // plane hit
+		Point3D p = ray.o + t * ray.d;
+		Vector3D A = Vector3D(v2 - v1) ^ Vector3D(p - v1);
+		Vector3D B = (-v20) ^ Vector3D(p - v2);
+		Vector3D C = v10 ^ Vector3D(p - v0);
+		double signA = (A * n) > 0 ? 1 : -1; // in triangle?
+		double signB = (B * n) > 0 ? 1 : -1; // in triangle?
+		double signC = (C * n) > 0 ? 1 : -1; // in triangle?
+		double lambda0 = signA * A.length() / nlen;
+		double lambda1 = signB * B.length() / nlen;
+		double lambda2 = signC * C.length() / nlen;
+		if(
+			lambda0 <= 1 && lambda0 >= 0 &&
+			lambda1 <= 1 && lambda1 >= 0 &&
+			lambda2 <= 1 && lambda2 >= 0
+		){                                      // triangle hit
+			tmin = t;
 			return (true);
 		}
 	}

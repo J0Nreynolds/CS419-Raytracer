@@ -5,6 +5,7 @@
 
 // This file contains the definition of the class DirectionalLight
 #include "DirectionalLight.h"
+#include "World.h"
 
 DirectionalLight::DirectionalLight()
 : Light(), d(0, 0, -1), color(1.0), ls(1.0)
@@ -28,6 +29,7 @@ DirectionalLight::~DirectionalLight()
 CLLight DirectionalLight::get_cl_light()
 {
 	CLLight ret = Light::get_cl_light();
+	ret.pos = (cl_double3){0, 0, 0};
 	ret.dir = (cl_double3){d.x, d.y, d.z};
     ret.color = (cl_float3){color.r, color.g, color.b};
     ret.ls = (cl_float)ls;
@@ -42,4 +44,15 @@ RGBColor DirectionalLight::L(ShadeRec sr)
 Vector3D DirectionalLight::get_direction(ShadeRec sr)
 {
     return -d.hat();
+}
+
+bool DirectionalLight::in_shadow(const Ray& ray, const ShadeRec& sr) const {
+	float t;
+	int num_objects = sr.w.objects.size();
+
+	for (int j = 0; j < num_objects; j++)
+		if (sr.w.objects[j]->shadow_hit(ray, t))
+			return (true);
+
+	return (false);
 }

@@ -35,6 +35,9 @@ class Triangle: public GeometricObject {
 		virtual bool
 		hit(const Ray& ray, double& t, ShadeRec& s) const;
 
+		virtual bool
+		shadow_hit(const Ray& ray, float& tmin) const;
+
 		CLTriangle get_cl_triangle();
 
 	private:

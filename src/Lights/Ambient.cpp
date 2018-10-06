@@ -8,11 +8,15 @@
 
 Ambient::Ambient()
 : Light(), color(1.0), ls(1.0)
-{}
+{
+	set_shadows(false);
+}
 
 Ambient::Ambient(RGBColor c)
 : Light(), color(c), ls(1.0)
-{}
+{
+	set_shadows(false);
+}
 
 Ambient::~Ambient()
 {}
@@ -20,6 +24,8 @@ Ambient::~Ambient()
 CLLight Ambient::get_cl_light()
 {
 	CLLight ret = Light::get_cl_light();
+	ret.dir = (cl_double3){0, 0, 0};
+	ret.pos = (cl_double3){0, 0, 0};
     ret.color = (cl_float3){color.r, color.g, color.b};
     ret.ls = (cl_float)ls;
 	return ret;
@@ -33,4 +39,8 @@ RGBColor Ambient::L(ShadeRec sr)
 Vector3D Ambient::get_direction(ShadeRec sr)
 {
     return Vector3D(0, 0, 0);
+}
+
+bool Ambient::in_shadow(const Ray& ray, const ShadeRec& sr) const {
+	return false;
 }

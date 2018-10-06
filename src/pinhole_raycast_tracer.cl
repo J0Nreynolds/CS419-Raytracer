@@ -113,7 +113,7 @@ bool intersect_sphere(__global const Sphere* sphere, __private const Ray* ray, _
 		double denom = 2.0 * a;
 		t = (-b - e) / denom;    // smaller root
 
-		if (t > EPSILON && t < (*tmin)) {
+		if (t > EPSILON) {
 			(*tmin) = t;
 			sr->normal = (temp + t * ray->d) / sphere->radius;
 			sr->local_hit_point = ray->o + t * ray->d;
@@ -122,7 +122,7 @@ bool intersect_sphere(__global const Sphere* sphere, __private const Ray* ray, _
 
 		t = (-b + e) / denom;    // larger root
 
-		if (t > EPSILON && t < (*tmin)) {
+		if (t > EPSILON) {
 			(*tmin) = t;
 			sr->normal = (temp + t * ray->d) / sphere->radius;
 			sr->local_hit_point = ray->o + t * ray->d;
@@ -136,7 +136,7 @@ bool intersect_sphere(__global const Sphere* sphere, __private const Ray* ray, _
 bool intersect_plane(__global const Plane* plane, __private const Ray* ray, __private double* tmin, __private ShadeRec* sr){
 	float t = dot((plane->a - ray->o), plane->n) / (dot(ray->d, plane->n));
 
-	if (t > EPSILON && t < (*tmin)) {
+	if (t > EPSILON) {
 		(*tmin) = t;
 		if(dot(plane->n, ray->d) > 0){
 			sr->normal = - plane->n;
@@ -160,7 +160,7 @@ bool intersect_triangle(__global const Triangle* triangle, __private const Ray* 
 	double nlen = length(n);
 	float t = dot((triangle->v0 - ray->o), n) / (dot(ray->d, n));
 
-	if (t > EPSILON && t < (*tmin)) {
+	if (t > EPSILON) {
 		double3 p = ray->o + t * ray->d;
 
 		double3 A = cross((triangle->v2 - triangle->v1), (p - triangle->v1));
@@ -209,7 +209,7 @@ ShadeRec hit_objects(__private const Ray* ray,
 	double3 local_hit_point;
 
 	for (int j = 0; j < num_spheres; j++){
-		if (intersect_sphere(&spheres[j], ray, &t, &sr)) {
+		if (intersect_sphere(&spheres[j], ray, &t, &sr) && (t < tmin)) {
 			sr.hit_an_object = true;
 			tmin = t;
 			sr.material_ptr = &(spheres[j].material);
@@ -220,7 +220,7 @@ ShadeRec hit_objects(__private const Ray* ray,
 	}
 
 	for (int j = 0; j < num_triangles; j++){
-		if (intersect_triangle(&triangles[j], ray, &t, &sr)) {
+		if (intersect_triangle(&triangles[j], ray, &t, &sr) && (t < tmin)) {
 			sr.hit_an_object = true;
 			tmin = t;
 			sr.material_ptr = &(triangles[j].material);
@@ -231,7 +231,7 @@ ShadeRec hit_objects(__private const Ray* ray,
 	}
 
 	for (int j = 0; j < num_planes; j++){
-		if (intersect_plane(&planes[j], ray, &t, &sr)) {
+		if (intersect_plane(&planes[j], ray, &t, &sr) && (t < tmin)) {
 			sr.hit_an_object = true;
 			tmin = t;
 			sr.material_ptr = &(planes[j].material);

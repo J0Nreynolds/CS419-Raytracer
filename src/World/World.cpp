@@ -135,13 +135,15 @@ void World::build(){
 	RGBColor light_purple(0.65, 0.3, 1.0);							// light purple
 	RGBColor dark_purple(0.5, 0.0, 1.0);							// dark purple
 
-	DirectionalLight* l1 = new DirectionalLight(Vector3D(0, 0, -1));
-	l1->set_ls(5.0);
-	add_light(l1);
+	// DirectionalLight* l1 = new DirectionalLight(Vector3D(0, 0, -1));
+	// l1->set_shadows(true);
+	// l1->set_ls(5.0);
+	// add_light(l1);
 
-	// PointLight* l = new PointLight(Point3D(100,0,-40));
-	// l->set_ls(5.0);
-	// add_light(l);
+	PointLight* l = new PointLight(Point3D(0,0,200));
+	l->set_shadows(true);
+	l->set_ls(5.0);
+	add_light(l);
 
 	// spheres
 	Phong* red_material = new Phong();
@@ -151,6 +153,10 @@ void World::build(){
 	red_material->set_kd(0.6);
 	red_material->set_ka(0.25);
 	red_material->set_cd(white);
+
+	Plane* plane_ptr = new Plane(Point3D(0,0,-50), Vector3D(0,0.1,1));
+	plane_ptr->set_material(red_material);
+	add_object(plane_ptr);
 
 	for(int i = 0; i <  vp.hres; i += 40){
 		for(int j = 0; j < vp.vres; j+= 40){

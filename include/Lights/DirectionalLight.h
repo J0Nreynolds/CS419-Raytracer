@@ -24,6 +24,7 @@ class DirectionalLight: public Light {
 		virtual CLLight get_cl_light();
 		virtual Vector3D get_direction(ShadeRec sr);
 		virtual RGBColor L(ShadeRec sr);
+		virtual bool in_shadow(const Ray& ray, const ShadeRec& sr) const;
 
 	protected:
 		Vector3D d;
