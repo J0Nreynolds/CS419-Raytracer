@@ -144,10 +144,10 @@ void World::build(){
 	// add_light(l);
 
 	// spheres
-	// Phong* red_material = new Phong();
-	// red_material->set_ks(0.15);
-	// red_material->set_exp(0.25);
-	Matte* red_material = new Matte();
+	Phong* red_material = new Phong();
+	red_material->set_ks(0.15);
+	red_material->set_exp(0.25);
+	// Matte* red_material = new Matte();
 	red_material->set_kd(0.6);
 	red_material->set_ka(0.25);
 	red_material->set_cd(white);

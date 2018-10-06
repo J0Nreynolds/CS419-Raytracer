@@ -250,11 +250,11 @@ ShadeRec hit_objects(__private const Ray* ray,
 }
 
 float3 directionalLight_L(__global const Light* light, __private ShadeRec* sr){
-    return light->ls * light->color;
+    return light->color * light->ls;
 }
 
 float3 pointLight_L(__global const Light* light, __private ShadeRec* sr){
-    return light->ls * light->color;
+    return light->color * light->ls;
 }
 
 float3 light_L(__global const Light* light, __private ShadeRec* sr){
@@ -267,7 +267,7 @@ float3 light_L(__global const Light* light, __private ShadeRec* sr){
 }
 
 float3 ambient_L(__private const Light* light, __private ShadeRec* sr){
-    return light->ls * light->color;
+    return light->color * light->ls;
 }
 
 double3 directionalLight_get_direction(__global const Light* light, __private ShadeRec* sr){
@@ -350,8 +350,7 @@ float3 shade_phong(__private ShadeRec* sr, __global const Light* lights,
 
         if (ndotwi > 0.0)
             L += (lambertian_f(diffuse_brdf, sr, wo, wi) +
-                glossy_specular_f(specular_brdf, sr, wo, wi))
-                * light_L(&lights[j], sr) * ndotwi;
+                glossy_specular_f(specular_brdf, sr, wo, wi)) * light_L(&lights[j], sr) * ndotwi;
     }
 
     return (L);
@@ -359,8 +358,7 @@ float3 shade_phong(__private ShadeRec* sr, __global const Light* lights,
 
 float3 shade(__private ShadeRec* sr, __global const Light* lights,
         __private const int num_lights, __private const Light* ambient_ptr){
-    BRDF brdf = sr->material_ptr->specular_brdf;
-    if(all(brdf.cd == 0) && brdf.kd == 0 && brdf.ks == 0 && brdf.e == 0){
+    if(sr->material_ptr->specular_brdf.ks == 0 && sr->material_ptr->specular_brdf.e == 0){
         return shade_matte(sr, lights, num_lights, ambient_ptr);
     }
     else {
@@ -378,7 +376,7 @@ float3 trace_ray(__private const Ray* ray, __private float3 bg_color,
 		triangles, num_spheres, spheres, num_lights, lights );
 
     if (sr.hit_an_object) {
-        sr.ray = *ray;          // for specular reflection (Chapter 15)
+		sr.ray = *ray;
         return shade(&sr, lights, num_lights, ambient_ptr);
     }
     else
@@ -406,7 +404,7 @@ double2 sample_unit_square(__global double2* samples, __global int* shuffled_ind
 double3 ray_direction(__private double2 pp, __private double3 u,
 	__private double3 v, __private double3 w, __private float d)
 {
-	return (double3)(pp.s0 * u + pp.s1 * v - d * w);
+	return normalize(pp.s0 * u + pp.s1 * v - d * w);
 }
 
 float3 max_to_one(__private const float3 c) {
