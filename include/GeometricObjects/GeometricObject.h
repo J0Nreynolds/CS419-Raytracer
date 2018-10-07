@@ -86,8 +86,8 @@ class GeometricObject {
 
 	protected:
 
-		RGBColor   			color;				// only used for Bare Bones ray tracing
-		Material* 			material_ptr;
+		RGBColor 			color;				// only used for Bare Bones ray tracing
+		mutable Material* 	material_ptr;
 		GeometricObject& operator=(const GeometricObject& rhs);
 };
 

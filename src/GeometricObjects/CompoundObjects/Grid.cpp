@@ -10,7 +10,7 @@
 #include "Grid.h"
 
 Grid::Grid()
-: nx(0), ny(0), nz(0)
+: Compound(), nx(0), ny(0), nz(0)
 {}
 
 Grid::Grid(const Grid& grid)
@@ -163,150 +163,7 @@ void Grid::setup_cells(void) {
 	counts.erase(counts.begin(), counts.end());
 }
 
-bool Grid::hit(Ray& ray, double& tmin, ShadeRec& sr){
-	// if the ray misses the grid’s bounding box
-    //  return false
-	double ox = ray.o.x; double oy = ray.o.y; double oz = ray.o.z;
-	double dx = ray.d.x; double dy = ray.d.y; double dz = ray.d.z;
-
-	double x0 = bbox.x0; double y0 = bbox.y0; double z0 = bbox.z0;
-	double x1 = bbox.x1; double y1 = bbox.y1; double z1 = bbox.z1;
-
-	double tx_min, ty_min, tz_min;
-	double tx_max, ty_max, tz_max;
-
-	double a = 1.0 / dx;
-	if (a >= 0) {
-		tx_min = (x0 - ox) * a;
-		tx_max = (x1 - ox) * a;
-	}
-	else {
-		tx_min = (x1 - ox) * a;
-		tx_max = (x0 - ox) * a;
-	}
-
-	double b = 1.0 / dy;
-	if (b >= 0) {
-		ty_min = (y0 - oy) * b;
-		ty_max = (y1 - oy) * b;
-	}
-	else {
-		ty_min = (y1 - oy) * b;
-		ty_max = (y0 - oy) * b;
-	}
-
-	double c = 1.0 / dz;
-	if (c >= 0) {
-		tz_min = (z0 - oz) * c;
-		tz_max = (z1 - oz) * c;
-	}
-	else {
-		tz_min = (z1 - oz) * c;
-		tz_max = (z0 - oz) * c;
-	}
-
-	double t0 = std::max(tx_min, std::max(ty_min, tz_min));
-	double t1 = std::min(tx_max, std::min(ty_max, tz_max));
-
-	if(t0 >= t1 || t1 <= kEpsilon){
-		return false;
-	}
-
-	// if the ray starts inside the grid
-	//      find the cell that contains the ray origin
-	// else
-	//      find the cell where the ray hits the grid from the
-	//         outside
-
-	//Find the indices of the cell where we start the grid traversal
-	int ix, iy, iz;
-
-	if (bbox.inside(ray.o)) {
-		ix = clamp((ox - x0) * nx / (x1 - x0), 0, nx - 1);
-		iy = clamp((oy - y0) * ny / (y1 - y0), 0, ny - 1);
-		iz = clamp((oz - z0) * nz / (z1 - z0), 0, nz - 1);
-	}
-	else {
-		Point3D p = ray.o + t0 * ray.d;
-		ix = clamp((p.x - x0) * nx / (x1 - x0), 0, nx - 1);
-		iy = clamp((p.y - y0) * ny / (y1 - y0), 0, ny - 1);
-		iz = clamp((p.z - z0) * nz / (z1 - z0), 0, nz - 1);
-	}
-
-	// traverse the grid
-	// widths of sides of cell
-	double dtx = (tx_max - tx_min) / nx;
-	double dty = (ty_max - ty_min) / ny;
-	double dtz = (tz_max - tz_min) / nz;
-
-	double tx_next, ty_next, tz_next;
-	int ix_step, iy_step, iz_step;
-	int ix_stop, iy_stop, iz_stop;
-
-	// The time to reach the next cell in x direction
-	tx_next = tx_min + (ix + 1) * dtx;
-	ix_step = +1;
-	ix_stop = nx;
-
-	// The time to reach the next cell in y direction
-	ty_next = ty_min + (iy + 1) * dty;
-	iy_step = +1;
-	iy_stop = ny;
-
-	// The time to reach the next cell in z direction
-	tz_next = tz_min + (iz + 1) * dtz;
-	iz_step = +1;
-	iz_stop = nz;
-
-	while (true) {
-		GeometricObject* object_ptr = cells[ix + nx * iy + nx * ny * iz];
-
-		// If the next cell in the x-direction is nearest in time, i.e. closest
-		if (tx_next < ty_next && tx_next < tz_next) {
-			if (object_ptr && object_ptr->hit(ray, tmin, sr) && tmin < tx_next) {
-				material_ptr = object_ptr->get_material(); // store for object->get_material after hit
-				return (true);
-			}
-			// No longer need to consider this cell, step forward to nearest cell and restart loop
-			tx_next += dtx;
-			ix += ix_step;
-
-			if (ix == ix_stop)
-				return (false);
-		}
-		else {
-			// If the next cell in the y-direction is nearest in time, i.e. closest
-			if (ty_next < tz_next) {
-				if (object_ptr && object_ptr->hit(ray, tmin, sr) && tmin < ty_next) {
-					material_ptr = object_ptr->get_material();
-					return (true);
-				}
-
-				ty_next += dty;
-				iy += iy_step;
-
-				if (iy == iy_stop)
-					return (false);
-			}
-			else {
-			// If the next cell in the y-direction is nearest in time, i.e. closest
-				if (object_ptr && object_ptr->hit(ray, tmin, sr) && tmin < tz_next) {
-					material_ptr = object_ptr->get_material();
-					return (true);
-				}
-
-				tz_next += dtz;
-				iz += iz_step;
-
-				if (iz == iz_stop)
-					return (false);
-			}
-		}
-	}
-	return false;
-}
-
-bool Grid::shadow_hit(Ray& ray, float& tmin){
+bool Grid::hit(const Ray& ray, double& tmin, ShadeRec& sr) const {
 	// if the ray misses the grid’s bounding box
     //  return false
 	double ox = ray.o.x; double oy = ray.o.y; double oz = ray.o.z;
@@ -378,6 +235,181 @@ bool Grid::shadow_hit(Ray& ray, float& tmin){
 
 	// traverse the grid
 	// widths of sides of cell
+	double dtx = (tx_max - tx_min) / nx;
+	double dty = (ty_max - ty_min) / ny;
+	double dtz = (tz_max - tz_min) / nz;
+
+	double tx_next, ty_next, tz_next;
+	int ix_step, iy_step, iz_step;
+	int ix_stop, iy_stop, iz_stop;
+
+
+	// The time to reach the next cell in x direction
+	if(dx > 0){
+		tx_next = tx_min + (ix + 1) * dtx;
+		ix_step = +1;
+		ix_stop = nx;
+	}
+	else {
+		tx_next = tx_min + (nx - ix) * dtx;
+		ix_step = -1;
+		ix_stop = -1;
+	}
+	if(dx == 0){
+		tx_next = kHugeValue;
+	}
+
+	// The time to reach the next cell in y direction
+	if(dy > 0){
+		ty_next = ty_min + (iy + 1) * dty;
+		iy_step = +1;
+		iy_stop = ny;
+	}
+	else {
+		ty_next = ty_min + (ny - iy) * dty;
+		iy_step = -1;
+		iy_stop = -1;
+	}
+	if(dy == 0){
+		ty_next = kHugeValue;
+	}
+
+
+	// The time to reach the next cell in z direction
+	if(dz > 0){
+		tz_next = tz_min + (iz + 1) * dtz;
+		iz_step = +1;
+		iz_stop = nz;
+	}
+	else {
+		tz_next = tz_min + (nz - iz) * dtz;
+		iz_step = -1;
+		iz_stop = -1;
+	}
+	if(dz == 0){
+		tz_next = kHugeValue;
+	}
+
+	while (true) {
+		GeometricObject* object_ptr = cells[ix + nx * iy + nx * ny * iz];
+
+		// If the next cell in the x-direction is nearest in time, i.e. closest
+		if (tx_next < ty_next && tx_next < tz_next) {
+			if (object_ptr && object_ptr->hit(ray, tmin, sr) && tmin < tx_next) {
+				material_ptr = object_ptr->get_material();
+				return (true);
+			}
+			// No longer need to consider this cell, step forward to nearest cell and restart loop
+			tx_next += dtx;
+			ix += ix_step;
+
+			if (ix == ix_stop)
+				return (false);
+		}
+		else {
+			// If the next cell in the y-direction is nearest in time, i.e. closest
+			if (ty_next < tz_next) {
+				if (object_ptr && object_ptr->hit(ray, tmin, sr) && tmin < ty_next) {
+					material_ptr = object_ptr->get_material();
+					return (true);
+				}
+
+				ty_next += dty;
+				iy += iy_step;
+
+				if (iy == iy_stop)
+					return (false);
+			}
+			else {
+			// If the next cell in the y-direction is nearest in time, i.e. closest
+				if (object_ptr && object_ptr->hit(ray, tmin, sr) && tmin < tz_next) {
+					material_ptr = object_ptr->get_material();
+					return (true);
+				}
+
+				tz_next += dtz;
+				iz += iz_step;
+
+				if (iz == iz_stop)
+					return (false);
+			}
+		}
+	}
+	return false;
+}
+
+bool Grid::shadow_hit(const Ray& ray, float& tmin) const {
+	// if the ray misses the grid’s bounding box
+    //  return false
+	double ox = ray.o.x; double oy = ray.o.y; double oz = ray.o.z;
+	double dx = ray.d.x; double dy = ray.d.y; double dz = ray.d.z;
+
+	double x0 = bbox.x0; double y0 = bbox.y0; double z0 = bbox.z0;
+	double x1 = bbox.x1; double y1 = bbox.y1; double z1 = bbox.z1;
+
+	double tx_min, ty_min, tz_min;
+	double tx_max, ty_max, tz_max;
+
+	double a = 1.0 / dx;
+	if (a >= 0) {
+		tx_min = (x0 - ox) * a;
+		tx_max = (x1 - ox) * a;
+	}
+	else {
+		tx_min = (x1 - ox) * a;
+		tx_max = (x0 - ox) * a;
+	}
+
+	double b = 1.0 / dy;
+	if (b >= 0) {
+		ty_min = (y0 - oy) * b;
+		ty_max = (y1 - oy) * b;
+	}
+	else {
+		ty_min = (y1 - oy) * b;
+		ty_max = (y0 - oy) * b;
+	}
+
+	double c = 1.0 / dz;
+	if (c >= 0) {
+		tz_min = (z0 - oz) * c;
+		tz_max = (z1 - oz) * c;
+	}
+	else {
+		tz_min = (z1 - oz) * c;
+		tz_max = (z0 - oz) * c;
+	}
+
+	double t0 = std::max(tx_min, std::max(ty_min, tz_min));
+	double t1 = std::min(tx_max, std::min(ty_max, tz_max));
+
+	if(t0 > t1){
+		return false;
+	}
+
+	// if the ray starts inside the grid
+	//      find the cell that contains the ray origin
+	// else
+	//      find the cell where the ray hits the grid from the
+	//         outside
+
+	//Find the indices of the cell where we start the grid traversal
+	int ix, iy, iz;
+
+	if (bbox.inside(ray.o)) {
+		ix = clamp((ox - x0) * nx / (x1 - x0), 0, nx - 1);
+		iy = clamp((oy - y0) * ny / (y1 - y0), 0, ny - 1);
+		iz = clamp((oz - z0) * nz / (z1 - z0), 0, nz - 1);
+	}
+	else {
+		Point3D p = ray.o + t0 * ray.d;
+		ix = clamp((p.x - x0) * nx / (x1 - x0), 0, nx - 1);
+		iy = clamp((p.y - y0) * ny / (y1 - y0), 0, ny - 1);
+		iz = clamp((p.z - z0) * nz / (z1 - z0), 0, nz - 1);
+	}
+
+	// traverse the grid
+	// widths of sides of cell
 	float dtx = (tx_max - tx_min) / nx;
 	float dty = (ty_max - ty_min) / ny;
 	float dtz = (tz_max - tz_min) / nz;
@@ -387,19 +419,50 @@ bool Grid::shadow_hit(Ray& ray, float& tmin){
 	int ix_stop, iy_stop, iz_stop;
 
 	// The time to reach the next cell in x direction
-	tx_next = tx_min + (ix + 1) * dtx;
-	ix_step = +1;
-	ix_stop = nx;
+	if(dx > 0){
+		tx_next = tx_min + (ix + 1) * dtx;
+		ix_step = +1;
+		ix_stop = nx;
+	}
+	else {
+		tx_next = tx_min + (nx - ix) * dtx;
+		ix_step = -1;
+		ix_stop = -1;
+	}
+	if(dx == 0){
+		tx_next = kHugeValue;
+	}
 
 	// The time to reach the next cell in y direction
-	ty_next = ty_min + (iy + 1) * dty;
-	iy_step = +1;
-	iy_stop = ny;
+	if(dy > 0){
+		ty_next = ty_min + (iy + 1) * dty;
+		iy_step = +1;
+		iy_stop = ny;
+	}
+	else {
+		ty_next = ty_min + (ny - iy) * dty;
+		iy_step = -1;
+		iy_stop = -1;
+	}
+	if(dy == 0){
+		ty_next = kHugeValue;
+	}
+
 
 	// The time to reach the next cell in z direction
-	tz_next = tz_min + (iz + 1) * dtz;
-	iz_step = +1;
-	iz_stop = nz;
+	if(dz > 0){
+		tz_next = tz_min + (iz + 1) * dtz;
+		iz_step = +1;
+		iz_stop = nz;
+	}
+	else {
+		tz_next = tz_min + (nz - iz) * dtz;
+		iz_step = -1;
+		iz_stop = -1;
+	}
+	if(dz == 0){
+		tz_next = kHugeValue;
+	}
 
 	while (true) {
 		GeometricObject* object_ptr = cells[ix + nx * iy + nx * ny * iz];

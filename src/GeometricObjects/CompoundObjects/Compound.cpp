@@ -6,9 +6,12 @@
 
 #include "Compound.h"
 
-Compound::Compound(){}
+Compound::Compound()
+: GeometricObject()
+{}
 
-Compound::Compound(const Compound& compound){
+Compound::Compound(const Compound& compound)
+: GeometricObject(compound) {
     for(GeometricObject* object : compound.objects){
 		if(object != NULL)
     		add_object(object->clone());
@@ -29,6 +32,7 @@ Compound::~Compound(){
 }
 
 Compound& Compound::operator=(const Compound& compound){
+    GeometricObject::operator=(compound);
     for(GeometricObject* object : objects){
 		if(object != NULL)
 			delete object;
@@ -45,9 +49,7 @@ void Compound::set_material(const Material* material_ptr) {
     int num_objects = objects.size();
     for (int j = 0; j < num_objects; j++)
         objects[j]->set_material((Material*) material_ptr);
-    this->material_ptr = (Material*) material_ptr;
 }
-
 
 bool Compound::hit(const Ray& ray, double& tmin, ShadeRec& sr) const {
     double t;
@@ -63,6 +65,7 @@ bool Compound::hit(const Ray& ray, double& tmin, ShadeRec& sr) const {
             tmin = t;
             normal = sr.normal;
             local_hit_point = sr.local_hit_point;
+            material_ptr = objects[j]->get_material();
         }
 
     if (hit) {

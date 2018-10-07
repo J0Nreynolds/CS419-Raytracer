@@ -17,9 +17,9 @@ class Grid: public Compound {
 
         void setup_cells();
 
-        virtual bool hit(Ray& ray, double& tmin, ShadeRec& s);
+        virtual bool hit(const Ray& ray, double& tmin, ShadeRec& sr) const;
 
-        virtual bool shadow_hit(Ray& ray, float& tmin);
+        virtual bool shadow_hit(const Ray& ray, float& tmin) const;
 
     private:
 

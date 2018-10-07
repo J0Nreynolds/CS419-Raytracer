@@ -86,7 +86,7 @@ void World::build(){
 	vp.set_show_out_of_gamut(false);
 	vp.set_hres(400);
 	vp.set_vres(400);
-	vp.set_pixel_size(1);
+	vp.set_pixel_size(0.5);
 	vp.set_sampler(new MultiJittered(25));
 
 	background_color = black;
@@ -106,20 +106,20 @@ void World::build(){
 	// thinlens_ptr->compute_uvw();
 	// set_camera(thinlens_ptr);
 
-	// Pinhole* pinhole_ptr = new Pinhole();
-	// pinhole_ptr->set_eye(0, 0, 200);
-	// pinhole_ptr->set_lookat(0, 0, 0);
-	// pinhole_ptr->set_view_distance(50); // set d
-	// pinhole_ptr->set_roll_angle(0); //rotate camera
-	// pinhole_ptr->compute_uvw();
-	// set_camera(pinhole_ptr);
+	Pinhole* pinhole_ptr = new Pinhole();
+	pinhole_ptr->set_eye(0, 0, 200);
+	pinhole_ptr->set_lookat(0, 0, 0);
+	pinhole_ptr->set_view_distance(50); // set d
+	pinhole_ptr->set_roll_angle(0); //rotate camera
+	pinhole_ptr->compute_uvw();
+	set_camera(pinhole_ptr);
 
-	Orthographic* ortho_ptr = new Orthographic();
-	ortho_ptr->set_eye(0, 0, 250);
-	ortho_ptr->set_lookat(0, 0, 0);
-	ortho_ptr->set_roll_angle(0); //rotate camera
-	ortho_ptr->compute_uvw();
-	set_camera(ortho_ptr);
+	// Orthographic* ortho_ptr = new Orthographic();
+	// ortho_ptr->set_eye(0, 0, 250);
+	// ortho_ptr->set_lookat(0, 0, 0);
+	// ortho_ptr->set_roll_angle(0); //rotate camera
+	// ortho_ptr->compute_uvw();
+	// set_camera(ortho_ptr);
 
 	// colors
 
@@ -164,11 +164,11 @@ void World::build(){
 	float radius = 10;
 	for(int i = 0; i <  vp.hres; i += 20){
 		for(int j = 0; j < vp.vres; j+= 20){
-			Sphere*	sphere_ptr = new Sphere(Point3D(0, i+radius/2-200, j+radius/2-200), radius);
+			Sphere*	sphere_ptr = new Sphere(Point3D(i+radius/2-200, j+radius/2-200, 0), radius);
+			sphere_ptr->set_material(red_material);
 			grid_ptr->add_object(sphere_ptr);
 		}
 	}
-	grid_ptr->set_material(red_material);
 	grid_ptr->setup_cells();
 	add_object(grid_ptr);
 }
@@ -211,17 +211,19 @@ ShadeRec World::hit_objects(const Ray& ray) const {
 	double tmin = kHugeValue;
 	double t = tmin;
 	Normal normal;
-	Point3D local_hit_point;;
+	Point3D local_hit_point;
 	int num_objects = objects.size();
 
 	for (int j = 0; j < num_objects; j++)
 		if (objects[j]->hit(ray, t, sr) && (t < tmin)) {
 			sr.hit_an_object = true;
 			tmin = t;
-			sr.material_ptr = objects[j]->get_material();
 			sr.hit_point = ray.o + t * ray.d;
+			sr.material_ptr = objects[j]->get_material();
+			// Save for later
 			normal = sr.normal;
 			local_hit_point = sr.local_hit_point;
+			// Check if the object has a material
 		}
 
 	if (sr.hit_an_object) {
