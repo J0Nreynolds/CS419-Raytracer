@@ -12,7 +12,7 @@
 
 // ---------------------------------------------------------------------- default constructor
 
-GeometricObject::GeometricObject(void)
+GeometricObject::GeometricObject()
 	: 	color(black), material_ptr(NULL)
 {}
 
@@ -40,7 +40,7 @@ GeometricObject::operator= (const GeometricObject& rhs) {
 
 // ---------------------------------------------------------------------- destructor
 
-GeometricObject::~GeometricObject (void) {
+GeometricObject::~GeometricObject () {
 }
 
 
@@ -54,7 +54,7 @@ GeometricObject::add_object(GeometricObject* object_ptr) {}
 // ----------------------------------------------------------------------- get_normal
 
 Normal
-GeometricObject::get_normal(void) const{
+GeometricObject::get_normal() const{
 	return (Normal());
 }
 
@@ -72,7 +72,7 @@ GeometricObject::get_normal(const Point3D& p) {
 // returns a sample point on the object for area light shading
 
 Point3D
-GeometricObject::sample(void) {
+GeometricObject::sample() {
 	return (Point3D(0.0));
 }
 

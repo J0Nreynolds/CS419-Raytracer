@@ -24,15 +24,15 @@
 class GeometricObject {
 	public:
 
-		GeometricObject(void);
+		GeometricObject();
 
 		GeometricObject(const GeometricObject& object);
 
 		virtual GeometricObject*
-		clone(void) const = 0;
+		clone() const = 0;
 
 		virtual
-		~GeometricObject(void);
+		~GeometricObject();
 
 		virtual bool
 		hit(const Ray& ray, double& t, ShadeRec& s) const = 0;
@@ -50,7 +50,7 @@ class GeometricObject {
 		set_color(const float r, const float g, const float b);
 
 		RGBColor
-		get_color(void);
+		get_color();
 
 		// The following two functions are only required for Chapter 14 and on
 
@@ -65,7 +65,7 @@ class GeometricObject {
 		// The following two functions are only required for objects that are light sources, eg disks, rectangles, and spheres
 
 		virtual Point3D
-		sample(void);
+		sample();
 
 		virtual float
 		pdf(ShadeRec& sr);
@@ -74,7 +74,7 @@ class GeometricObject {
 		// The following two functions allow us to simplify the code for smooth shaded triangle meshes
 
 		virtual Normal
-		get_normal(void) const;
+		get_normal() const;
 
 		virtual Normal
 		get_normal(const Point3D& p);
@@ -107,7 +107,7 @@ GeometricObject::set_color(const float r, const float g, const float b) {
 // --------------------------------------------------------------------  get_color
 
 inline RGBColor
-GeometricObject::get_color(void) {
+GeometricObject::get_color() {
 	return (color);
 }
 

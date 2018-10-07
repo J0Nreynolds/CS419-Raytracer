@@ -17,17 +17,17 @@ class Sphere: public GeometricObject {
 
 	public:
 
-		Sphere(void);   									// Default constructor
+		Sphere();   									// Default constructor
 
 		Sphere(Point3D center, double r);					// Constructor
 
 		Sphere(const Sphere& sphere); 						// Copy constructor
 
 		virtual Sphere* 									// Virtual copy constructor
-		clone(void) const;
+		clone() const;
 
 		virtual												// Destructor
-		~Sphere(void);
+		~Sphere();
 
 		Sphere& 											// assignment operator
 		operator= (const Sphere& sphere);

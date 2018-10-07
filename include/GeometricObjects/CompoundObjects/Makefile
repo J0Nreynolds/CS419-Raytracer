@@ -1,6 +1,6 @@
 CC := g++-8 -std=c++11# This is the main compiler
 
-SRCDIR := ../../../src/GeometricObjects/Meshes
+SRCDIR := ../../../src/GeometricObjects/CompoundObjects
 BUILDDIR := ../../../build
 
 SRCEXT := cpp

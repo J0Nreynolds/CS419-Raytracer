@@ -13,7 +13,7 @@ const double Sphere::kEpsilon = 10e-6;
 
 // ---------------------------------------------------------------- default constructor
 
-Sphere::Sphere(void)
+Sphere::Sphere()
 	: 	GeometricObject(),
 		center(0.0),
 		radius(1.0)
@@ -32,7 +32,7 @@ Sphere::Sphere(Point3D c, double r)
 // ---------------------------------------------------------------- clone
 
 Sphere*
-Sphere::clone(void) const {
+Sphere::clone() const {
 	return (new Sphere(*this));
 }
 
@@ -66,7 +66,7 @@ Sphere::operator= (const Sphere& rhs)
 
 // ---------------------------------------------------------------- destructor
 
-Sphere::~Sphere(void) {}
+Sphere::~Sphere() {}
 
 
 //---------------------------------------------------------------- hit

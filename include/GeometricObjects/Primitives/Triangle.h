@@ -15,17 +15,17 @@ class Triangle: public GeometricObject {
 
 	public:
 
-		Triangle(void);   									// Default constructor
+		Triangle();   									// Default constructor
 
 		Triangle(Point3D p1, Point3D p2, Point3D p3);		// Constructor
 
 		Triangle(const Triangle& triangle); 			    // Copy constructor
 
 		virtual Triangle* 									// Virtual copy constructor
-		clone(void) const;
+		clone() const;
 
 		virtual												// Destructor
-		~Triangle(void);
+		~Triangle();
 
 		Triangle& 											// assignment operator
 		operator= (const Triangle& triangle);

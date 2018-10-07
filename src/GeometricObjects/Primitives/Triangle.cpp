@@ -11,7 +11,7 @@ const double Triangle::kEpsilon = 10e-6;
 
 // ---------------------------------------------------------------- default constructor
 
-Triangle::Triangle(void)
+Triangle::Triangle()
 	: 	GeometricObject(),
 		v0(Point3D(0, 1, 0)),
 		v1(Point3D(0, 0, 0)),
@@ -34,7 +34,7 @@ Triangle::Triangle(Point3D u1, Point3D u2, Point3D u3)
 // ---------------------------------------------------------------- clone
 
 Triangle*
-Triangle::clone(void) const {
+Triangle::clone() const {
 	return (new Triangle(*this));
 }
 
@@ -70,7 +70,7 @@ Triangle::operator= (const Triangle& rhs)
 
 // ---------------------------------------------------------------- destructor
 
-Triangle::~Triangle(void) {}
+Triangle::~Triangle() {}
 
 
 //---------------------------------------------------------------- hit

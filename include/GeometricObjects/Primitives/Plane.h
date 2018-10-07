@@ -16,20 +16,20 @@ class Plane: public GeometricObject {
 
 	public:
 
-		Plane(void);   												// default constructor
+		Plane();   												// default constructor
 
 		Plane(const Point3D& point, const Normal& normal);			// constructor
 
 		Plane(const Plane& plane); 									// copy constructor
 
 		virtual Plane* 												// virtual copy constructor
-		clone(void) const;
+		clone() const;
 
 		Plane& 														// assignment operator
 		operator= (const Plane& rhs);
 
 		virtual														// destructor
-		~Plane(void);
+		~Plane();
 
 		virtual bool
 		hit(const Ray& ray, double& tmin, ShadeRec& sr) const;

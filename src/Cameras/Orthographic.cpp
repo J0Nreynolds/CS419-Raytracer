@@ -178,14 +178,34 @@ void Orthographic::opencl_render_scene(World& w) {
 	while(time(NULL) < stop){
 		while( SDL_PollEvent( &e ) != 0 )
 		{
-			//User requests quit
-			if(e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_UP){
-				eye.z += 10;
+			//User input
+			if(e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_q){
+				eye = eye + 10 * this->w;
 				cl_info.eye = (cl_double3){eye.x, eye.y, eye.z};
 				kernel.setArg(1, cl_info);
 			}
-			if(e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_DOWN){
-				eye.z -= 10;
+			if(e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_e){
+				eye = eye - 10 * this->w;
+				cl_info.eye = (cl_double3){eye.x, eye.y, eye.z};
+				kernel.setArg(1, cl_info);
+			}
+			if(e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_d){
+				eye = eye + 10 * this->u;
+				cl_info.eye = (cl_double3){eye.x, eye.y, eye.z};
+				kernel.setArg(1, cl_info);
+			}
+			if(e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_a){
+				eye = eye - 10 * this->u;
+				cl_info.eye = (cl_double3){eye.x, eye.y, eye.z};
+				kernel.setArg(1, cl_info);
+			}
+			if(e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_w){
+				eye = eye + 10 * this->v;
+				cl_info.eye = (cl_double3){eye.x, eye.y, eye.z};
+				kernel.setArg(1, cl_info);
+			}
+			if(e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_s){
+				eye = eye - 10 * this->v;
 				cl_info.eye = (cl_double3){eye.x, eye.y, eye.z};
 				kernel.setArg(1, cl_info);
 			}
