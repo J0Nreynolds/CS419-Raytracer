@@ -621,8 +621,8 @@ __kernel void thin_lens_tracer(__global float3 *dst,
 
 	float s = scene_info.s / scene_info.zoom;
 
-	ulong seed1 = 7;
-	ulong seed2 = seed1;
+	ulong seed1 = r;
+	ulong seed2 = c;
 
 	for (int j = 0; j < scene_info.num_samples; j++) {
 		sp = sample_double2_array(samples, shuffled_indices, scene_info.num_samples, scene_info.num_sets, &count1, &jump1, &seed1);
