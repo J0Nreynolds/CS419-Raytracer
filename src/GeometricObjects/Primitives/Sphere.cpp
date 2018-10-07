@@ -139,6 +139,11 @@ Sphere::shadow_hit(const Ray& ray, float& tmin) const {
 	return (false);
 }
 
+BBox Sphere::get_bounding_box() {
+	Point3D p1 = center - radius * Vector3D(1,1,1);
+	Point3D p2 = center + radius * Vector3D(1,1,1);
+	return BBox(p1, p2);
+}
 
 CLSphere Sphere::get_cl_sphere(){
 	CLSphere ret;

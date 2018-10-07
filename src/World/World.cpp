@@ -35,6 +35,8 @@ using namespace std;
 #include "Triangle.h"
 #include "Sphere.h"
 #include "Plane.h"
+#include "Grid.h"
+#include "Compound.h"
 
 #include "DirectionalLight.h"
 #include "PointLight.h"
@@ -84,8 +86,8 @@ void World::build(){
 	vp.set_show_out_of_gamut(false);
 	vp.set_hres(400);
 	vp.set_vres(400);
-	vp.set_pixel_size(0.5);
-	vp.set_sampler(new MultiJittered(225));
+	vp.set_pixel_size(1);
+	vp.set_sampler(new MultiJittered(25));
 
 	background_color = black;
 	Ambient* ambient = new Ambient();
@@ -100,24 +102,24 @@ void World::build(){
 	// thinlens_ptr->set_lens_radius(50); // set d
 	// thinlens_ptr->set_focal_plane_distance(550); // set d
 	// thinlens_ptr->set_roll_angle(0); //rotate camera
-	// thinlens_ptr->set_sampler(new MultiJittered(225));
+	// thinlens_ptr->set_sampler(new MultiJittered(25));
 	// thinlens_ptr->compute_uvw();
 	// set_camera(thinlens_ptr);
 
-	Pinhole* pinhole_ptr = new Pinhole();
-	pinhole_ptr->set_eye(0, 0, 200);
-	pinhole_ptr->set_lookat(0, 0, 0);
-	pinhole_ptr->set_view_distance(50); // set d
-	pinhole_ptr->set_roll_angle(0); //rotate camera
-	pinhole_ptr->compute_uvw();
-	set_camera(pinhole_ptr);
+	// Pinhole* pinhole_ptr = new Pinhole();
+	// pinhole_ptr->set_eye(0, 0, 200);
+	// pinhole_ptr->set_lookat(0, 0, 0);
+	// pinhole_ptr->set_view_distance(50); // set d
+	// pinhole_ptr->set_roll_angle(0); //rotate camera
+	// pinhole_ptr->compute_uvw();
+	// set_camera(pinhole_ptr);
 
-	// Orthographic* ortho_ptr = new Orthographic();
-	// ortho_ptr->set_eye(0, 0, 200);
-	// ortho_ptr->set_lookat(0, 0, 0);
-	// ortho_ptr->set_roll_angle(0); //rotate camera
-	// ortho_ptr->compute_uvw();
-	// set_camera(ortho_ptr);
+	Orthographic* ortho_ptr = new Orthographic();
+	ortho_ptr->set_eye(0, 0, 250);
+	ortho_ptr->set_lookat(0, 0, 0);
+	ortho_ptr->set_roll_angle(0); //rotate camera
+	ortho_ptr->compute_uvw();
+	set_camera(ortho_ptr);
 
 	// colors
 
@@ -135,15 +137,15 @@ void World::build(){
 	RGBColor light_purple(0.65, 0.3, 1.0);							// light purple
 	RGBColor dark_purple(0.5, 0.0, 1.0);							// dark purple
 
-	// DirectionalLight* l1 = new DirectionalLight(Vector3D(0, 0, -1));
-	// l1->set_shadows(true);
-	// l1->set_ls(5.0);
-	// add_light(l1);
+	DirectionalLight* l1 = new DirectionalLight(Vector3D(0, 0, -1));
+	l1->set_shadows(true);
+	l1->set_ls(5.0);
+	add_light(l1);
 
-	PointLight* l = new PointLight(Point3D(0,0,500));
-	l->set_shadows(true);
-	l->set_ls(3.0);
-	add_light(l);
+	// PointLight* l = new PointLight(Point3D(0,0,500));
+	// l->set_shadows(true);
+	// l->set_ls(3.0);
+	// add_light(l);
 
 	// spheres
 	Phong* red_material = new Phong();
@@ -154,17 +156,21 @@ void World::build(){
 	red_material->set_ka(0.25);
 	red_material->set_cd(white);
 
-	Plane* plane_ptr = new Plane(Point3D(0,0,-150), Vector3D(0,0.1,1));
-	plane_ptr->set_material(red_material);
-	add_object(plane_ptr);
+	// Plane* plane_ptr = new Plane(Point3D(0,0,-150), Vector3D(0,0.1,1));
+	// plane_ptr->set_material(red_material);
+	// add_object(plane_ptr);
 
-	for(int i = 0; i <  vp.hres; i += 40){
-		for(int j = 0; j < vp.vres; j+= 40){
-			Sphere*	sphere_ptr = new Sphere(Point3D(5+(2*i-400), 5+(2*j-400), 0), 35);
-			sphere_ptr->set_material(red_material);	   								// yellow
-			add_object(sphere_ptr);
+	Grid* grid_ptr = new Grid();
+	float radius = 10;
+	for(int i = 0; i <  vp.hres; i += 20){
+		for(int j = 0; j < vp.vres; j+= 20){
+			Sphere*	sphere_ptr = new Sphere(Point3D(0, i+radius/2-200, j+radius/2-200), radius);
+			grid_ptr->add_object(sphere_ptr);
 		}
 	}
+	grid_ptr->set_material(red_material);
+	grid_ptr->setup_cells();
+	add_object(grid_ptr);
 }
 
 
@@ -220,7 +226,6 @@ ShadeRec World::hit_objects(const Ray& ray) const {
 
 	if (sr.hit_an_object) {
 		sr.normal = normal;
-		sr.normal.normalize();
 		sr.local_hit_point = local_hit_point;
 	}
 

@@ -10,32 +10,33 @@ Compound::Compound(){}
 
 Compound::Compound(const Compound& compound){
     for(GeometricObject* object : compound.objects){
-        add_object(object->clone());
+		if(object != NULL)
+    		add_object(object->clone());
     }
 }
 
 Compound* Compound::clone() const {
-    Compound* ret = new Compound();
-    for(GeometricObject* object : objects){
-        ret->add_object(object->clone());
-    }
+    Compound* ret = new Compound(*this);
     return ret;
 }
 
 Compound::~Compound(){
     for(GeometricObject* object : objects){
-        delete object;
+		if(object != NULL)
+			delete object;
     }
     objects.clear();
 }
 
 Compound& Compound::operator=(const Compound& compound){
     for(GeometricObject* object : objects){
-        delete object;
+		if(object != NULL)
+			delete object;
     }
     objects.clear();
     for(GeometricObject* object : compound.objects){
-        add_object(object->clone());
+		if(object != NULL)
+    		add_object(object->clone());
     }
     return (*this);
 }
@@ -44,6 +45,7 @@ void Compound::set_material(const Material* material_ptr) {
     int num_objects = objects.size();
     for (int j = 0; j < num_objects; j++)
         objects[j]->set_material((Material*) material_ptr);
+    this->material_ptr = (Material*) material_ptr;
 }
 
 
@@ -65,7 +67,6 @@ bool Compound::hit(const Ray& ray, double& tmin, ShadeRec& sr) const {
 
     if (hit) {
         sr.normal = normal;
-        sr.normal.normalize();
         sr.local_hit_point = local_hit_point;
     }
 

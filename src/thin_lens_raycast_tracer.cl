@@ -202,6 +202,7 @@ bool intersect_triangle(__global const Triangle* triangle, __private const Ray* 
 	double3 v20 = triangle->v2 - triangle->v0;
 	double3 n = cross(v10, v20); // cross product gives normal of triangle's plane
 	double nlen = length(n);
+	n = normalize(n);
 	double t = dot((triangle->v0 - ray->o), n) / (dot(ray->d, n));
 
 	if (t > EPSILON) {
@@ -321,7 +322,7 @@ ShadeRec hit_objects(__private const Ray* ray,
 	}
 
 	if (sr.hit_an_object) {
-		sr.normal = normalize(normal);
+		sr.normal = normal;
 		sr.local_hit_point = local_hit_point;
 	}
 

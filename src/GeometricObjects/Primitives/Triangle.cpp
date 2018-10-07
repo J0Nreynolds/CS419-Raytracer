@@ -3,6 +3,7 @@
 //	This C++ code is licensed under the GNU General Public License Version 2.
 
 // This file contains the definition of the class Triangle
+#include <algorithm>
 #include "CLTriangle.h"
 
 #include "Triangle.h"
@@ -100,7 +101,7 @@ Triangle::hit(const Ray& ray, double& tmin, ShadeRec& sr) const {
 			lambda2 <= 1 && lambda2 >= 0
 		){                                      // triangle hit
 			tmin = t;
-			sr.normal = n;
+			sr.normal = n/nlen;
 			if(n * ray.d > 0){
 				sr.normal = -sr.normal;
 			}
@@ -144,6 +145,15 @@ Triangle::shadow_hit(const Ray& ray, float& tmin) const {
 	   return(false);
 }
 
+BBox Triangle::get_bounding_box() {
+	double minx = std::min(v0.x, std::min(v1.x, v2.x));
+	double maxx = std::max(v0.x, std::max(v1.x, v2.x));
+	double miny = std::min(v0.y, std::min(v1.y, v2.y));
+	double maxy = std::max(v0.y, std::max(v1.y, v2.y));
+	double minz = std::min(v0.z, std::min(v1.z, v2.z));
+	double maxz = std::max(v0.z, std::max(v1.z, v2.z));
+	return BBox(minx, miny, minz, maxx, maxy, maxz);
+}
 
 CLTriangle Triangle::get_cl_triangle(){
 	CLTriangle ret;

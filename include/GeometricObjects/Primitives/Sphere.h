@@ -50,6 +50,8 @@ class Sphere: public GeometricObject {
 		virtual bool
 		shadow_hit(const Ray& ray, float& tmin) const;
 
+        virtual BBox get_bounding_box();
+
 		CLSphere get_cl_sphere();
 
 	private:

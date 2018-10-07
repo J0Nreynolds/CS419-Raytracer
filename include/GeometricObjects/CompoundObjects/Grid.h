@@ -17,21 +17,21 @@ class Grid: public Compound {
 
         void setup_cells();
 
-        virtual bool hit(Ray& ray, float& tmin, Shading& s);
+        virtual bool hit(Ray& ray, double& tmin, ShadeRec& s);
 
         virtual bool shadow_hit(Ray& ray, float& tmin);
 
     private:
 
-        vector<GeometricObject*> cells;    // cells are stored in a 1D array
+        std::vector<GeometricObject*> cells;    // cells are stored in a 1D array
         BBox bbox;         // bounding box
         int nx, ny, nz;    // number of cells in the x-, y-, and z-directions
 
         Point3D            // compute minimum grid coordinates
-        min_coordinates(void);
+        min_coordinates();
 
         Point3D            // compute maximum grid coordinates
-        max_coordinates(void);
+        max_coordinates();
 };
 
 #endif

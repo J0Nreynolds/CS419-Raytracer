@@ -14,6 +14,8 @@ class Compound: public GeometricObject {
 		virtual Compound* clone() const;
 		virtual ~Compound();
 
+		std::vector<GeometricObject*>& get_objects();
+
 		Compound& operator=(const Compound& compound);
 
         virtual void set_material(const Material* material_ptr);
@@ -31,6 +33,10 @@ class Compound: public GeometricObject {
 
 inline void Compound::add_object(const GeometricObject* object_ptr){
     objects.push_back((GeometricObject*) object_ptr);
+}
+
+inline std::vector<GeometricObject*>& Compound::get_objects(){
+    return objects;
 }
 
 #endif

@@ -17,6 +17,7 @@
 #include "Ray.h"
 #include "ShadeRec.h"
 #include "Material.h"
+#include "BBox.h"
 
 
 //----------------------------------------------------------------------------------------------------- class GeometricObject
@@ -39,6 +40,9 @@ class GeometricObject {
 
 		virtual bool
 		shadow_hit(const Ray& ray, float& tmin) const = 0;
+
+		// Allows us to ask an object for its bounding box
+		virtual BBox get_bounding_box();
 
 
 		// The following three functions are only required for Chapter 3

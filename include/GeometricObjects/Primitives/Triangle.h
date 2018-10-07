@@ -38,6 +38,8 @@ class Triangle: public GeometricObject {
 		virtual bool
 		shadow_hit(const Ray& ray, float& tmin) const;
 
+        virtual BBox get_bounding_box();
+
 		CLTriangle get_cl_triangle();
 
 	private:

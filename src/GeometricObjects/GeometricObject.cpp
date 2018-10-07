@@ -50,6 +50,10 @@ GeometricObject::~GeometricObject () {
 void
 GeometricObject::add_object(GeometricObject* object_ptr) {}
 
+// required for objects with bboxes
+BBox GeometricObject::get_bounding_box() {
+	return BBox(0,0,0,0,0,0);
+}
 
 // ----------------------------------------------------------------------- get_normal
 
