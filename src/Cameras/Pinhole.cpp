@@ -42,6 +42,7 @@ void Pinhole::render_scene(World& w) {
 	for (int r = 0; r < vp.vres; r++)                // up
 		for (int c = 0; c < vp.hres; c++) {    // across
 			L = black;
+			// std::cout << r << " " <<  c << std::endl;
 
 			for (int j = 0; j < vp.num_samples; j++) {
 				sp = vp.sampler_ptr->sample_unit_square();

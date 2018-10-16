@@ -59,14 +59,15 @@ bool Compound::hit(const Ray& ray, double& tmin, ShadeRec& sr) const {
     tmin = kHugeValue;
     int num_objects = objects.size();
 
-    for (int j = 0; j < num_objects; j++)
+    for (int j = 0; j < num_objects; j++){
         if (objects[j]->hit(ray, t, sr) && (t < tmin)) {
             hit = true;
             tmin = t;
             normal = sr.normal;
             local_hit_point = sr.local_hit_point;
-            material_ptr = objects[j]->get_material();
+            material_ptr = (Material*) objects[j]->get_material();
         }
+    }
 
     if (hit) {
         sr.normal = normal;

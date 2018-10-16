@@ -107,7 +107,7 @@ void World::build(){
 	// set_camera(thinlens_ptr);
 
 	Pinhole* pinhole_ptr = new Pinhole();
-	pinhole_ptr->set_eye(0, 0, 200);
+	pinhole_ptr->set_eye(0, 0, -100);
 	pinhole_ptr->set_lookat(0, 0, 0);
 	pinhole_ptr->set_view_distance(50); // set d
 	pinhole_ptr->set_roll_angle(0); //rotate camera
@@ -137,8 +137,8 @@ void World::build(){
 	RGBColor light_purple(0.65, 0.3, 1.0);							// light purple
 	RGBColor dark_purple(0.5, 0.0, 1.0);							// dark purple
 
-	DirectionalLight* l1 = new DirectionalLight(Vector3D(0, 0, -1));
-	l1->set_shadows(true);
+	DirectionalLight* l1 = new DirectionalLight(Vector3D(0, 0, 1));
+	l1->set_shadows(false);
 	l1->set_ls(5.0);
 	add_light(l1);
 
@@ -162,13 +162,18 @@ void World::build(){
 
 	Grid* grid_ptr = new Grid();
 	float radius = 10;
-	for(int i = 0; i <  vp.hres; i += 20){
-		for(int j = 0; j < vp.vres; j+= 20){
-			Sphere*	sphere_ptr = new Sphere(Point3D(i+radius/2-200, j+radius/2-200, 0), radius);
+	for(int i = 0; i <  vp.hres; i += 40){
+		for(int j = 0; j < vp.vres; j+= 40){
+			Sphere*	sphere_ptr = new Sphere(Point3D(i+radius/2-200, j+radius/2-200, 0), 2*radius);
 			sphere_ptr->set_material(red_material);
 			grid_ptr->add_object(sphere_ptr);
+			// add_object(sphere_ptr);
 		}
 	}
+	Sphere*	sphere_ptr = new Sphere(Point3D(50, 0, 0), 2*radius);
+	sphere_ptr->set_material(red_material);
+
+	// grid_ptr->add_object(sphere_ptr);
 	grid_ptr->setup_cells();
 	add_object(grid_ptr);
 }

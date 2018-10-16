@@ -68,17 +68,24 @@ void Grid::setup_cells(void) {
 
 	// store them in the bounding box
 
-	bbox.x0 = p0.x; bbox.y0 = p0.y; bbox.z0 = p0.z;
-	bbox.x1 = p1.x; bbox.y1 = p1.y; bbox.z1 = p1.z;
+	bbox.x0 = p0.x;
+	bbox.y0 = p0.y;
+	bbox.z0 = p0.z;
+
+	bbox.x1 = p1.x;
+	bbox.y1 = p1.y;
+	bbox.z1 = p1.z;
 
 	// compute the number of cells in the x-, y-, and z-directions
 
 	int num_objects = objects.size();
-	float wx = p1.x - p0.x;           // grid extent in x-direction
-	float wy = p1.y - p0.y;           // grid extent in y-direction
-	float wz = p1.z - p0.z;           // grid extent in z-direction
-	float multiplier = 2.0;           // about 8 times more cells than objects
-	float s = pow(wx * wy * wz / num_objects, 0.3333333);
+
+	double wx = p1.x - p0.x;           // grid extent in x-direction
+	double wy = p1.y - p0.y;           // grid extent in y-direction
+	double wz = p1.z - p0.z;           // grid extent in z-direction
+
+	double multiplier = 2.0;           // about 8 times more cells than objects
+	double s = pow(wx * wy * wz / num_objects, 0.3333333);
 	nx = multiplier * wx / s + 1;
 	ny = multiplier * wy / s + 1;
 	nz = multiplier * wz / s + 1;
@@ -110,12 +117,12 @@ void Grid::setup_cells(void) {
 		// compute the cell indices for the corners of the bounding box of the
 		// object
 
-		int ixmin = clamp((obj_bbox.x0 - p0.x) * nx / (p1.x - p0.x), 0, nx - 1);
-		int iymin = clamp((obj_bbox.y0 - p0.y) * ny / (p1.y - p0.y), 0, ny - 1);
-		int izmin = clamp((obj_bbox.z0 - p0.z) * nz / (p1.z - p0.z), 0, nz - 1);
-		int ixmax = clamp((obj_bbox.x1 - p0.x) * nx / (p1.x - p0.x), 0, nx - 1);
-		int iymax = clamp((obj_bbox.y1 - p0.y) * ny / (p1.y - p0.y), 0, ny - 1);
-		int izmax = clamp((obj_bbox.z1 - p0.z) * nz / (p1.z - p0.z), 0, nz - 1);
+		int ixmin = clamp((obj_bbox.x0 - p0.x) / wx * nx , 0, nx - 1);
+		int iymin = clamp((obj_bbox.y0 - p0.y) / wy * ny, 0, ny - 1);
+		int izmin = clamp((obj_bbox.z0 - p0.z) / wz * nz, 0, nz - 1);
+		int ixmax = clamp((obj_bbox.x1 - p0.x) / wx * nx, 0, nx - 1);
+		int iymax = clamp((obj_bbox.y1 - p0.y) / wy * ny, 0, ny - 1);
+		int izmax = clamp((obj_bbox.z1 - p0.z) / wz * nz, 0, nz - 1);
 
 		// add the object to the cells
 
@@ -157,58 +164,116 @@ void Grid::setup_cells(void) {
 	objects.erase(objects.begin(), objects.end());
 
 	// code for statistics on cell objects counts can go in here
+	// display some statistics on counts
+	// this is useful for finding out how many cells have no objects, one object, etc
+	// comment this out if you don't want to use it
+
+	int num_zeroes 	= 0;
+	int num_ones 	= 0;
+	int num_twos 	= 0;
+	int num_threes 	= 0;
+	int num_greater = 0;
+
+	for (int j = 0; j < num_cells; j++) {
+		if (counts[j] == 0)
+			num_zeroes += 1;
+		if (counts[j] == 1)
+			num_ones += 1;
+		if (counts[j] == 2)
+			num_twos += 1;
+		if (counts[j] == 3)
+			num_threes += 1;
+		if (counts[j] > 3)
+			num_greater += 1;
+	}
+
+	std::cout << "num_cells = " << num_cells << std::endl;
+	std::cout << "numZeroes = " << num_zeroes << "  numOnes = " << num_ones << "  numTwos = " << num_twos << std::endl;
+	std::cout << "numThrees = " << num_threes << "  numGreater = " << num_greater << std::endl;
 
 	// erase the temporary counts vector
 
 	counts.erase(counts.begin(), counts.end());
 }
 
+// bool Grid::hit(const Ray& ray, double& tmin, ShadeRec& sr) const {
+//
+// 	    double t;
+// 	    Normal normal;
+// 	    Point3D local_hit_point;
+// 	    bool hit = false;
+// 	    tmin = kHugeValue;
+// 	    int num_objects = objects.size();
+//
+// 	    for (int j = 0; j < cells.size(); j++){
+// 	        if (cells[j] && cells[j]->hit(ray, t, sr) && (t < tmin)) {
+// 	            hit = true;
+// 	            tmin = t;
+// 	            normal = sr.normal;
+// 	            local_hit_point = sr.local_hit_point;
+// 	            material_ptr = cells[j]->get_material();
+// 	        }
+// 		}
+//
+// 	    if (hit) {
+// 	        sr.normal = normal;
+// 	        sr.local_hit_point = local_hit_point;
+// 	    }
+//
+// 	    return (hit);
+// }
+
 bool Grid::hit(const Ray& ray, double& tmin, ShadeRec& sr) const {
 	// if the ray misses the grid’s bounding box
     //  return false
-	double ox = ray.o.x; double oy = ray.o.y; double oz = ray.o.z;
-	double dx = ray.d.x; double dy = ray.d.y; double dz = ray.d.z;
+	double ox = ray.o.x;
+	double oy = ray.o.y;
+	double oz = ray.o.z;
+	double dx = ray.d.x;
+	double dy = ray.d.y;
+	double dz = ray.d.z;
 
-	double x0 = bbox.x0; double y0 = bbox.y0; double z0 = bbox.z0;
-	double x1 = bbox.x1; double y1 = bbox.y1; double z1 = bbox.z1;
+	double x0 = bbox.x0;
+	double y0 = bbox.y0;
+	double z0 = bbox.z0;
+	double x1 = bbox.x1;
+	double y1 = bbox.y1;
+	double z1 = bbox.z1;
 
 	double tx_min, ty_min, tz_min;
 	double tx_max, ty_max, tz_max;
 
-	double a = 1.0 / dx;
-	if (a >= 0) {
-		tx_min = (x0 - ox) * a;
-		tx_max = (x1 - ox) * a;
+	if (dx >= 0) {
+		tx_min = (x0 - ox) / dx;
+		tx_max = (x1 - ox) / dx;
 	}
 	else {
-		tx_min = (x1 - ox) * a;
-		tx_max = (x0 - ox) * a;
+		tx_min = (x1 - ox) / dx;
+		tx_max = (x0 - ox) / dx;
 	}
 
-	double b = 1.0 / dy;
-	if (b >= 0) {
-		ty_min = (y0 - oy) * b;
-		ty_max = (y1 - oy) * b;
+	if (dy >= 0) {
+		ty_min = (y0 - oy) / dy;
+		ty_max = (y1 - oy) / dy;
 	}
 	else {
-		ty_min = (y1 - oy) * b;
-		ty_max = (y0 - oy) * b;
+		ty_min = (y1 - oy) / dy;
+		ty_max = (y0 - oy) / dy;
 	}
 
-	double c = 1.0 / dz;
-	if (c >= 0) {
-		tz_min = (z0 - oz) * c;
-		tz_max = (z1 - oz) * c;
+	if (dz >= 0) {
+		tz_min = (z0 - oz) / dz;
+		tz_max = (z1 - oz) / dz;
 	}
 	else {
-		tz_min = (z1 - oz) * c;
-		tz_max = (z0 - oz) * c;
+		tz_min = (z1 - oz) / dz;
+		tz_max = (z0 - oz) / dz;
 	}
 
 	double t0 = std::max(tx_min, std::max(ty_min, tz_min));
 	double t1 = std::min(tx_max, std::min(ty_max, tz_max));
 
-	if(t0 > t1 || t1 < kEpsilon){
+	if(t0 > t1){
 		return false;
 	}
 
@@ -234,7 +299,7 @@ bool Grid::hit(const Ray& ray, double& tmin, ShadeRec& sr) const {
 	}
 
 	// traverse the grid
-	// widths of sides of cell
+	// time to traverse each side of cell
 	double dtx = (tx_max - tx_min) / nx;
 	double dty = (ty_max - ty_min) / ny;
 	double dtz = (tz_max - tz_min) / nz;
@@ -255,7 +320,7 @@ bool Grid::hit(const Ray& ray, double& tmin, ShadeRec& sr) const {
 		ix_step = -1;
 		ix_stop = -1;
 	}
-	if(dx == 0){
+	if(dx == 0.0){
 		tx_next = kHugeValue;
 	}
 
@@ -270,7 +335,7 @@ bool Grid::hit(const Ray& ray, double& tmin, ShadeRec& sr) const {
 		iy_step = -1;
 		iy_stop = -1;
 	}
-	if(dy == 0){
+	if(dy == 0.0){
 		ty_next = kHugeValue;
 	}
 
@@ -286,12 +351,13 @@ bool Grid::hit(const Ray& ray, double& tmin, ShadeRec& sr) const {
 		iz_step = -1;
 		iz_stop = -1;
 	}
-	if(dz == 0){
+	if(dz == 0.0){
 		tz_next = kHugeValue;
 	}
-
+	int index;
 	while (true) {
-		GeometricObject* object_ptr = cells[ix + nx * iy + nx * ny * iz];
+		index = ix + nx * iy + nx * ny * iz;
+		GeometricObject* object_ptr = cells[index];
 
 		// If the next cell in the x-direction is nearest in time, i.e. closest
 		if (tx_next < ty_next && tx_next < tz_next) {
@@ -303,8 +369,9 @@ bool Grid::hit(const Ray& ray, double& tmin, ShadeRec& sr) const {
 			tx_next += dtx;
 			ix += ix_step;
 
-			if (ix == ix_stop)
+			if (ix == ix_stop){
 				return (false);
+			}
 		}
 		else {
 			// If the next cell in the y-direction is nearest in time, i.e. closest
@@ -317,8 +384,9 @@ bool Grid::hit(const Ray& ray, double& tmin, ShadeRec& sr) const {
 				ty_next += dty;
 				iy += iy_step;
 
-				if (iy == iy_stop)
+				if (iy == iy_stop){
 					return (false);
+				}
 			}
 			else {
 			// If the next cell in the y-direction is nearest in time, i.e. closest
@@ -330,8 +398,9 @@ bool Grid::hit(const Ray& ray, double& tmin, ShadeRec& sr) const {
 				tz_next += dtz;
 				iz += iz_step;
 
-				if (iz == iz_stop)
+				if (iz == iz_stop){
 					return (false);
+				}
 			}
 		}
 	}
@@ -341,11 +410,19 @@ bool Grid::hit(const Ray& ray, double& tmin, ShadeRec& sr) const {
 bool Grid::shadow_hit(const Ray& ray, float& tmin) const {
 	// if the ray misses the grid’s bounding box
     //  return false
-	double ox = ray.o.x; double oy = ray.o.y; double oz = ray.o.z;
-	double dx = ray.d.x; double dy = ray.d.y; double dz = ray.d.z;
+	double ox = ray.o.x;
+	double oy = ray.o.y;
+	double oz = ray.o.z;
+	double dx = ray.d.x;
+	double dy = ray.d.y;
+	double dz = ray.d.z;
 
-	double x0 = bbox.x0; double y0 = bbox.y0; double z0 = bbox.z0;
-	double x1 = bbox.x1; double y1 = bbox.y1; double z1 = bbox.z1;
+	double x0 = bbox.x0;
+	double y0 = bbox.y0;
+	double z0 = bbox.z0;
+	double x1 = bbox.x1;
+	double y1 = bbox.y1;
+	double z1 = bbox.z1;
 
 	double tx_min, ty_min, tz_min;
 	double tx_max, ty_max, tz_max;
@@ -429,7 +506,7 @@ bool Grid::shadow_hit(const Ray& ray, float& tmin) const {
 		ix_step = -1;
 		ix_stop = -1;
 	}
-	if(dx == 0){
+	if(dx == 0.0){
 		tx_next = kHugeValue;
 	}
 
@@ -444,7 +521,7 @@ bool Grid::shadow_hit(const Ray& ray, float& tmin) const {
 		iy_step = -1;
 		iy_stop = -1;
 	}
-	if(dy == 0){
+	if(dy == 0.0){
 		ty_next = kHugeValue;
 	}
 
@@ -460,7 +537,7 @@ bool Grid::shadow_hit(const Ray& ray, float& tmin) const {
 		iz_step = -1;
 		iz_stop = -1;
 	}
-	if(dz == 0){
+	if(dz == 0.0){
 		tz_next = kHugeValue;
 	}
 
