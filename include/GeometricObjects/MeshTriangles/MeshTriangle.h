@@ -14,9 +14,14 @@
 class MeshTriangle: public GeometricObject {
 
 	public:
+        Mesh* mesh_ptr;
+		int index0;   			// index of first vertex
+		int index1;   			// index of second vertex
+		int index2;   			// index of third vertex
+        Normal normal;
 
 		MeshTriangle();   									// Default constructor
-		MeshTriangle(int i0, int i1, int i2, Mesh* mesh);   // argument constructor
+		MeshTriangle(Mesh* mesh, int i0, int i1, int i2);   // argument constructor
 		MeshTriangle(const MeshTriangle& object);			// Copy constructor
 		virtual MeshTriangle* clone() const = 0;				// Clone
 		virtual	~MeshTriangle();							// Destructor
@@ -24,21 +29,17 @@ class MeshTriangle: public GeometricObject {
 		MeshTriangle& 										// assignment operator
 		operator= (const MeshTriangle& mesh_triangle);
 
-		void compute_normal();
-
 		virtual bool hit(const Ray& ray, double& t, ShadeRec& s) const = 0;
 		virtual bool shadow_hit(const Ray& ray, float& tmin) const;
-
+		virtual Normal get_normal() const;
         virtual BBox get_bounding_box();
 
-	protected:
-        Mesh* mesh_ptr;
-		int index0;   			// index of first vertex
-		int index1;   			// index of second vertex
-		int index2;   			// index of third vertex
-        Normal normal;
+		void compute_normal(bool reverse_normal);
 
-		static const double kEpsilon;   // for shadows and secondary rays
+	protected:
+
+		float interpolate_u(const float beta, const float gamma) const;
+		float interpolate_v(const float beta, const float gamma) const;
 };
 
 #endif

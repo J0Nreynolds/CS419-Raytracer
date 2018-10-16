@@ -15,7 +15,7 @@ class FlatMeshTriangle: public MeshTriangle {
 	public:
 
 		FlatMeshTriangle();   									// Default constructor
-		FlatMeshTriangle(int i0, int i1, int i2, Mesh* mesh);   // argument constructor
+		FlatMeshTriangle(Mesh* mesh, int i0, int i1, int i2);   // argument constructor
 		FlatMeshTriangle(const FlatMeshTriangle& object);			// Copy constructor
 		virtual FlatMeshTriangle* clone() const;				// Clone
 		virtual	~FlatMeshTriangle();							// Destructor

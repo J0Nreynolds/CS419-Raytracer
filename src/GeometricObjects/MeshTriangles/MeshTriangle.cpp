@@ -6,16 +6,13 @@
 
 #include "MeshTriangle.h"
 
-const double MeshTriangle::kEpsilon = 10e-6;
-
 MeshTriangle::MeshTriangle()
 : GeometricObject(), mesh_ptr(NULL)
 {}
 
-MeshTriangle::MeshTriangle(int i0, int i1, int i2, Mesh* mesh)
+MeshTriangle::MeshTriangle(Mesh* mesh, int i0, int i1, int i2)
 : GeometricObject(), mesh_ptr(mesh), index0(i0), index1(i1), index2(i2)
 {
-    compute_normal();
 }
 
 
@@ -41,12 +38,19 @@ MeshTriangle& MeshTriangle::operator=(const MeshTriangle& mesh_triangle){
     return (*this);
 }
 
-void MeshTriangle::compute_normal(){
+void MeshTriangle::compute_normal(bool reverse_normal){
     Point3D v0(mesh_ptr->vertices[index0]);
     Point3D v1(mesh_ptr->vertices[index1]);
     Point3D v2(mesh_ptr->vertices[index2]);
     normal = (v0 - v1) ^ (v0 - v2);
     normal.normalize();
+    if(reverse_normal){
+        normal = -normal;
+    }
+}
+
+Normal MeshTriangle::get_normal() const{
+    return normal;
 }
 
 BBox MeshTriangle::get_bounding_box(void) {
@@ -99,4 +103,27 @@ bool MeshTriangle::shadow_hit(const Ray& ray, float& tmin) const {
 
     tmin = t;
     return true;
+}
+
+// ---------------------------------------------------------------- interpolate_u
+// this is used for texture mapping in Chapter 29
+
+float MeshTriangle::interpolate_u(const float beta, const float gamma) const {
+	return(
+        (1 - beta - gamma) * mesh_ptr->u[index0]
+        + beta * mesh_ptr->u[index1]
+		+ gamma * mesh_ptr->u[index2]
+    );
+}
+
+
+// ---------------------------------------------------------------- interpolate_v
+// this is used for texture mapping in Chapter 29
+
+float MeshTriangle::interpolate_v(const float beta, const float gamma) const {
+    return(
+        (1 - beta - gamma) * mesh_ptr->v[index0]
+        + beta * mesh_ptr->v[index1]
+        + gamma * mesh_ptr->v[index2]
+    );
 }

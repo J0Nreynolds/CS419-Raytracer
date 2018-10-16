@@ -10,8 +10,8 @@ FlatMeshTriangle::FlatMeshTriangle()
 : MeshTriangle()
 {}
 
-FlatMeshTriangle::FlatMeshTriangle(int i0, int i1, int i2, Mesh* mesh)
-: MeshTriangle(i0, i1, i2, mesh)
+FlatMeshTriangle::FlatMeshTriangle(Mesh* mesh, int i0, int i1, int i2)
+: MeshTriangle(mesh, i0, i1, i2)
 {}
 
 FlatMeshTriangle::FlatMeshTriangle(const FlatMeshTriangle& mesh_triangle)

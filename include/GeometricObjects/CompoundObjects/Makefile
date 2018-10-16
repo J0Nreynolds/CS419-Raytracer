@@ -8,7 +8,8 @@ SOURCES := $(wildcard $(SRCDIR)/*.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CFLAGS := -g -Wall
 INC := -I . -I .. -I ../../Utilities -I ../../OpenCL/CLObjects \
- 	-I ../../OpenCL/CLMaterials -I ../../OpenCL/CLBRDFs -I ../../Materials
+ 	-I ../../OpenCL/CLMaterials -I ../../OpenCL/CLBRDFs -I ../../Materials \
+	-I ../MeshTriangles -I ../Primitives
 
 all: $(OBJECTS)
 

@@ -10,8 +10,8 @@ SmoothMeshTriangle::SmoothMeshTriangle()
 : MeshTriangle()
 {}
 
-SmoothMeshTriangle::SmoothMeshTriangle(int i0, int i1, int i2, Mesh* mesh)
-: MeshTriangle(i0, i1, i2, mesh)
+SmoothMeshTriangle::SmoothMeshTriangle(Mesh* mesh, int i0, int i1, int i2)
+: MeshTriangle(mesh, i0, i1, i2)
 {}
 
 SmoothMeshTriangle::SmoothMeshTriangle(const SmoothMeshTriangle& mesh_triangle)
@@ -29,6 +29,10 @@ SmoothMeshTriangle::~SmoothMeshTriangle(){
 SmoothMeshTriangle& SmoothMeshTriangle::operator=(const SmoothMeshTriangle& mesh_triangle){
     MeshTriangle::operator=(mesh_triangle);
     return (*this);
+}
+
+Normal SmoothMeshTriangle::interpolate_normal(double beta, double gamma) const {
+    return (1 - beta - gamma) * n0 + beta * n1 + gamma * n2;
 }
 
 bool SmoothMeshTriangle::hit(const Ray& ray, double& tmin, ShadeRec& sr) const {
@@ -67,7 +71,7 @@ bool SmoothMeshTriangle::hit(const Ray& ray, double& tmin, ShadeRec& sr) const {
       return (false);
 
     tmin = t;
-    sr.normal = (1 - beta - gamma) * n0 + beta* n1 + gamma * n2; // for smooth shading
+    sr.normal = interpolate_normal(beta, gamma); // for smooth shading
     sr.local_hit_point = ray.o + t * ray.d;  // for texture mapping
 
     return(true);
