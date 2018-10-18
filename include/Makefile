@@ -21,10 +21,12 @@ $(SUBDIRS):
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(BUILDDIR)
-	@echo " $(CC) $(CFLAGS) $(INC) -c -o $@ $<"; $(CC) $(CFLAGS) $(INC) -c -o $@ $<
+	@echo " $(CC) $(CFLAGS) $(INC) -c -o $@ $<"
+	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
 
 clean:
-	@echo " Cleaning...";
-	@echo " $(RM) -r $(BUILDDIR)"; $(RM) -r $(BUILDDIR)
+	@echo " Cleaning..."
+	@echo " $(RM) -r $(BUILDDIR)"
+	$(RM) -r $(BUILDDIR)
 
 .PHONY: clean all $(SUBDIRS)
