@@ -1,3 +1,4 @@
+SHELL := bash
 CC := g++ -std=c++11# This is the main compiler
 
 SRCDIR := ../../src/Samplers
