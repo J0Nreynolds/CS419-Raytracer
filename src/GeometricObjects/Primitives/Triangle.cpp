@@ -146,12 +146,12 @@ Triangle::shadow_hit(const Ray& ray, float& tmin) const {
 }
 
 BBox Triangle::get_bounding_box() {
-	double minx = std::min(v0.x, std::min(v1.x, v2.x));
-	double maxx = std::max(v0.x, std::max(v1.x, v2.x));
-	double miny = std::min(v0.y, std::min(v1.y, v2.y));
-	double maxy = std::max(v0.y, std::max(v1.y, v2.y));
-	double minz = std::min(v0.z, std::min(v1.z, v2.z));
-	double maxz = std::max(v0.z, std::max(v1.z, v2.z));
+	double minx = std::min(v0.x, std::min(v1.x, v2.x)) - kEpsilon;
+	double maxx = std::max(v0.x, std::max(v1.x, v2.x)) + kEpsilon;
+	double miny = std::min(v0.y, std::min(v1.y, v2.y)) - kEpsilon;
+	double maxy = std::max(v0.y, std::max(v1.y, v2.y)) + kEpsilon;
+	double minz = std::min(v0.z, std::min(v1.z, v2.z)) - kEpsilon;
+	double maxz = std::max(v0.z, std::max(v1.z, v2.z)) + kEpsilon;
 	return BBox(minx, miny, minz, maxx, maxy, maxz);
 }
 

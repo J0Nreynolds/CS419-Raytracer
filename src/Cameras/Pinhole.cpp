@@ -10,6 +10,7 @@ using namespace std;
 #include <time.h>
 #include <fstream>
 #include <iostream>
+#include <chrono>
 
 #include "CLUtil.h"
 
@@ -38,6 +39,8 @@ void Pinhole::render_scene(World& w) {
 	w.open_window(vp.hres, vp.vres);
 	vp.s /= zoom;
 	ray.o = eye;
+	using namespace std::chrono;
+	int start = duration_cast< milliseconds >(system_clock::now().time_since_epoch()).count();
 
 	for (int r = 0; r < vp.vres; r++)                // up
 		for (int c = 0; c < vp.hres; c++) {    // across
@@ -57,6 +60,8 @@ void Pinhole::render_scene(World& w) {
 			L *= exposure_time;
 			w.display_pixel(r, c, L);
 		}
+	int end = duration_cast< milliseconds >(system_clock::now().time_since_epoch()).count();
+	std::cout << (int)(end-start) << "ms to render" << std::endl;
  	w.renderer->display(); // Display for a second before saving
  	w.renderer->save_png("renders/pinhole.png");
 }

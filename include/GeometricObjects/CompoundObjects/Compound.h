@@ -20,20 +20,18 @@ class Compound: public GeometricObject {
 
         virtual void set_material(const Material* material_ptr);
 
-        void add_object(const GeometricObject* object_ptr);
+        virtual void add_object(GeometricObject* object_ptr);
 
         virtual bool hit(const Ray& ray, double& tmin, ShadeRec& sr) const;
 
         virtual bool shadow_hit(const Ray& ray, float& tmin) const;
 
-    protected:
+        virtual BBox get_bounding_box();
 
+    protected:
+        BBox bbox;
         std::vector<GeometricObject*> objects;
 };
-
-inline void Compound::add_object(const GeometricObject* object_ptr){
-    objects.push_back((GeometricObject*) object_ptr);
-}
 
 inline std::vector<GeometricObject*>& Compound::get_objects(){
     return objects;

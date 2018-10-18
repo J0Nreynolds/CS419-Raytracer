@@ -25,10 +25,6 @@ class SmoothMeshTriangle: public MeshTriangle {
 		virtual bool hit(const Ray& ray, double& t, ShadeRec& s) const;
 
 	private:
-		Normal n0;
-		Normal n1;
-		Normal n2;
-
 		Normal interpolate_normal(double beta, double gamma) const;
 
 };

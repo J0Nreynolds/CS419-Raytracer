@@ -91,3 +91,25 @@ bool Compound::shadow_hit(const Ray& ray, float& tmin) const {
 
     return (hit);
 }
+
+
+void Compound::add_object(GeometricObject* object_ptr){
+    BBox obj_bbox = ((GeometricObject*)object_ptr)->get_bounding_box();
+    if(objects.size() == 0){ //if we have no bounding box
+        bbox = obj_bbox;
+    }
+    else {
+        bbox.x0 = std::min(bbox.x0, obj_bbox.x0);
+        bbox.y0 = std::min(bbox.y0, obj_bbox.y0);
+        bbox.z0 = std::min(bbox.z0, obj_bbox.z0);
+        bbox.x1 = std::max(bbox.x1, obj_bbox.x1);
+        bbox.y1 = std::max(bbox.y1, obj_bbox.y1);
+        bbox.z1 = std::max(bbox.z1, obj_bbox.z1);
+    }
+    objects.push_back((GeometricObject*) object_ptr);
+}
+
+
+BBox Compound::get_bounding_box(){
+    return bbox;
+}

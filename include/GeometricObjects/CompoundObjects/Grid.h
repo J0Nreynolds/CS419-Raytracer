@@ -3,6 +3,7 @@
 // 	Copyright (C) Jonathan Reynolds 2018
 //	This C++ code is for non-commercial purposes only.
 //	This C++ code is licensed under the GNU General Public License Version 2.
+#include <string>
 #include "Compound.h"
 #include "Mesh.h"
 
@@ -17,9 +18,7 @@ class Grid: public Compound {
 
 		virtual BBox get_bounding_box();
 
-		void read_flat_triangles(char* file_name);
-
-		void read_smooth_triangles(char* file_name);
+		void read_obj_file(std::string file_name);
 
 		void setup_cells();
 
@@ -41,9 +40,8 @@ class Grid: public Compound {
 
 		Point3D max_coordinates(); // upper corner of bbox
 
-		void read_ply_file(char* file_name, const int triangle_type);
-
 		void compute_mesh_normals(void);
+
 };
 
 inline void

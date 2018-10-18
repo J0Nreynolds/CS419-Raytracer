@@ -15,7 +15,7 @@ class Mesh {
      public:
         vector<Point3D> vertices;           // vertices
         vector<Normal> normals;             // average normal at each vertex
-        vector<vector<int>> vertex_faces;   // the faces shared by each vertex
+        vector< vector<int> > vertex_faces;   // the faces shared by each vertex
         vector<float> u;            // u texture coordinate at each vertex
         vector<float> v;            // v texture coordinate at each vertex
         int num_vertices;           // number of vertices

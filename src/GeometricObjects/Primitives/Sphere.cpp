@@ -140,13 +140,12 @@ Sphere::shadow_hit(const Ray& ray, float& tmin) const {
 }
 
 BBox Sphere::get_bounding_box() {
-	double delta = 0.00001;
-	double x0 = center.x - radius - delta;
-	double y0 = center.y - radius - delta;
-	double z0 = center.z - radius - delta;
-	double x1 = center.x + radius + delta;
-	double y1 = center.y + radius + delta;
-	double z1 = center.z + radius + delta;
+	double x0 = center.x - radius - kEpsilon;
+	double y0 = center.y - radius - kEpsilon;
+	double z0 = center.z - radius - kEpsilon;
+	double x1 = center.x + radius + kEpsilon;
+	double y1 = center.y + radius + kEpsilon;
+	double z1 = center.z + radius + kEpsilon;
 	return BBox(x0, x1, y0, y1, z0, z1);
 }
 

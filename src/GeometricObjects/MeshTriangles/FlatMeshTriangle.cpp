@@ -68,6 +68,9 @@ bool FlatMeshTriangle::hit(const Ray& ray, double& tmin, ShadeRec& sr) const {
 
     tmin = t;
     sr.normal = normal;                      // for flat shading
+    if(normal * ray.d > 0){
+        sr.normal = -sr.normal;
+    }
     sr.local_hit_point = ray.o + t * ray.d;  // for texture mapping
 
     return(true);

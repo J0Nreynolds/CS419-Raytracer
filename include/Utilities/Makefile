@@ -1,4 +1,5 @@
-CC := g++-8 -std=c++11# This is the main compiler
+CC := g++-8 -std=c++17# This is the main compiler
+C := cc -std=c17
 
 
 SRCDIR := ../../src/Utilities
@@ -7,14 +8,19 @@ BUILDDIR := ../../build
 SRCEXT := cpp
 SOURCES := $(wildcard $(SRCDIR)/*.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
-CFLAGS := -g -Wall
+CFLAGS := -g -Wall -fpermissive
 INC := -I .
 
-all: $(OBJECTS)
+all: $(OBJECTS) $(BUILDDIR)/ply.o
+# all: $(OBJECTS)
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(BUILDDIR)
 	@echo " $(CC) $(CFLAGS) $(INC) -c -o $@ $<"; $(CC) $(CFLAGS) $(INC) -c -o $@ $<
+#
+$(BUILDDIR)/ply.o: $(SRCDIR)/ply.c
+	@mkdir -p $(BUILDDIR)
+	@echo " $(CC) $(CFLAGS) -I . -c -o $@ $<"; $(CC) $(CFLAGS) -I . -c -o $@ $<
 
 clean:
 	@echo " Cleaning...";

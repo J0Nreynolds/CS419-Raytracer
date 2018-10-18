@@ -32,6 +32,9 @@ SmoothMeshTriangle& SmoothMeshTriangle::operator=(const SmoothMeshTriangle& mesh
 }
 
 Normal SmoothMeshTriangle::interpolate_normal(double beta, double gamma) const {
+    Normal n0(mesh_ptr->normals[index0]);
+    Normal n1(mesh_ptr->normals[index1]);
+    Normal n2(mesh_ptr->normals[index2]);
     return (1 - beta - gamma) * n0 + beta * n1 + gamma * n2;
 }
 
@@ -72,6 +75,9 @@ bool SmoothMeshTriangle::hit(const Ray& ray, double& tmin, ShadeRec& sr) const {
 
     tmin = t;
     sr.normal = interpolate_normal(beta, gamma); // for smooth shading
+    if(sr.normal * ray.d > 0){
+        sr.normal = -sr.normal;
+    }
     sr.local_hit_point = ray.o + t * ray.d;  // for texture mapping
 
     return(true);

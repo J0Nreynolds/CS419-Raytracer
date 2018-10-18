@@ -54,16 +54,15 @@ Normal MeshTriangle::get_normal() const{
 }
 
 BBox MeshTriangle::get_bounding_box(void) {
-     double delta = 0.000001;
      Point3D v0(mesh_ptr->vertices[index0]);
      Point3D v1(mesh_ptr->vertices[index1]);
      Point3D v2(mesh_ptr->vertices[index2]);
-     return(BBox(min(min(v0.x, v1.x), v2.x) - delta,
-                 max(max(v0.x, v1.x), v2.x) + delta,
-                 min(min(v0.y, v1.y), v2.y) - delta,
-                 max(max(v0.y, v1.y), v2.y) + delta,
-                 min(min(v0.z, v1.z), v2.z) - delta,
-                 max(max(v0.z, v1.z), v2.z) + delta));
+     return(BBox(std::min(std::min(v0.x, v1.x), v2.x) - kEpsilon,
+                 max(max(v0.x, v1.x), v2.x) + kEpsilon,
+                 min(min(v0.y, v1.y), v2.y) - kEpsilon,
+                 max(max(v0.y, v1.y), v2.y) + kEpsilon,
+                 min(min(v0.z, v1.z), v2.z) - kEpsilon,
+                 max(max(v0.z, v1.z), v2.z) + kEpsilon));
 }
 
 bool MeshTriangle::shadow_hit(const Ray& ray, float& tmin) const {
@@ -87,7 +86,7 @@ bool MeshTriangle::shadow_hit(const Ray& ray, float& tmin) const {
       return (false);
 
     double e2 = a * n + d * q + c * r;
-    double gamma        = e2 * inv_denom;
+    double gamma = e2 * inv_denom;
 
     if (gamma < 0.0 || gamma > 1.0)
       return (false);
