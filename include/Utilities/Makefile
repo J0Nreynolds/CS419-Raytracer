@@ -1,4 +1,4 @@
-CC := g++-8 -std=c++17# This is the main compiler
+CC := g++ -std=c++17# This is the main compiler
 C := cc -std=c17
 
 

@@ -109,7 +109,7 @@ void Grid::setup_cells(void) {
 	double wy = p1.y - p0.y;           // grid extent in y-direction
 	double wz = p1.z - p0.z;           // grid extent in z-direction
 
-	double multiplier = 2.0;           // about 8 times more cells than objects
+	double multiplier = 3.0;           // about 8 times more cells than objects
 	double s = pow(wx * wy * wz / num_objects, 0.3333333);
 	nx = multiplier * wx / s + 1;
 	ny = multiplier * wy / s + 1;

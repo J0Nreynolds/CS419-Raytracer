@@ -1,4 +1,4 @@
-CC := g++-8 -std=c++11 -faligned-new# This is the main compiler
+CC := g++ -std=c++11 -faligned-new# This is the main compiler
 
 SRCDIR := ../../src/World
 BUILDDIR := ../../build
