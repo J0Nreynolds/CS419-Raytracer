@@ -12,7 +12,7 @@ INC := -I . -I ../Utilities -I ../Samplers -I ../OpenCL/CLBRDFs
 
 # Include OpenCL headers from NVIDIA GPU Computing Toolkit on Windows
 ifdef OS
-INC := $(INC) -I C:/Program\ Files/NVIDIA\ GPU\ Computing\ Toolkit/CUDA/v10.0/include
+INC := $(INC) -I C:/Program\ Files/NVIDIA\ GPU\ Computing\ Toolkit/CUDA/v10.0/include -I C:/cygwin/usr/include/SDL2
 endif
 
 all: $(OBJECTS)
