@@ -15,6 +15,11 @@ INC := -I . -I ./CLObjects -I ../World -I ../Samplers -I ../Utilities \
 	-I ../Tracers -I ../Cameras -I ../Lights -I ../Materials -I ./CLMaterials \
 	-I ./CLBRDFs
 
+# Include OpenCL headers from NVIDIA GPU Computing Toolkit on Windows
+ifdef OS
+INC := $(INC) -I C:/Program\ Files/NVIDIA\ GPU\ Computing\ Toolkit/CUDA/v10.0/include
+endif
+
 all: $(SUBDIRS) $(OBJECTS)
 
 $(SUBDIRS):
