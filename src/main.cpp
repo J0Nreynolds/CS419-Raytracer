@@ -1,6 +1,9 @@
+using namespace std;
+
 #include <iostream>
 #include <cstdlib>
 #include <time.h>
+#include <csignal>
 
 #include "World.h"
 

@@ -3,7 +3,7 @@ CC := g++ -std=c++11# This is the main compiler
 
 SRCDIR := ../../src/OpenCL
 BUILDDIR := ../../build
-SUBDIRS := $(wildcard */.)
+SUBDIRS := $(filter-out ./,$(sort $(dir $(wildcard ./*/))))
 
 
 SRCEXT := cpp

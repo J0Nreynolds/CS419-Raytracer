@@ -11,6 +11,7 @@
 
 #include <iostream>
 
+#include "Constants.h"
 #include "Sampler.h"
 
 Sampler::Sampler ()
@@ -130,7 +131,7 @@ void Sampler::map_samples_to_unit_disk() {
 				}
 		}
 
-		  phi *= M_PI / 4.0;
+		  phi *= PI / 4.0;
 
 		  disk_samples[j].x = r * cos(phi);
 		  disk_samples[j].y = r * sin(phi);
@@ -148,8 +149,8 @@ void Sampler::map_samples_to_hemisphere(const float e) {
      int size = samples.size();
      hemisphere_samples.reserve(num_samples * num_sets);
      for (int j = 0; j < size; j++) {
-          float cos_phi = cos(2.0 * M_PI * samples[j].x);
-          float sin_phi = sin(2.0 * M_PI * samples[j].x);
+          float cos_phi = cos(2.0 * PI * samples[j].x);
+          float sin_phi = sin(2.0 * PI * samples[j].x);
           float cos_theta = pow((1.0 - samples[j].y), 1.0 / (e + 1.0));
           float sin_theta = sqrt (1.0 - cos_theta * cos_theta);
           float pu = sin_theta * cos_phi;

@@ -3,7 +3,7 @@ CC := g++ -std=c++11# This is the main compiler
 
 SRCDIR := ../../src/GeometricObjects
 BUILDDIR := ../../build
-SUBDIRS := $(wildcard */.)
+SUBDIRS := $(filter-out ./,$(sort $(dir $(wildcard ./*/))))
 
 
 SRCEXT := cpp

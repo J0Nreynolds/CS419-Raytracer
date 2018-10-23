@@ -1,8 +1,8 @@
-CC := g++ -std=c++11 -faligned-new# This is the main compiler
+CC := g++ -std=c++11 # This is the main compiler
 
 SRCDIR := ../src
 BUILDDIR := ../build
-SUBDIRS := $(wildcard */.)
+SUBDIRS := $(filter-out ./,$(sort $(dir $(wildcard ./*/))))
 
 
 SRCEXT := cpp
