@@ -162,15 +162,16 @@ void World::build(){
 	// Plane
 	Plane* plane_ptr = new Plane(Point3D(0,-200,0), Vector3D(0,1,0));
 	plane_ptr->set_material(orange_material);
+	add_object(plane_ptr);
 
 	// Mesh
-	Grid* grid_ptr = new Grid(new Mesh);
+	//Grid* grid_ptr = new Grid(new Mesh);
 
-    grid_ptr->read_obj_file("./src/dragon.obj");       // read obj file
-	grid_ptr->set_material(orange_material);
+    	//grid_ptr->read_obj_file("./src/dragon.obj");       // read obj file
+	//grid_ptr->set_material(orange_material);
 
-	grid_ptr->setup_cells();
-	add_object(grid_ptr);
+	//grid_ptr->setup_cells();
+	//add_object(grid_ptr);
 }
 
 
