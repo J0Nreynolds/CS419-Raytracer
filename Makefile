@@ -3,10 +3,15 @@ CC := g++ -std=c++11 -g # This is the main compiler
 BUILDDIR := build
 TARGET = bin/runner.exe
 INCLUDE = include
+ifdef OS
 LIB := -lOpenCL -lSDL2 -lpng
 LIBL := -L C:/Program\ Files\ \(x86\)/GnuWin32/lib \
     -L C:/Program\ Files/NVIDIA\ GPU\ Computing\ Toolkit/CUDA/v10.0/lib/Win32 \
     -L C:/cygwin/lib
+else
+LIB := -framework OpenCL -F/Library/Frameworks -framework SDL2 -lpng
+LIBL :=
+endif
 
 SRCDIR := src
 SRCEXT := cpp

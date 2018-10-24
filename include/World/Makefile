@@ -11,7 +11,8 @@ INC := -I . -I ../Utilities -I ../Tracers -I ../Graphics -I ../GeometricObjects 
 	-I ../GeometricObjects/Primitives -I ../Samplers -I ../Cameras -I ../Lights \
 	-I ../OpenCL -I ../OpenCL/CLObjects  -I ../Materials  -I ../BRDFs \
 	-I ../OpenCL/CLMaterials -I ../OpenCL/CLBRDFs \
-	-I ../GeometricObjects/CompoundObjects -I /Library/Frameworks/SDL2.framework/Headers
+	-I ../GeometricObjects/CompoundObjects -I /Library/Frameworks/SDL2.framework/Headers \
+	-I /System/Library/Frameworks/OpenCL.framework/Headers
 
 # Include OpenCL headers from NVIDIA GPU Computing Toolkit on Windows
 ifdef OS

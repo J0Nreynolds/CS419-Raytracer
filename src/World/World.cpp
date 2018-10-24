@@ -14,7 +14,8 @@ using namespace std;
 #define __CL_ENABLE_EXCEPTIONS
 
 #ifdef __APPLE__
-#include <OpenCL/cl.hpp> /* read cpp_wrapper_fix.txt */
+#define CL_SILENCE_DEPRECATION 
+#include <cl.hpp> /* read cpp_wrapper_fix.txt */
 #else
 #include <CL/cl.hpp>
 #endif

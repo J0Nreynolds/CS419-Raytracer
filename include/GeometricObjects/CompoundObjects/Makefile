@@ -10,7 +10,7 @@ OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CFLAGS := -g -Wall -fpermissive
 INC := -I . -I .. -I ../../Utilities -I ../../OpenCL/CLObjects \
  	-I ../../OpenCL/CLMaterials -I ../../OpenCL/CLBRDFs -I ../../Materials \
-	-I ../MeshTriangles -I ../Primitives
+	-I ../MeshTriangles -I ../Primitives -I /System/Library/Frameworks/OpenCL.framework/Headers
 
 # Include OpenCL headers from NVIDIA GPU Computing Toolkit on Windows
 ifdef OS

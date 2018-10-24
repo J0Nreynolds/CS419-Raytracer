@@ -9,7 +9,7 @@ using namespace std;
 #include <iostream>
 
 #ifdef __APPLE__
-#include <OpenCL/cl.hpp>
+#include <cl.hpp>
 #else
 #include <CL/cl.hpp>
 #endif

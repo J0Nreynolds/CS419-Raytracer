@@ -7,11 +7,11 @@ BUILDDIR := ../../build
 SRCEXT := cpp
 SOURCES := $(wildcard $(SRCDIR)/*.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
-CFLAGS := -g -Wall -lpng
+CFLAGS := -g -Wall
 INC := -I . -I ../Utilities -I ../World -I ../GeometricObjects -I ../Tracers \
 	-I ../GeometricObjects/Primitives -I ../Samplers  -I ../Cameras -I ../Lights \
 	-I ../OpenCL/CLObjects -I ../OpenCL/CLMaterials -I ../OpenCL/CLBRDFs -I ../Materials \
-	 -I /Library/Frameworks/SDL2.framework/Headers
+	 -I /Library/Frameworks/SDL2.framework/Headers -I /System/Library/Frameworks/OpenCL.framework/Headers
 
  # Include OpenCL headers from NVIDIA GPU Computing Toolkit on Windows
  ifdef OS
@@ -23,7 +23,7 @@ all: $(OBJECTS)
 $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(BUILDDIR)
 	@echo " $(CC) $(CFLAGS) $(INC) -c -o $@ $<"
-	$(CC) $(CFLAGS) $(INC) -c -o $@ $< -lPNG
+	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
 
 clean:
 	@echo " Cleaning..."
