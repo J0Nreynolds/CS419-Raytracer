@@ -9,7 +9,7 @@ LIBL := -L C:/Program\ Files\ \(x86\)/GnuWin32/lib \
     -L C:/Program\ Files/NVIDIA\ GPU\ Computing\ Toolkit/CUDA/v10.0/lib/Win32 \
     -L C:/cygwin/lib
 else
-LIB := -framework OpenCL -F/Library/Frameworks -framework SDL2 -lpng
+LIB := -framework OpenCL -lSDL2 -lpng
 LIBL :=
 endif
 

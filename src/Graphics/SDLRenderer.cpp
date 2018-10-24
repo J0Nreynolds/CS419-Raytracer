@@ -32,8 +32,6 @@ void SDLRenderer::initialize(const int hres, const int vres){
 		printf( "Window could not be created! SDL Error: %s\n", SDL_GetError() );
 		exit(-1);
 	}
-	SDL_PumpEvents();
-	SDL_SetWindowSize(window, hres, vres);
 		//Create renderer for window
 	renderer = SDL_CreateRenderer( window, -1, SDL_RENDERER_ACCELERATED );
 	if( renderer == NULL )
