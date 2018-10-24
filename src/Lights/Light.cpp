@@ -16,6 +16,6 @@ Light::~Light(){}
 CLLight Light::get_cl_light()
 {
 	CLLight ret;
-	ret.shadows = (cl_bool)shadows;
+	ret.shadows = (cl_char)shadows;
 	return ret;
 }

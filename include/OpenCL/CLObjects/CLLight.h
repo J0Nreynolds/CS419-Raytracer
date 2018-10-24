@@ -13,7 +13,7 @@ typedef struct CLLight{
 	cl_double3 dir;
 	cl_float3  color;
 	cl_float   ls;
-	cl_bool    shadows;
+	cl_char    shadows;
 } CLLight;
 
 #endif

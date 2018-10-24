@@ -52,7 +52,7 @@ typedef struct Light{
 	double3 dir;
 	float3  color;
 	float   ls;
-	bool    shadows;
+	char    shadows;
 } Light;
 
 typedef struct SceneInfo {
