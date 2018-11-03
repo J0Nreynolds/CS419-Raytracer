@@ -24,6 +24,8 @@ class Grid: public Compound {
 
 		void reverse_mesh_normals(void);
 
+		void set_mesh_ptr(Mesh* _mesh_ptr); // use this to change mesh_ptrs while reading in multiple objects
+
 		virtual bool hit(const Ray& ray, double& tmin, ShadeRec& sr) const;
 
 		virtual bool shadow_hit(const Ray& ray, float& tmin) const;
@@ -33,7 +35,7 @@ class Grid: public Compound {
 		std::vector<GeometricObject*> cells;    // cells are stored in a 1D array
 		BBox bbox;         // bounding box
 		int nx, ny, nz;    // number of cells in the x-, y-, and z-directions
-		Mesh* mesh_ptr;		// holds triangle data
+		Mesh* mesh_ptr;		// holds triangle data during file reading
 		bool reverse_normal;	// some PLY files have normals that point inwards
 
 		Point3D min_coordinates(); // lower corner of bbox
@@ -46,7 +48,12 @@ class Grid: public Compound {
 
 inline void
 Grid::reverse_mesh_normals(void) {
-	reverse_normal = true;
+	reverse_normal = !reverse_normal;
+}
+
+inline void
+Grid::set_mesh_ptr(Mesh* _mesh_ptr) {
+	mesh_ptr = _mesh_ptr;
 }
 
 #endif

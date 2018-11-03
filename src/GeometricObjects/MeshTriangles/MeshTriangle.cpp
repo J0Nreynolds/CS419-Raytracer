@@ -3,6 +3,7 @@
 //	This C++ code is licensed under the GNU General Public License Version 2.
 
 // This file contains the definition of the class MeshTriangle
+using namespace std;
 
 #include "MeshTriangle.h"
 
@@ -57,7 +58,7 @@ BBox MeshTriangle::get_bounding_box(void) {
      Point3D v0(mesh_ptr->vertices[index0]);
      Point3D v1(mesh_ptr->vertices[index1]);
      Point3D v2(mesh_ptr->vertices[index2]);
-     return(BBox(std::min(std::min(v0.x, v1.x), v2.x) - kEpsilon,
+     return(BBox(min(min(v0.x, v1.x), v2.x) - kEpsilon,
                  max(max(v0.x, v1.x), v2.x) + kEpsilon,
                  min(min(v0.y, v1.y), v2.y) - kEpsilon,
                  max(max(v0.y, v1.y), v2.y) + kEpsilon,
@@ -125,4 +126,16 @@ float MeshTriangle::interpolate_v(const float beta, const float gamma) const {
         + beta * mesh_ptr->v[index1]
         + gamma * mesh_ptr->v[index2]
     );
+}
+
+CLMeshTriangle MeshTriangle::get_cl_mesh_triangle(){
+    CLMeshTriangle ret;
+    ret.material = material_ptr->get_cl_material();
+    ret.normal = (cl_double3){normal.x, normal.y, normal.z};
+    ret.idx0 = (cl_int)index0;
+    ret.idx1 = (cl_int)index1;
+    ret.idx2 = (cl_int)index2;
+    ret.mesh_idx = (cl_int)mesh_ptr->get_cl_index();
+    ret.is_smooth = (cl_char)true;
+    return ret;
 }

@@ -76,6 +76,8 @@ Grid::~Grid(){
 			delete object;
 	}
 	cells.clear();
+	// We don't need these anymore, they were deleted from cells
+	objects.erase(objects.begin(), objects.end());
 }
 
 BBox Grid::get_bounding_box(){
@@ -175,7 +177,7 @@ void Grid::setup_cells(void) {
         }
 	}
 
-	objects.erase(objects.begin(), objects.end());
+	// objects.erase(objects.begin(), objects.end());
 
 	// code for statistics on cell objects counts can go in here
 	// display some statistics on counts
@@ -661,7 +663,7 @@ void Grid::read_obj_file(std::string file_name){
                 prepareFaces = true;
                 mesh_ptr->num_vertices = vertexCount;
     		  	mesh_ptr->vertex_faces.reserve(mesh_ptr->num_vertices);
-    		  	vector<int> faceList;
+    		  	std::vector<int> faceList;
 
     		  	for (int j = 0; j < mesh_ptr->num_vertices; j++)
     		  	    mesh_ptr->vertex_faces.push_back(faceList); // store empty lists so that we can use the [] notation below

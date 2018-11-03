@@ -83,6 +83,7 @@ void Pinhole::opencl_render_scene(World& w) {
 		cl_int num_planes;  // number of planes in scene
 		cl_int num_triangles;  // number of triangles in scene
 		cl_int num_spheres;  // number of spheres in scene
+		cl_int num_mesh_triangles;  // number of mesh triangles in scene
 		cl_int num_lights;  // number of lights in scene
 		cl_int num_samples;  // number of samples per pixel
 		cl_int num_sets;     // number of samples patterns
@@ -98,7 +99,7 @@ void Pinhole::opencl_render_scene(World& w) {
     // OPENCL KERNEL //
     ///////////////////
 
-    std::ifstream t("./src/pinhole_raycast_tracer.cl");
+    std::ifstream t("./src/pinhole_mesh_tracer.cl");
     std::string str((std::istreambuf_iterator<char>(t)),
                   std::istreambuf_iterator<char>());
     const char* source_string = str.c_str();
@@ -128,9 +129,20 @@ void Pinhole::opencl_render_scene(World& w) {
 	CLSphere* cl_spheres;
 	int num_spheres;
 	CLUtil::get_cl_spheres(w, cl_spheres, num_spheres);
+
+	CLMeshTriangle* cl_mesh_triangles;
+	int num_mesh_triangles;
+	CLUtil::get_cl_mesh_triangles(w, cl_mesh_triangles, num_mesh_triangles);
 	CLLight* cl_lights;
 	int num_lights;
 	CLUtil::get_cl_lights(w, cl_lights, num_lights);
+
+	cl_double3* cl_mesh_vertices;
+	int num_mesh_vertices;
+	CLUtil::get_cl_mesh_vertices(w, cl_mesh_vertices, num_mesh_vertices);
+	cl_double3* cl_mesh_normals;
+	int num_mesh_normals;
+	CLUtil::get_cl_mesh_normals(w, cl_mesh_normals, num_mesh_normals);
 
 	struct CLSceneInfo cl_info = {
 		w.ambient_ptr->get_cl_light(),
@@ -148,6 +160,7 @@ void Pinhole::opencl_render_scene(World& w) {
 		num_planes,
 		num_triangles,
 		num_spheres,
+		num_mesh_triangles,
 		num_lights,
 		vp.num_samples,
 		sampler->get_num_sets(),
@@ -162,7 +175,10 @@ void Pinhole::opencl_render_scene(World& w) {
 	cl::Buffer cl_buffer_c = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_planes * sizeof(CLPlane), cl_planes);
 	cl::Buffer cl_buffer_d = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_triangles * sizeof(CLTriangle), cl_triangles);
 	cl::Buffer cl_buffer_e = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_spheres * sizeof(CLSphere), cl_spheres);
-	cl::Buffer cl_buffer_f = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_lights * sizeof(CLLight), cl_lights);
+	cl::Buffer cl_buffer_f = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_mesh_triangles * sizeof(CLMeshTriangle), cl_mesh_triangles);
+	cl::Buffer cl_buffer_g = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_lights * sizeof(CLLight), cl_lights);
+	cl::Buffer cl_buffer_h = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_mesh_vertices * sizeof(cl_double3), cl_mesh_vertices);
+	cl::Buffer cl_buffer_i = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_mesh_normals * sizeof(cl_double3), cl_mesh_normals);
 
     // Specify the arguments for the OpenCL kernel
 	kernel.setArg(0, cl_output);
@@ -173,6 +189,9 @@ void Pinhole::opencl_render_scene(World& w) {
 	kernel.setArg(5, cl_buffer_d);
 	kernel.setArg(6, cl_buffer_e);
 	kernel.setArg(7, cl_buffer_f);
+	kernel.setArg(8, cl_buffer_g);
+	kernel.setArg(9, cl_buffer_h);
+	kernel.setArg(10, cl_buffer_i);
 
     // Create a command queue for the OpenCL device
     // the command queue allows kernel execution commands to be sent to the device

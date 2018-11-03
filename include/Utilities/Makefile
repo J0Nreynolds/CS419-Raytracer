@@ -9,7 +9,7 @@ SRCEXT := cpp
 SOURCES := $(wildcard $(SRCDIR)/*.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CFLAGS := -g -Wall -fpermissive
-INC := -I .
+INC := -I . -I /System/Library/Frameworks/OpenCL.framework/Headers
 
 # Include OpenCL headers from NVIDIA GPU Computing Toolkit on Windows
 ifdef OS

@@ -3,8 +3,8 @@
 //	This C++ code is licensed under the GNU General Public License Version 2.
 //	See the file COPYING.txt for the full license.
 
+using namespace std;
 #include "Mesh.h"
-
 
 // ----------------------------------------------------------------  default constructor
 
@@ -23,7 +23,8 @@ Mesh::Mesh (const Mesh& m)
 		u(m.u),
 		v(m.v),
 		num_vertices(m.num_vertices),
-		num_triangles(m.num_triangles)
+		num_triangles(m.num_triangles),
+		cl_index(m.cl_index)
 {}
 
 
@@ -41,6 +42,7 @@ Mesh::operator= (const Mesh& rhs) {
 	v  				= rhs.v;
 	num_vertices	= rhs.num_vertices;
 	num_triangles	= rhs.num_triangles;
+	cl_index		= rhs.cl_index;
 
 	return (*this);
 }
@@ -49,3 +51,19 @@ Mesh::operator= (const Mesh& rhs) {
 // ---------------------------------------------------------------- destructor
 
 Mesh::~Mesh(void) {}
+
+cl_double3* Mesh::get_cl_vertices(){
+	cl_double3* ret = new cl_double3[num_vertices];
+	for(int i = 0 ; i < num_vertices; i++){
+		ret[i] = (cl_double3){vertices[i].x, vertices[i].y, vertices[i].z};
+	}
+	return ret;
+}
+
+cl_double3* Mesh::get_cl_normals(){
+	cl_double3* ret = new cl_double3[num_vertices];
+	for(int i = 0 ; i < num_vertices; i++){
+		ret[i] = (cl_double3){normals[i].x, normals[i].y, normals[i].z};
+	}
+	return ret;
+}

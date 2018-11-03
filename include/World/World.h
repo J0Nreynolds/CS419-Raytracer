@@ -7,11 +7,12 @@
 using namespace std;
 #include <vector>
 
-#include "ViewPlane.h"
-#include "Renderer.h"
 #include "RGBColor.h"
 #include "ShadeRec.h"
 #include "Ray.h"
+#include "Mesh.h"
+#include "ViewPlane.h"
+#include "Renderer.h"
 #include "Tracer.h"
 #include "Ambient.h"
 #include "GeometricObject.h"
@@ -22,12 +23,14 @@ class World {
 
 		vector <GeometricObject*> objects;
 		vector <Light*> lights;
+		vector <Mesh*> meshes;
 		ViewPlane       vp;
 		RGBColor        background_color;
 		Ambient*        ambient_ptr;
 		Tracer*         tracer_ptr;
 		Renderer*       renderer;
 		Camera*         camera_ptr;
+		int 			cur_cl_index;
 
 		World();
 
@@ -40,6 +43,8 @@ class World {
 		void add_object(GeometricObject* object_ptr);
 
 		void add_light(Light* light_ptr);
+
+		void add_mesh(Mesh* mesh_ptr);
 
 		ShadeRec hit_bare_bones_objects(const Ray& ray) const;
 		ShadeRec hit_objects(const Ray& ray) const;
@@ -70,6 +75,12 @@ inline void World::add_object(GeometricObject* object_ptr) {
 
 inline void World::add_light(Light* light_ptr) {
       lights.push_back(light_ptr);
+}
+
+inline void World::add_mesh(Mesh* mesh_ptr) {
+	mesh_ptr->set_cl_index(cur_cl_index);
+	cur_cl_index += mesh_ptr->num_vertices;
+    meshes.push_back(mesh_ptr);
 }
 
 inline void World::set_camera(Camera* camera) {

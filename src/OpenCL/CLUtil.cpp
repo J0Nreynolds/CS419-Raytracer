@@ -16,6 +16,8 @@ using namespace std;
 
 #include "Sphere.h"
 #include "Triangle.h"
+#include "MeshTriangle.h"
+#include "Grid.h"
 #include "Plane.h"
 
 #include "CLUtil.h"
@@ -75,26 +77,6 @@ cl::Device CLUtil::choose_platform_and_device(){
     return device;
 }
 
-// template <class To, class From>
-// void CLUtil::get_all_cl(const World& world, To*& output, int& num_type) {
-//     num_type = 0;
-//     int num_objects = world.objects.size();
-// 	for(int i = 0; i < num_objects; i ++){
-//         From* obj = dynamic_cast<From*> (world.objects[i]);
-//         if(obj != NULL){
-//             num_type ++;
-//         }
-// 	}
-//     output = new To[num_type];
-//     int j = 0;
-//     for(int i = 0; i < num_objects && j < num_type; i++){
-//         From* obj = dynamic_cast<From*> (world.objects[i]);
-//         if(obj != NULL){
-//             output[j++] = obj->get_cl();
-//         }
-//     }
-// }
-
 void CLUtil::get_cl_spheres(const World& world, CLSphere*& spheres, int& num_spheres){
 	num_spheres = 0;
     int num_objects = world.objects.size();
@@ -133,6 +115,41 @@ void CLUtil::get_cl_triangles(const World& world, CLTriangle*& triangles, int& n
     }
 }
 
+void CLUtil::get_cl_mesh_triangles(const World& world, CLMeshTriangle*& mesh_triangles, int& num_mesh_triangles){
+	num_mesh_triangles = 0;
+    int num_objects = world.objects.size();
+    std::vector<GeometricObject*> objects;
+	for(int i = 0; i < num_objects; i ++){
+        Grid* grid = dynamic_cast<Grid*> (world.objects[i]);
+        if(grid != NULL){
+            objects = grid->get_objects();
+            int num_grid_objects = objects.size();
+        	for(int i = 0; i < num_grid_objects; i ++){
+                MeshTriangle* mesh_triangle = dynamic_cast<MeshTriangle*> (objects[i]);
+                if(mesh_triangle != NULL){
+                    num_mesh_triangles ++;
+                }
+            }
+        }
+	}
+
+    mesh_triangles = new CLMeshTriangle[num_mesh_triangles];
+    int j = 0;
+	for(int i = 0; i < num_objects; i ++){
+        Grid* grid = dynamic_cast<Grid*> (world.objects[i]);
+        if(grid != NULL){
+            objects = grid->get_objects(); // FIX: assumes a single grid in scene
+            int num_grid_objects = objects.size();
+            for(int i = 0; i < num_grid_objects && j < num_mesh_triangles; i++){
+                MeshTriangle* mesh_triangle = dynamic_cast<MeshTriangle*> (objects[i]);
+                if(mesh_triangle != NULL){
+                    mesh_triangles[j++] = mesh_triangle->get_cl_mesh_triangle();
+                }
+            }
+        }
+	}
+}
+
 void CLUtil::get_cl_planes(const World& world, CLPlane*& planes, int& num_planes){
 	num_planes = 0;
     int num_objects = world.objects.size();
@@ -158,7 +175,32 @@ void CLUtil::get_cl_lights(const World& world, CLLight*& lights, int& num_lights
 	for(int i = 0; i < num_lights; i ++){
         lights[i] = world.lights[i]->get_cl_light();
 	}
+}
 
+void CLUtil::get_cl_mesh_vertices(const World& world, cl_double3*& mesh_vertices, int& num_mesh_vertices){
+    num_mesh_vertices = world.cur_cl_index;
+    mesh_vertices = new cl_double3[num_mesh_vertices];
+    int num_meshes = world.meshes.size();
+	for(int i = 0; i < num_meshes; i ++){
+        Mesh* mesh = world.meshes[i];
+        int index = mesh->get_cl_index();
+        for(int j = 0; j < mesh->num_vertices; j++){
+            mesh_vertices[index + j] = (cl_double3){mesh->vertices[j].x, mesh->vertices[j].y, mesh->vertices[j].z};
+        }
+	}
+}
+
+void CLUtil::get_cl_mesh_normals(const World& world, cl_double3*& mesh_normals, int& num_mesh_normals){
+    num_mesh_normals = world.cur_cl_index;
+    mesh_normals = new cl_double3[num_mesh_normals];
+    int num_meshes = world.meshes.size();
+	for(int i = 0; i < num_meshes; i ++){
+        Mesh* mesh = world.meshes[i];
+        int index = mesh->get_cl_index();
+        for(int j = 0; j < mesh->num_vertices; j++){
+            mesh_normals[index + j] = (cl_double3){mesh->normals[j].x, mesh->normals[j].y, mesh->normals[j].z};
+        }
+	}
 }
 
 void CLUtil::attempt_build_program(cl::Program program, cl::Device device){

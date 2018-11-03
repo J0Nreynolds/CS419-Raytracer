@@ -209,45 +209,57 @@ void ThinLens::opencl_render_scene(World& w) {
 	int stop = time(NULL) + 10;
 	int num_draws = 0;
 	SDL_Event e;
+	int dx = 0;
+	int dy = 0;
+	int dz = 0;
 	while(time(NULL) < stop){
 		while( SDL_PollEvent( &e ) != 0 )
 		{
 			//User input
 			if(e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_q){
-				eye = eye + 10 * this->w;
-				cl_info.eye = (cl_double3){eye.x, eye.y, eye.z};
-				kernel.setArg(1, cl_info);
+				dz = 10;
 			}
 			if(e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_e){
-				eye = eye - 10 * this->w;
-				cl_info.eye = (cl_double3){eye.x, eye.y, eye.z};
-				kernel.setArg(1, cl_info);
+				dz = -10;
 			}
+			if(e.type == SDL_KEYUP && (
+				e.key.keysym.sym == SDLK_e || e.key.keysym.sym == SDLK_q
+			)){
+				dz = 0;
+			}
+
 			if(e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_d){
-				eye = eye + 10 * this->u;
-				cl_info.eye = (cl_double3){eye.x, eye.y, eye.z};
-				kernel.setArg(1, cl_info);
+				dx = 10;
 			}
 			if(e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_a){
-				eye = eye - 10 * this->u;
-				cl_info.eye = (cl_double3){eye.x, eye.y, eye.z};
-				kernel.setArg(1, cl_info);
+				dx = -10;
 			}
+			if(e.type == SDL_KEYUP && (
+				e.key.keysym.sym == SDLK_a || e.key.keysym.sym == SDLK_d
+			)){
+				dx = 0;
+			}
+
 			if(e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_w){
-				eye = eye + 10 * this->v;
-				cl_info.eye = (cl_double3){eye.x, eye.y, eye.z};
-				kernel.setArg(1, cl_info);
+				dy = 10;
 			}
 			if(e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_s){
-				eye = eye - 10 * this->v;
-				cl_info.eye = (cl_double3){eye.x, eye.y, eye.z};
-				kernel.setArg(1, cl_info);
+				dy = -10;
+			}
+			if(e.type == SDL_KEYUP && (
+				e.key.keysym.sym == SDLK_s || e.key.keysym.sym == SDLK_w
+			)){
+				dy = 0;
 			}
 			//User requests quit
 			if( e.type == SDL_QUIT )
 			{
 				exit(-1);
 			}
+
+			eye = eye + dx * this->u + dy * this->v + dz * this->w;
+			cl_info.eye = (cl_double3){eye.x, eye.y, eye.z};
+			kernel.setArg(1, cl_info);
 		}
 		// Launch the kernel and specify the global and local number of work items (threads)
 		queue.enqueueNDRangeKernel(kernel, 0, global_work_size);

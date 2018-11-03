@@ -8,6 +8,7 @@
 
 #include "GeometricObject.h"
 #include "Mesh.h"
+#include "CLMeshTriangle.h"
 
 //-------------------------------------------------------------------------------- class Triangle
 
@@ -35,6 +36,8 @@ class MeshTriangle: public GeometricObject {
         virtual BBox get_bounding_box();
 
 		void compute_normal(bool reverse_normal);
+
+		virtual CLMeshTriangle get_cl_mesh_triangle();
 
 	protected:
 

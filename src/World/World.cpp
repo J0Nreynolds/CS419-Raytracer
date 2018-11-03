@@ -14,7 +14,7 @@ using namespace std;
 #define __CL_ENABLE_EXCEPTIONS
 
 #ifdef __APPLE__
-#define CL_SILENCE_DEPRECATION 
+#define CL_SILENCE_DEPRECATION
 #include <cl.hpp> /* read cpp_wrapper_fix.txt */
 #else
 #include <CL/cl.hpp>
@@ -53,7 +53,7 @@ using namespace std;
 #include "RayCast.h"
 
 World::World():
-	ambient_ptr(NULL), tracer_ptr(NULL), renderer(NULL), camera_ptr(NULL)
+	ambient_ptr(NULL), tracer_ptr(NULL), renderer(NULL), camera_ptr(NULL), cur_cl_index(0)
 {}
 
 World::~World(){
@@ -88,7 +88,7 @@ void World::build(){
 	vp.set_hres(400);
 	vp.set_vres(400);
 	vp.set_pixel_size(0.5);
-	vp.set_sampler(new MultiJittered(100));
+	vp.set_sampler(new MultiJittered(25));
 
 	background_color = black;
 	Ambient* ambient = new Ambient();
@@ -98,24 +98,24 @@ void World::build(){
 
 	// Camera
 
-	ThinLens* thinlens_ptr = new ThinLens();
-	thinlens_ptr->set_eye(800, 0, 450);
-	thinlens_ptr->set_lookat(0, 0, 0);
-	thinlens_ptr->set_view_distance(150); // set d
-	thinlens_ptr->set_lens_radius(50); // set d
-	thinlens_ptr->set_focal_plane_distance(750); // set d
-	thinlens_ptr->set_roll_angle(0); //rotate camera
-	thinlens_ptr->set_sampler(new MultiJittered(100));
-	thinlens_ptr->compute_uvw();
-	set_camera(thinlens_ptr);
+	// ThinLens* thinlens_ptr = new ThinLens();
+	// thinlens_ptr->set_eye(800, 0, 450);
+	// thinlens_ptr->set_lookat(0, 0, 0);
+	// thinlens_ptr->set_view_distance(150); // set d
+	// thinlens_ptr->set_lens_radius(50); // set d
+	// thinlens_ptr->set_focal_plane_distance(750); // set d
+	// thinlens_ptr->set_roll_angle(0); //rotate camera
+	// thinlens_ptr->set_sampler(new MultiJittered(100));
+	// thinlens_ptr->compute_uvw();
+	// set_camera(thinlens_ptr);
 
-	// Pinhole* pinhole_ptr = new Pinhole();
-	// pinhole_ptr->set_eye(800, 0, 450);
-	// pinhole_ptr->set_lookat(0, 0, 0);
-	// pinhole_ptr->set_view_distance(150); // set d
-	// pinhole_ptr->set_roll_angle(0); //rotate camera
-	// pinhole_ptr->compute_uvw();
-	// set_camera(pinhole_ptr);
+	Pinhole* pinhole_ptr = new Pinhole();
+	pinhole_ptr->set_eye(500, 0, 500);
+	pinhole_ptr->set_lookat(0, 0, 0);
+	pinhole_ptr->set_view_distance(150); // set d
+	pinhole_ptr->set_roll_angle(0); //rotate camera
+	pinhole_ptr->compute_uvw();
+	set_camera(pinhole_ptr);
 
 	// Orthographic* ortho_ptr = new Orthographic();
 	// ortho_ptr->set_eye(0, 0, 250);
@@ -147,14 +147,14 @@ void World::build(){
 	// l1->set_ls(5.0);
 	// add_light(l1);
 
-	PointLight* l = new PointLight(Point3D(300,0,500));
+	PointLight* l = new PointLight(Point3D(300,50,500));
 	l->set_shadows(true);
-	l->set_ls(5.0);
+	l->set_ls(3.0);
 	add_light(l);
 
 	Phong* orange_material = new Phong();
 	orange_material->set_ks(0.15);
-	orange_material->set_exp(10);
+	orange_material->set_exp(50);
 	orange_material->set_kd(0.6);
 	orange_material->set_ka(0.25);
 	orange_material->set_cd(orange);
@@ -164,14 +164,15 @@ void World::build(){
 	plane_ptr->set_material(orange_material);
 	add_object(plane_ptr);
 
-	// Mesh
-	//Grid* grid_ptr = new Grid(new Mesh);
+	Mesh* mesh_ptr = new Mesh();
+	Grid* grid_ptr = new Grid(mesh_ptr);
 
-    	//grid_ptr->read_obj_file("./src/dragon.obj");       // read obj file
-	//grid_ptr->set_material(orange_material);
+    grid_ptr->read_obj_file("./src/cow.obj");       // read obj file
+	grid_ptr->set_material(orange_material);
 
-	//grid_ptr->setup_cells();
-	//add_object(grid_ptr);
+	grid_ptr->setup_cells();
+	add_object(grid_ptr);
+	add_mesh(mesh_ptr);
 }
 
 
