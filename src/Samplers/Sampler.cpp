@@ -1,4 +1,5 @@
-// 	Copyright (C) Jonathan Reynolds 2018
+// 	Copyright (C) Kevin Suffern 2000-2007.
+//  Modified work Copyright (C) Jonathan Reynolds 2018
 //	This C++ code is for non-commercial purposes only.
 //	This C++ code is licensed under the GNU General Public License Version 2.
 
@@ -146,25 +147,25 @@ Point2D Sampler::sample_unit_disk() {
 }
 
 void Sampler::map_samples_to_hemisphere(const float e) {
-     int size = samples.size();
-     hemisphere_samples.reserve(num_samples * num_sets);
-     for (int j = 0; j < size; j++) {
-          float cos_phi = cos(2.0 * PI * samples[j].x);
-          float sin_phi = sin(2.0 * PI * samples[j].x);
-          float cos_theta = pow((1.0 - samples[j].y), 1.0 / (e + 1.0));
-          float sin_theta = sqrt (1.0 - cos_theta * cos_theta);
-          float pu = sin_theta * cos_phi;
-          float pv = sin_theta * sin_phi;
-          float pw = cos_theta;
-          hemisphere_samples.push_back(Point3D(pu, pv, pw));
-     }
+    int size = samples.size();
+    hemisphere_samples.reserve(num_samples * num_sets);
+    for (int j = 0; j < size; j++) {
+        float cos_phi = cos(2.0 * PI * samples[j].x);
+        float sin_phi = sin(2.0 * PI * samples[j].x);
+        float cos_theta = pow((1.0 - samples[j].y), 1.0 / (e + 1.0));
+        float sin_theta = sqrt (1.0 - cos_theta * cos_theta);
+        float pu = sin_theta * cos_phi;
+        float pv = sin_theta * sin_phi;
+        float pw = cos_theta;
+        hemisphere_samples.push_back(Point3D(pu, pv, pw));
+    }
 }
 
 Point3D Sampler::sample_hemisphere() {
-	 if (count % num_samples == 0)      // start of a new pixel
-		  jump = ((int) rand() % num_sets) * num_samples;
+	if (count % num_samples == 0)      // start of a new pixel
+		jump = ((int) rand() % num_sets) * num_samples;
 
-	 return (hemisphere_samples[jump + shuffled_indices[jump + count++ % num_samples]]);
+	return (hemisphere_samples[jump + shuffled_indices[jump + count++ % num_samples]]);
 }
 
 cl_double2* Sampler::get_cl_samples(int& count) {

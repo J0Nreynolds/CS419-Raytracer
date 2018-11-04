@@ -13,6 +13,7 @@ using namespace std;
 #include <chrono>
 
 #include "CLUtil.h"
+#include "AmbientOccluder.h"
 
 #include "Pinhole.h"
 
@@ -116,10 +117,22 @@ void Pinhole::opencl_render_scene(World& w) {
     // Constructs the arguments for the kernel
 	Sampler* sampler = w.vp.sampler_ptr;
 
+	Sampler* hemi_sampler = NULL;
+	AmbientOccluder* ambient_occ = dynamic_cast<AmbientOccluder*>(w.ambient_ptr);
+	if(ambient_occ){
+		hemi_sampler = ambient_occ->get_sampler();
+	}
+
 	int samples_count;
 	int indices_count;
 	cl_double2* cl_samples = sampler->get_cl_samples(samples_count);
 	cl_int* cl_shuffled_indices = sampler->get_cl_shuffled_indices(indices_count);
+
+	int hemi_samples_count = 0;
+	int hemi_indices_count = 0;
+	cl_double3* cl_hemi_samples = hemi_sampler ? hemi_sampler->get_cl_hemisphere_samples(hemi_samples_count): NULL;
+	cl_int* cl_hemi_shuffled_indices = hemi_sampler ?  hemi_sampler->get_cl_shuffled_indices(hemi_indices_count): NULL;
+
 	CLPlane* cl_planes;
 	int num_planes;
 	CLUtil::get_cl_planes(w, cl_planes, num_planes);
@@ -172,13 +185,15 @@ void Pinhole::opencl_render_scene(World& w) {
 	cl::Buffer cl_output = cl::Buffer(context, CL_MEM_WRITE_ONLY, vp.hres * vp.vres * sizeof(cl_float3), NULL);
 	cl::Buffer cl_buffer_a = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, samples_count * sizeof(cl_double2), cl_samples);
 	cl::Buffer cl_buffer_b = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, indices_count * sizeof(cl_int), cl_shuffled_indices);
-	cl::Buffer cl_buffer_c = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_planes * sizeof(CLPlane), cl_planes);
-	cl::Buffer cl_buffer_d = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_triangles * sizeof(CLTriangle), cl_triangles);
-	cl::Buffer cl_buffer_e = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_spheres * sizeof(CLSphere), cl_spheres);
-	cl::Buffer cl_buffer_f = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_mesh_triangles * sizeof(CLMeshTriangle), cl_mesh_triangles);
-	cl::Buffer cl_buffer_g = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_lights * sizeof(CLLight), cl_lights);
-	cl::Buffer cl_buffer_h = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_mesh_vertices * sizeof(cl_double3), cl_mesh_vertices);
-	cl::Buffer cl_buffer_i = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_mesh_normals * sizeof(cl_double3), cl_mesh_normals);
+	cl::Buffer cl_buffer_c = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, hemi_samples_count * sizeof(cl_double3), cl_hemi_samples);
+	cl::Buffer cl_buffer_d = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, hemi_indices_count * sizeof(cl_int), cl_hemi_shuffled_indices);
+	cl::Buffer cl_buffer_e = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_planes * sizeof(CLPlane), cl_planes);
+	cl::Buffer cl_buffer_f = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_triangles * sizeof(CLTriangle), cl_triangles);
+	cl::Buffer cl_buffer_g = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_spheres * sizeof(CLSphere), cl_spheres);
+	cl::Buffer cl_buffer_h = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_mesh_triangles * sizeof(CLMeshTriangle), cl_mesh_triangles);
+	cl::Buffer cl_buffer_i = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_lights * sizeof(CLLight), cl_lights);
+	cl::Buffer cl_buffer_j = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_mesh_vertices * sizeof(cl_double3), cl_mesh_vertices);
+	cl::Buffer cl_buffer_k = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_mesh_normals * sizeof(cl_double3), cl_mesh_normals);
 
     // Specify the arguments for the OpenCL kernel
 	kernel.setArg(0, cl_output);
@@ -192,6 +207,8 @@ void Pinhole::opencl_render_scene(World& w) {
 	kernel.setArg(8, cl_buffer_g);
 	kernel.setArg(9, cl_buffer_h);
 	kernel.setArg(10, cl_buffer_i);
+	kernel.setArg(11, cl_buffer_j);
+	kernel.setArg(12, cl_buffer_k);
 
     // Create a command queue for the OpenCL device
     // the command queue allows kernel execution commands to be sent to the device

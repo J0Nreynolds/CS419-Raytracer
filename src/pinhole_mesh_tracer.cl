@@ -88,6 +88,21 @@ typedef struct SceneInfo {
 	int seed;         // seed for random number generation
 } SceneInfo;
 
+typedef struct RenderComponents {
+	__global const Plane* planes;
+	__global const Triangle* triangles;
+	__global const Sphere* spheres;
+	__global const MeshTriangle* mesh_triangles;
+	__global const Light* lights;
+	__global const double3* mesh_vertices;
+	__global const double3* mesh_normals;
+	__global const double3* hemi_samples;
+	__global const int* hemi_shuffled_indices;
+	ulong seed;
+	int hemi_count;
+	int hemi_jump;
+} RenderComponents;
+
 typedef struct ShadeRec{
 	Ray ray;                 // for specular highlights
 	double3 normal;          // normal at hit point
@@ -109,7 +124,43 @@ uint random(__private ulong* seed_ptr)
 	return result;
 }
 
-bool intersect_sphere(__global const Sphere* sphere, __private const Ray* ray, __private double* tmin, __private ShadeRec* sr){
+int sample_index(__global const int* shuffled_indices, __private int num_samples,
+	__private int num_sets, __private int* count_ptr,__private int* jump_ptr,
+	__private ulong* seed_ptr){
+	int random_num = random(seed_ptr);
+	int count = (*count_ptr);
+	int jump = (*jump_ptr);
+
+
+	if (count % num_samples == 0){      // start of a new pixel
+		jump = (random_num % num_sets) * num_samples;
+		(*jump_ptr) = jump;
+	}
+
+	(*count_ptr) = count+1;
+	return (jump + shuffled_indices[jump + (count % num_samples)]);
+}
+
+double2 sample_double2_array(__global const double2* samples, __global const int* shuffled_indices,
+	 __private int num_samples, __private int num_sets, __private int* count_ptr,
+	 __private int* jump_ptr, __private ulong* seed_ptr)
+{
+	int index = sample_index(shuffled_indices, num_samples, num_sets, count_ptr,
+							 jump_ptr, seed_ptr);
+	return (samples[index]);
+}
+
+double3 sample_double3_array(__global const double3* samples, __global const int* shuffled_indices,
+	 __private int num_samples, __private int num_sets, __private int* count_ptr,
+	 __private int* jump_ptr, __private ulong* seed_ptr)
+{
+	int index = sample_index(shuffled_indices, num_samples, num_sets, count_ptr,
+							 jump_ptr, seed_ptr);
+	return (samples[index]);
+}
+
+bool intersect_sphere(__global const Sphere* sphere, __private const Ray* ray,
+	__private double* tmin, __private ShadeRec* sr){
 	double t;
 	double3 temp = ray->o - sphere->center;
 	double a = dot(ray->d, ray->d);
@@ -144,7 +195,8 @@ bool intersect_sphere(__global const Sphere* sphere, __private const Ray* ray, _
 	return (false);
 }
 
-bool shadow_intersect_sphere(__global const Sphere* sphere, __private const Ray* ray, __private float* tmin){
+bool shadow_intersect_sphere(__global const Sphere* sphere, __private const Ray* ray,
+	__private float* tmin){
 	float t;
 	double3 temp = ray->o - sphere->center;
 	float a = dot(ray->d, ray->d);
@@ -175,7 +227,8 @@ bool shadow_intersect_sphere(__global const Sphere* sphere, __private const Ray*
 	return (false);
 }
 
-bool intersect_plane(__global const Plane* plane, __private const Ray* ray, __private double* tmin, __private ShadeRec* sr){
+bool intersect_plane(__global const Plane* plane, __private const Ray* ray,
+	__private double* tmin, __private ShadeRec* sr){
 	double t = dot((plane->a - ray->o), plane->n) / (dot(ray->d, plane->n));
 
 	if (t > EPSILON) {
@@ -194,7 +247,8 @@ bool intersect_plane(__global const Plane* plane, __private const Ray* ray, __pr
 	return(false);
 }
 
-bool shadow_intersect_plane(__global const Plane* plane, __private const Ray* ray, __private float* tmin){
+bool shadow_intersect_plane(__global const Plane* plane,__private const Ray* ray,
+	__private float* tmin){
 	float t = dot((plane->a - ray->o), plane->n) / (dot(ray->d, plane->n));
 
 	if (t > EPSILON) {
@@ -205,7 +259,8 @@ bool shadow_intersect_plane(__global const Plane* plane, __private const Ray* ra
 	return(false);
 }
 
-bool intersect_triangle(__global const Triangle* triangle, __private const Ray* ray, __private double* tmin, __private ShadeRec* sr){
+bool intersect_triangle(__global const Triangle* triangle,
+	__private const Ray* ray, __private double* tmin, __private ShadeRec* sr){
 	// Find plane intersection
 	double3 v10 = triangle->v1 - triangle->v0;
 	double3 v20 = triangle->v2 - triangle->v0;
@@ -249,7 +304,8 @@ bool intersect_triangle(__global const Triangle* triangle, __private const Ray* 
 	return(false);
 }
 
-bool shadow_intersect_triangle(__global const Triangle* triangle, __private const Ray* ray, __private float* tmin){
+bool shadow_intersect_triangle(__global const Triangle* triangle,
+	__private const Ray* ray, __private float* tmin){
 	// Find plane intersection
 	double3 v10 = triangle->v1 - triangle->v0;
 	double3 v20 = triangle->v2 - triangle->v0;
@@ -284,8 +340,9 @@ bool shadow_intersect_triangle(__global const Triangle* triangle, __private cons
 	return(false);
 }
 
-bool intersect_mesh_triangle(__global const MeshTriangle* mesh_triangle, __private const Ray* ray, __private double* tmin,
-	 __private ShadeRec* sr, __global const double3* mesh_vertices, __global const double3* mesh_normals){
+bool intersect_mesh_triangle(__global const MeshTriangle* mesh_triangle,
+	__private const Ray* ray, __private double* tmin, __private ShadeRec* sr,
+	__global const double3* mesh_vertices, __global const double3* mesh_normals){
 	int mesh_idx = mesh_triangle->mesh_idx;
 	int idx0 = mesh_triangle->idx0;
 	int idx1 = mesh_triangle->idx1;
@@ -343,8 +400,8 @@ bool intersect_mesh_triangle(__global const MeshTriangle* mesh_triangle, __priva
     return(true);
 }
 
-bool shadow_intersect_mesh_triangle(__global const MeshTriangle* mesh_triangle, __private const Ray* ray, __private float* tmin,
-	__global const double3* mesh_vertices){
+bool shadow_intersect_mesh_triangle(__global const MeshTriangle* mesh_triangle,
+	__private const Ray* ray, __private float* tmin, __global const double3* mesh_vertices){
 	int mesh_idx = mesh_triangle->mesh_idx;
 	int idx0 = mesh_triangle->idx0;
 	int idx1 = mesh_triangle->idx1;
@@ -388,13 +445,15 @@ bool shadow_intersect_mesh_triangle(__global const MeshTriangle* mesh_triangle, 
     return true;
 }
 
-ShadeRec hit_objects(__private const Ray* ray,
-	__private const int num_planes, __global const Plane* planes,
-	__private const int num_triangles, __global const Triangle* triangles,
-	__private const int num_spheres, __global const Sphere* spheres,
-	__private const int num_mesh_triangles, __global const MeshTriangle* mesh_triangles,
-	__private const int num_lights, __global const Light* lights,
-	__global const double3* mesh_vertices, __global const double3* mesh_normals) {
+ShadeRec hit_objects(__private const Ray* ray, __private const SceneInfo* scene_info,
+	__private const RenderComponents* render_components){
+	__global const Plane* planes = render_components->planes;
+	__global const Triangle* triangles = render_components->triangles;
+	__global const Sphere* spheres = render_components->spheres;
+	__global const MeshTriangle* mesh_triangles = render_components->mesh_triangles;
+	__global const double3* mesh_vertices = render_components->mesh_vertices;
+	__global const double3* mesh_normals = render_components->mesh_normals;
+
 	ShadeRec sr;
 	sr.hit_an_object = false;
 	double tmin = kHugeValue;
@@ -403,7 +462,7 @@ ShadeRec hit_objects(__private const Ray* ray,
 	double3 normal;
 	double3 local_hit_point;
 
-	for (int j = 0; j < num_spheres; j++){
+	for (int j = 0; j < scene_info->num_spheres; j++){
 		if (intersect_sphere(&spheres[j], ray, &t, &sr) && (t < tmin)) {
 			sr.hit_an_object = true;
 			tmin = t;
@@ -414,7 +473,7 @@ ShadeRec hit_objects(__private const Ray* ray,
 		}
 	}
 
-	for (int j = 0; j < num_triangles; j++){
+	for (int j = 0; j < scene_info->num_triangles; j++){
 		if (intersect_triangle(&triangles[j], ray, &t, &sr) && (t < tmin)) {
 			sr.hit_an_object = true;
 			tmin = t;
@@ -425,7 +484,7 @@ ShadeRec hit_objects(__private const Ray* ray,
 		}
 	}
 
-	for (int j = 0; j < num_mesh_triangles; j++){
+	for (int j = 0; j < scene_info->num_mesh_triangles; j++){
 		if (intersect_mesh_triangle(&mesh_triangles[j], ray, &t, &sr, mesh_vertices, mesh_normals) && (t < tmin)) {
 			sr.hit_an_object = true;
 			tmin = t;
@@ -436,7 +495,7 @@ ShadeRec hit_objects(__private const Ray* ray,
 		}
 	}
 
-	for (int j = 0; j < num_planes; j++){
+	for (int j = 0; j < scene_info->num_planes; j++){
 		if (intersect_plane(&planes[j], ray, &t, &sr) && (t < tmin)) {
 			sr.hit_an_object = true;
 			tmin = t;
@@ -493,77 +552,108 @@ double3 Light_get_direction(__global const Light* light, __private ShadeRec* sr)
     }
 
 }
-bool directionalLight_in_shadow(__global const Light* light, __private const Ray* ray, __private ShadeRec* sr,
-	__private const int num_planes, __global const Plane* planes,
-	__private const int num_triangles, __global const Triangle* triangles,
-	__private const int num_spheres, __global const Sphere* spheres,
-	__private const int num_mesh_triangles, __global const MeshTriangle* mesh_triangles,
-	__global const double3* mesh_vertices){
+
+bool pointLight_in_shadow(__global const Light* light, __private const Ray* ray,
+	__private ShadeRec* sr, __private const SceneInfo* scene_info,
+	__private const RenderComponents* render_components){
+	__global const Plane* planes = render_components->planes;
+	__global const Triangle* triangles = render_components->triangles;
+	__global const Sphere* spheres = render_components->spheres;
+	__global const MeshTriangle* mesh_triangles = render_components->mesh_triangles;
+	__global const double3* mesh_vertices = render_components->mesh_vertices;
+
+    float t;
+	float d = length(light->pos - ray->o);
+
+	for (int j = 0; j < scene_info->num_planes; j++)
+		if (shadow_intersect_plane(&planes[j], ray, &t) && length(t * ray->d) < d)
+			return (true);
+
+	for (int j = 0; j < scene_info->num_triangles; j++)
+		if (shadow_intersect_triangle(&triangles[j], ray, &t) && length(t * ray->d) < d)
+			return (true);
+
+	for (int j = 0; j < scene_info->num_mesh_triangles; j++)
+		if (shadow_intersect_mesh_triangle(&mesh_triangles[j], ray, &t, mesh_vertices) && length(t * ray->d) < d)
+			return (true);
+
+	for (int j = 0; j < scene_info->num_spheres; j++)
+		if (shadow_intersect_sphere(&spheres[j], ray, &t) &&  length(t * ray->d) < d)
+			return (true);
+
+	return (false);
+}
+
+bool directionalLight_in_shadow(__global const Light* light, __private const Ray* ray,
+	__private ShadeRec* sr, __private const SceneInfo* scene_info,
+	__private const RenderComponents* render_components){
+	__global const Plane* planes = render_components->planes;
+	__global const Triangle* triangles = render_components->triangles;
+	__global const Sphere* spheres = render_components->spheres;
+	__global const MeshTriangle* mesh_triangles = render_components->mesh_triangles;
+	__global const double3* mesh_vertices = render_components->mesh_vertices;
+
 	float t;
 
-	for (int j = 0; j < num_planes; j++)
+	for (int j = 0; j < scene_info->num_planes; j++)
 		if (shadow_intersect_plane(&planes[j], ray, &t))
 			return (true);
 
-	for (int j = 0; j < num_triangles; j++)
+	for (int j = 0; j < scene_info->num_triangles; j++)
 		if (shadow_intersect_triangle(&triangles[j], ray, &t))
 			return (true);
 
-	for (int j = 0; j < num_mesh_triangles; j++)
+	for (int j = 0; j < scene_info->num_mesh_triangles; j++)
 		if (shadow_intersect_mesh_triangle(&mesh_triangles[j], ray, &t, mesh_vertices))
 			return (true);
 
-	for (int j = 0; j < num_spheres; j++)
+	for (int j = 0; j < scene_info->num_spheres; j++)
 		if (shadow_intersect_sphere(&spheres[j], ray, &t))
 			return (true);
 
 	return false;
 }
 
-bool pointLight_in_shadow(__global const Light* light, __private const Ray* ray, __private ShadeRec* sr,
-	__private const int num_planes, __global const Plane* planes,
-	__private const int num_triangles, __global const Triangle* triangles,
-	__private const int num_spheres, __global const Sphere* spheres,
-	__private const int num_mesh_triangles, __global const MeshTriangle* mesh_triangles,
-	__global const double3* mesh_vertices){
-    float t;
-	float d = length(light->pos - ray->o);
-
-	for (int j = 0; j < num_planes; j++)
-		if (shadow_intersect_plane(&planes[j], ray, &t) && t < d)
-			return (true);
-
-	for (int j = 0; j < num_triangles; j++)
-		if (shadow_intersect_triangle(&triangles[j], ray, &t) && t < d)
-			return (true);
-
-	for (int j = 0; j < num_mesh_triangles; j++)
-		if (shadow_intersect_mesh_triangle(&mesh_triangles[j], ray, &t, mesh_vertices))
-			return (true);
-
-	for (int j = 0; j < num_spheres; j++)
-		if (shadow_intersect_sphere(&spheres[j], ray, &t) && t < d)
-			return (true);
-
-	return (false);
-}
-
-bool Light_in_shadow(__global const Light* light, __private const Ray* ray, __private ShadeRec* sr,
-	__private const int num_planes, __global const Plane* planes,
-	__private const int num_triangles, __global const Triangle* triangles,
-	__private const int num_spheres, __global const Sphere* spheres,
-	__private const int num_mesh_triangles, __global const MeshTriangle* mesh_triangles,
-	__global const double3* mesh_vertices){
+bool Light_in_shadow(__global const Light* light, __private const Ray* ray,
+	__private ShadeRec* sr, __private const SceneInfo* scene_info,
+	__private const RenderComponents* render_components){
     if(all(light->dir == 0)){
-        return pointLight_in_shadow(light, ray, sr, num_planes, planes,
-				num_triangles, triangles, num_spheres, spheres,
-				num_mesh_triangles, mesh_triangles, mesh_vertices);
+        return pointLight_in_shadow(light, ray, sr, scene_info, render_components);
     }
     else {
-        return directionalLight_in_shadow(light, ray, sr, num_planes, planes,
-				num_triangles, triangles, num_spheres, spheres,
-				num_mesh_triangles, mesh_triangles, mesh_vertices);
+        return directionalLight_in_shadow(light, ray, sr, scene_info, render_components);
     }
+}
+
+
+double3 ambientOccluder_get_direction(__private const Light* light, __private ShadeRec* sr,
+	double3 u, double3 v, double3 w, __private const SceneInfo* scene_info,
+	__private const RenderComponents* render_components){
+    double3 sp = sample_double3_array(render_components->hemi_samples,
+		render_components->hemi_shuffled_indices, scene_info->num_samples,
+		scene_info->num_sets, &(render_components->hemi_count),
+		&(render_components->hemi_jump), &(render_components->seed));
+    return (sp.x * u + sp.y * v + sp.z * w);
+}
+
+float3 ambientOccluder_L(__private const Light* light, __private ShadeRec* sr,
+	__private const SceneInfo* scene_info, __private const RenderComponents* render_components){
+    double3 w = sr->normal;
+    // jitter up vector in case normal is vertical
+    double3 v = cross(w, (double3)(0.0072, 1.0, 0.0034));
+    v = normalize(v);
+    double3 u = cross(v, w);
+
+    Ray shadow_ray;
+    shadow_ray.o = sr->hit_point;
+    shadow_ray.d = ambientOccluder_get_direction(light, sr, u, v, w, scene_info, render_components);
+
+    if (directionalLight_in_shadow(0, &shadow_ray, sr, scene_info, render_components)){
+		float3 min_amount = (float3)(light->dir.x, light->dir.y, light->dir.z);
+        return (min_amount * light->ls * light->color);
+	}
+    else
+        return (light->ls * light->color);
 }
 
 float3 lambertian_f(BRDF brdf, __private ShadeRec* sr, double3 wo, double3 wi){
@@ -573,21 +663,25 @@ float3 lambertian_rho(BRDF brdf, __private ShadeRec* sr, double3 wo){
 	return brdf.cd * brdf.kd;
 }
 
-float3 shade_matte(__private ShadeRec* sr, __private const int num_planes,
-	__global const Plane* planes, __private const int num_triangles,
-	__global const Triangle* triangles, __private const int num_spheres,
-	__global const Sphere* spheres, __private const int num_mesh_triangles,
-	__global const MeshTriangle* mesh_triangles, __private const int num_lights,
-	__global const Light* lights, __private const Light* ambient_ptr,
-	__global const double3* mesh_vertices){
+float3 shade_matte(__private ShadeRec* sr, __private const SceneInfo* scene_info,
+	__private const RenderComponents* render_components){
+	__global const Light* lights = render_components->lights;
+
     double3 wo = -sr->ray.d;
 
 	BRDF ambient_brdf = sr->material_ptr->ambient_brdf;
 	BRDF diffuse_brdf = sr->material_ptr->diffuse_brdf;
 
-    float3 L = lambertian_rho(ambient_brdf, sr, wo) * ambient_L(ambient_ptr, sr);
+	__private const Light* ambient_light = &(scene_info->ambient_light);
+	float3 L;
+	if(ambient_light->shadows){ //Render with ambient occlusion
+    	L = lambertian_rho(ambient_brdf, sr, wo) * ambientOccluder_L(ambient_light, sr, scene_info, render_components);
+	}
+	else {
+    	L = lambertian_rho(ambient_brdf, sr, wo) * ambient_L(ambient_light, sr);
+	}
 
-    for (int j = 0; j < num_lights; j++){
+    for (int j = 0; j < scene_info->num_lights; j++){
         double3 wi = Light_get_direction(&lights[j], sr);
         float ndotwi = dot(sr->normal, wi);
 
@@ -596,9 +690,8 @@ float3 shade_matte(__private ShadeRec* sr, __private const int num_planes,
 
 			if (lights[j].shadows) {
 				Ray shadow_ray = {sr->hit_point, wi};
-				in_shadow = Light_in_shadow(&lights[j], &shadow_ray, sr, num_planes, planes,
-						num_triangles, triangles, num_spheres, spheres, num_mesh_triangles,
-						mesh_triangles, mesh_vertices);
+				in_shadow = Light_in_shadow(&lights[j], &shadow_ray, sr,
+					scene_info, render_components);
 			}
 
 			if (!in_shadow)
@@ -628,22 +721,26 @@ float3 glossy_specular_rho(BRDF brdf, __private ShadeRec* sr, double3 wo){
     return (float3)(0,0,0);
 }
 
-float3 shade_phong(__private ShadeRec* sr, __private const int num_planes,
-	__global const Plane* planes, __private const int num_triangles,
-	__global const Triangle* triangles, __private const int num_spheres,
-	__global const Sphere* spheres, __private const int num_mesh_triangles,
-	__global const MeshTriangle* mesh_triangles, __private const int num_lights,
-	__global const Light* lights, __private const Light* ambient_ptr,
-	__global const double3* mesh_vertices){
+float3 shade_phong(__private ShadeRec* sr, __private const SceneInfo* scene_info,
+	__private const RenderComponents* render_components){
+	__global const Light* lights = render_components->lights;
+
     double3 wo = -sr->ray.d;
 
 	BRDF ambient_brdf = sr->material_ptr->ambient_brdf;
 	BRDF diffuse_brdf = sr->material_ptr->diffuse_brdf;
 	BRDF specular_brdf = sr->material_ptr->specular_brdf;
 
-    float3 L = lambertian_rho(ambient_brdf, sr, wo) * ambient_L(ambient_ptr, sr);
+	__private const Light* ambient_light = &(scene_info->ambient_light);
+	float3 L;
+	if(ambient_light->shadows){ //Render with ambient occlusion
+		L = lambertian_rho(ambient_brdf, sr, wo) * ambientOccluder_L(ambient_light, sr, scene_info, render_components);
+	}
+	else {
+		L = lambertian_rho(ambient_brdf, sr, wo) * ambient_L(ambient_light, sr);
+	}
 
-    for (int j = 0; j < num_lights; j++) {
+    for (int j = 0; j < scene_info->num_lights; j++) {
         double3 wi = Light_get_direction(&lights[j], sr);
         float ndotwi = dot(sr->normal, wi);
 
@@ -652,9 +749,7 @@ float3 shade_phong(__private ShadeRec* sr, __private const int num_planes,
 
 			if (lights[j].shadows) {
 				Ray shadow_ray = {sr->hit_point, wi};
-				in_shadow = Light_in_shadow(&lights[j], &shadow_ray, sr, num_planes, planes,
-						num_triangles, triangles, num_spheres, spheres, num_mesh_triangles,
-						mesh_triangles, mesh_vertices);
+				in_shadow = Light_in_shadow(&lights[j], &shadow_ray, sr, scene_info, render_components);
 			}
 
 			if (!in_shadow)
@@ -666,62 +761,26 @@ float3 shade_phong(__private ShadeRec* sr, __private const int num_planes,
     return (L);
 }
 
-float3 shade(__private ShadeRec* sr, __private const int num_planes,
-	__global const Plane* planes, __private const int num_triangles,
-	__global const Triangle* triangles, __private const int num_spheres,
-	__global const Sphere* spheres, __private const int num_mesh_triangles,
-	__global const MeshTriangle* mesh_triangles, __private const int num_lights,
-	__global const Light* lights, __private const Light* ambient_ptr,
-	__global const double3* mesh_vertices){
+float3 shade(__private ShadeRec* sr, __private const SceneInfo* scene_info,
+	__private const RenderComponents* render_components){
     if(sr->material_ptr->specular_brdf.ks == 0 && sr->material_ptr->specular_brdf.e == 0){
-        return shade_matte(sr, num_planes, planes, num_triangles, triangles,
-			num_spheres, spheres, num_mesh_triangles, mesh_triangles, num_lights,
-			lights, ambient_ptr, mesh_vertices);
+        return shade_matte(sr, scene_info, render_components);
     }
     else {
-        return shade_phong(sr, num_planes, planes, num_triangles, triangles,
-			num_spheres, spheres, num_mesh_triangles, mesh_triangles, num_lights,
-			lights, ambient_ptr, mesh_vertices);
+        return shade_phong(sr, scene_info, render_components);
     }
 }
 
-float3 trace_ray(__private const Ray* ray, __private float3 bg_color,
-	__private const int num_planes, __global const Plane* planes,
-	__private const int num_triangles, __global const Triangle* triangles,
-	__private const int num_spheres, __global const Sphere* spheres,
-	__private const int num_mesh_triangles, __global const MeshTriangle* mesh_triangles,
-	__private const int num_lights, __global const Light* lights, __private const Light* ambient_ptr,
-	__global const double3* mesh_vertices, __global const double3* mesh_normals) {
-	ShadeRec sr = hit_objects(ray, num_planes, planes, num_triangles,
-		triangles, num_spheres, spheres, num_mesh_triangles, mesh_triangles,
-		num_lights, lights, mesh_vertices, mesh_normals);
+float3 trace_ray(__private const Ray* ray, __private const SceneInfo* scene_info,
+	__private const RenderComponents* render_components) {
+	ShadeRec sr = hit_objects(ray, scene_info, render_components);
 
     if (sr.hit_an_object) {
 		sr.ray = *ray;
-        return shade(&sr, num_planes, planes, num_triangles, triangles,
-			num_spheres, spheres, num_mesh_triangles, mesh_triangles, num_lights,
-			lights, ambient_ptr, mesh_vertices);
+        return shade(&sr, scene_info, render_components);
     }
     else
-        return bg_color;
-}
-
-double2 sample_unit_square(__global double2* samples, __global int* shuffled_indices,
-	 __private int num_samples, __private int num_sets, __private int* count_ptr,
-	 __private int* jump_ptr, __private ulong* seed_ptr)
-{
-	int random_num = random(seed_ptr);
-	int count = (*count_ptr);
-	int jump = (*jump_ptr);
-
-
-	if (count % num_samples == 0){      // start of a new pixel
-		jump = (random_num % num_sets) * num_samples;
-		(*jump_ptr) = jump;
-	}
-
-	(*count_ptr) = count+1;
-	return (samples[jump + shuffled_indices[jump + (count % num_samples)]]);
+        return scene_info->background_color;
 }
 
 double3 ray_direction(__private double2 pp, __private double3 u,
@@ -751,7 +810,8 @@ float3 clamp_to_color(__private const float3 raw_color) {
 
 __kernel void pinhole_tracer(__global float3 *dst,
 	__private SceneInfo scene_info, __global double2* samples,
-	__global int* shuffled_indices, __global Plane* planes,
+	__global int* shuffled_indices, __global double3* hemi_samples,
+	__global int* hemi_shuffled_indices,__global Plane* planes,
 	__global Triangle* triangles, __global Sphere* spheres,
 	__global MeshTriangle* mesh_triangles, __global Light* lights,
 	__global double3* mesh_vertices, __global double3* mesh_normals)
@@ -763,6 +823,7 @@ __kernel void pinhole_tracer(__global float3 *dst,
 	int r = id / scene_info.hres;
 	int jump = 0;
 	int count = 0;
+	ulong seed = c;
 
 	Ray ray;
 	double2 sp; // sample point in [0, 1] x [0, 1]
@@ -771,18 +832,28 @@ __kernel void pinhole_tracer(__global float3 *dst,
 
 	float s = scene_info.s / scene_info.zoom;
 	ray.o = scene_info.eye;
-	ulong seed = 7;
+
+	RenderComponents render_components;
+	render_components.planes = planes;
+	render_components.triangles = triangles;
+	render_components.spheres = spheres;
+	render_components.mesh_triangles = mesh_triangles;
+	render_components.lights = lights;
+	render_components.mesh_vertices = mesh_vertices;
+	render_components.mesh_normals = mesh_normals;
+	render_components.hemi_samples = hemi_samples;
+	render_components.hemi_shuffled_indices = hemi_shuffled_indices;
+	render_components.seed = (3 * r + c) % 5;
+	render_components.hemi_count = 0;
+	render_components.hemi_jump = 0;
 
 	for (int j = 0; j < scene_info.num_samples; j++) {
-		sp = sample_unit_square(samples, shuffled_indices, scene_info.num_samples, scene_info.num_sets, &count, &jump, &seed);
+		sp = sample_double2_array(samples, shuffled_indices, scene_info.num_samples,
+			scene_info.num_sets, &count, &jump, &seed);
 		pp.s0 = s * (c - 0.5 * scene_info.hres + sp.s0);
 		pp.s1 = s * (r - 0.5 * scene_info.vres + sp.s1);
 		ray.d = ray_direction(pp, scene_info.u, scene_info.v, scene_info.w, scene_info.d);
-		pixel_color += trace_ray(&ray, scene_info.background_color,
-			scene_info.num_planes, planes, scene_info.num_triangles, triangles,
-			scene_info.num_spheres, spheres, scene_info.num_mesh_triangles, mesh_triangles,
-			scene_info.num_lights, lights, &scene_info.ambient_light,
-			mesh_vertices, mesh_normals);
+		pixel_color += trace_ray(&ray, &scene_info, &render_components);
 	}
 	pixel_color *= scene_info.exposure_time / scene_info.num_samples ; // average the colors
 
