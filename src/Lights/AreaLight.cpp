@@ -39,15 +39,7 @@ AreaLight* AreaLight::clone() const {
 // ---------------------------------------------------------------- destructor
 
 AreaLight::~AreaLight() {
-	if (object_ptr) {
-		delete object_ptr;
-		object_ptr = NULL;
-	}
-
-	if (material_ptr) {
-		delete material_ptr;
-		material_ptr = NULL;
-	}
+	// Let object deconstruct itself and material
 }
 // --------------------------------------------------------------- assignment operator
 

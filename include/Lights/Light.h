@@ -21,15 +21,15 @@ class Light {
 		Light& operator= (const Light& rhs);	// assignment operator
 		virtual Light* clone() const = 0;		// clone
 
-		bool has_shadows();
+		bool casts_shadows();
 		void set_shadows(bool enabled);
 
-		virtual CLLight get_cl_light();
 		virtual Vector3D get_direction(ShadeRec& sr) = 0;
 		virtual RGBColor L(ShadeRec& sr) = 0;;
 		virtual float G(const ShadeRec& sr) const;
 		virtual float pdf(const ShadeRec& sr) const;
 		virtual bool in_shadow(const Ray& ray, const ShadeRec& sr) const = 0;
+		virtual CLLight get_cl_light();
 
 	protected:
 		bool shadows;
@@ -39,7 +39,7 @@ inline void Light::set_shadows(bool enabled){
 	shadows = enabled;
 }
 
-inline bool Light::has_shadows(){
+inline bool Light::casts_shadows(){
 	return shadows;
 }
 

@@ -3,9 +3,9 @@
 //	This C++ code is licensed under the GNU General Public License Version 2.
 
 // This file contains the definition of the class MeshTriangle
-using namespace std;
-
 #include "MeshTriangle.h"
+
+using namespace std;
 
 MeshTriangle::MeshTriangle()
 : GeometricObject(), mesh_ptr(NULL)

@@ -4,8 +4,6 @@
 
 
 // This file contains the definition of the class ThinLens
-using namespace std;
-
 #include "SDL.h"
 #include <time.h>
 #include <fstream>
@@ -14,6 +12,8 @@ using namespace std;
 #include "CLUtil.h"
 
 #include "ThinLens.h"
+
+using namespace std;
 
 ThinLens::ThinLens()
 : Camera(), lens_radius(0.0), zoom(1.0), sampler_ptr(NULL) {}

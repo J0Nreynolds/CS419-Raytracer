@@ -4,12 +4,12 @@
 
 
 // This file contains the definition of the class World
-using namespace std;
-
 #include "SDL.h"
 #include <time.h>
 #include <iostream>
 #include <fstream>
+
+using namespace std;
 
 #define __CL_ENABLE_EXCEPTIONS
 
@@ -50,6 +50,11 @@ using namespace std;
 #include "Matte.h"
 #include "Phong.h"
 
+#include "Emissive.h"
+#include "AreaLight.h"
+#include "Rectangle.h"
+#include "AreaLighting.h"
+
 #include "MultipleObjects.h"
 #include "RayCast.h"
 
@@ -80,12 +85,15 @@ World::~World(){
 	for(Light* light: lights){
 		delete light;
 	}
+	for(Mesh* mesh: meshes){
+		delete mesh;
+	}
 }
 
 void World::build(){
 	background_color = black;
 	renderer = new SDLRenderer;
-	int num_samples = 256;
+	int num_samples = 100;
 
 	vp.set_gamma(1.0);
 	vp.set_show_out_of_gamut(false);
@@ -94,40 +102,107 @@ void World::build(){
 	vp.set_pixel_size(1);
 	vp.set_samples(num_samples);
 
-	tracer_ptr = new RayCast(this);
+	tracer_ptr = new AreaLighting(this);
 
-	MultiJittered* sampler_ptr = new MultiJittered(num_samples);
+	MultiJittered* occ_sampler_ptr = new MultiJittered(num_samples);
+	MultiJittered* area_sampler_ptr = new MultiJittered(num_samples);
 
 	AmbientOccluder* occluder_ptr = new AmbientOccluder;
 	occluder_ptr->set_color(white);
 	occluder_ptr->set_min_amount(0.0);
-	occluder_ptr->set_sampler(sampler_ptr);
+	occluder_ptr->set_sampler(occ_sampler_ptr);
 	set_ambient_light(occluder_ptr);
 
-	Pinhole* camera_ptr = new Pinhole;
-	camera_ptr->set_eye(25, 20, 45);
-	camera_ptr->set_lookat(0, 1, 0);
-	camera_ptr->set_view_distance(5000);
-	camera_ptr->compute_uvw();
-	set_camera(camera_ptr);
+	Pinhole* pinhole_ptr = new Pinhole();
+	pinhole_ptr->set_eye(50, 50, -75);
+	pinhole_ptr->set_lookat(0, 0, 0);
+	pinhole_ptr->set_view_distance(4500); // set d
+	pinhole_ptr->set_roll_angle(0); //rotate camera
+	pinhole_ptr->compute_uvw();
+	set_camera(pinhole_ptr);
+
+	Emissive* emissive_ptr = new Emissive;
+	emissive_ptr->scale_radiance(20.0);
+	emissive_ptr->set_ce(red);
+
+	Rectangle* rectangle_ptr = new Rectangle(Point3D(-4, 0, -4), Vector3D(2, 0, 0), Vector3D(0, 2, 0));
+	rectangle_ptr->set_material(emissive_ptr);
+	rectangle_ptr->set_shadows(false);
+	rectangle_ptr->set_sampler(area_sampler_ptr);
+	add_object(rectangle_ptr);
+
+	AreaLight* area_light_ptr = new AreaLight;
+	area_light_ptr->set_object(rectangle_ptr);
+	area_light_ptr->set_shadows(true);
+	add_light(area_light_ptr);
 
 	Matte* matte_ptr1 = new Matte;
-	matte_ptr1->set_ka(0.75);
-	matte_ptr1->set_kd(0);
-	matte_ptr1->set_cd(RGBColor(1, 1, 0)); // yellow
+	matte_ptr1->set_ka(0.15);
+	matte_ptr1->set_kd(0.85);
+	matte_ptr1->set_cd(RGBColor(0.4, 0, 1)); // blue
 
 	Sphere* sphere_ptr1 = new Sphere (Point3D(0, 1, 0), 1);
 	sphere_ptr1->set_material(matte_ptr1);
 	add_object(sphere_ptr1);
 
+	Sphere* sphere_ptr2 = new Sphere (Point3D(-2, 1, 2), 1);
+	sphere_ptr2->set_material(matte_ptr1);
+	add_object(sphere_ptr2);
+
+	Sphere* sphere_ptr3 = new Sphere (Point3D(-4, 1, 4), 1);
+	sphere_ptr3->set_material(matte_ptr1);
+	add_object(sphere_ptr3);
+
 	Matte* matte_ptr2 = new Matte;
-	matte_ptr2->set_ka(0.75);
-	matte_ptr2->set_kd(0);
+	matte_ptr2->set_ka(0.15);
+	matte_ptr2->set_kd(0.85);
 	matte_ptr2->set_cd(1); // white
 
 	Plane* plane_ptr1 = new Plane(Point3D(0), Normal(0, 1, 0));
 	plane_ptr1->set_material(matte_ptr2);
 	add_object(plane_ptr1);
+
+	/**
+	 * BASIC SPHERE WITH AMBIENT OCCLUSION
+	 */
+	// tracer_ptr = new RayCast(this);
+	//
+	// MultiJittered* sampler_ptr = new MultiJittered(num_samples);
+	//
+	// AmbientOccluder* occluder_ptr = new AmbientOccluder;
+	// occluder_ptr->set_color(white);
+	// occluder_ptr->set_min_amount(0.0);
+	// occluder_ptr->set_sampler(sampler_ptr);
+	// set_ambient_light(occluder_ptr);
+	//
+	// Pinhole* camera_ptr = new Pinhole;
+	// camera_ptr->set_eye(25, 20, 45);
+	// camera_ptr->set_lookat(0, 1, 0);
+	// camera_ptr->set_view_distance(5000);
+	// camera_ptr->compute_uvw();
+	// set_camera(camera_ptr);
+	//
+	// Matte* matte_ptr1 = new Matte;
+	// matte_ptr1->set_ka(0.75);
+	// matte_ptr1->set_kd(0);
+	// matte_ptr1->set_cd(RGBColor(1, 1, 0)); // yellow
+	//
+	// Sphere* sphere_ptr1 = new Sphere (Point3D(0, 1, 0), 1);
+	// sphere_ptr1->set_material(matte_ptr1);
+	// add_object(sphere_ptr1);
+	//
+	// Matte* matte_ptr2 = new Matte;
+	// matte_ptr2->set_ka(0.75);
+	// matte_ptr2->set_kd(0);
+	// matte_ptr2->set_cd(1); // white
+	//
+	// Plane* plane_ptr1 = new Plane(Point3D(0), Normal(0, 1, 0));
+	// plane_ptr1->set_material(matte_ptr2);
+	// add_object(plane_ptr1);
+
+	/**
+	 * COW MESH WITH AMBIENT OCCLUSION
+	 */
 	// renderer = new SDLRenderer();
 	// int num_samples = 256;
 	//

@@ -4,8 +4,6 @@
 
 
 // This file contains the definition of the class Pinhole
-using namespace std;
-
 #include "SDL.h"
 #include <time.h>
 #include <fstream>
@@ -14,6 +12,8 @@ using namespace std;
 #include "CLUtil.h"
 
 #include "Orthographic.h"
+
+using namespace std;
 
 Orthographic::Orthographic()
 : Camera() {}

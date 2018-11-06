@@ -126,7 +126,6 @@ Rectangle& Rectangle::operator= (const Rectangle& rhs) {
 // ---------------------------------------------------------------- destructor
 
 Rectangle::~Rectangle() {
-
 	if (sampler_ptr) {
 		delete sampler_ptr;
 		sampler_ptr = NULL;
@@ -147,7 +146,6 @@ BBox Rectangle::get_bounding_box(void) {
 //------------------------------------------------------------------ hit
 
 bool Rectangle::hit(const Ray& ray, double& tmin, ShadeRec& sr) const {
-
 	double t = (p0 - ray.o) * normal / (ray.d * normal);
 
 	if (t <= kEpsilon)
@@ -176,7 +174,28 @@ bool Rectangle::hit(const Ray& ray, double& tmin, ShadeRec& sr) const {
 //------------------------------------------------------------------ hit
 
 bool Rectangle::shadow_hit(const Ray& ray, float& tmin) const {
-	return (false);
+	if(!has_shadows()){
+		return false;
+	}
+	double t = (p0 - ray.o) * normal / (ray.d * normal);
+
+	if (t <= kEpsilon)
+		return (false);
+
+	Point3D p = ray.o + t * ray.d;
+	Vector3D d = p - p0;
+
+	double ddota = d * a;
+
+	if (ddota < 0.0 || ddota > a_len_squared)
+		return (false);
+
+	double ddotb = d * b;
+
+	if (ddotb < 0.0 || ddotb > b_len_squared)
+		return (false);
+
+	return (true);
 }
 
 

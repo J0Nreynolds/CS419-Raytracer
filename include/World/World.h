@@ -4,7 +4,6 @@
 // 	Copyright (C) Jonathan Reynolds 2018
 //	This C++ code is for non-commercial purposes only.
 //	This C++ code is licensed under the GNU General Public License Version 2.
-using namespace std;
 #include <vector>
 
 #include "RGBColor.h"
@@ -21,9 +20,9 @@ class Camera; //fwd declaration
 class World {
 	public:
 
-		vector <GeometricObject*> objects;
-		vector <Light*> lights;
-		vector <Mesh*> meshes;
+		std::vector <GeometricObject*> objects;
+		std::vector <Light*> lights;
+		std::vector <Mesh*> meshes;
 		ViewPlane       vp;
 		RGBColor        background_color;
 		Ambient*        ambient_ptr;

@@ -8,12 +8,6 @@ using namespace std;
 #include <vector>
 #include <iostream>
 
-#ifdef __APPLE__
-#include <cl.hpp>
-#else
-#include <CL/cl.hpp>
-#endif
-
 #include "Sphere.h"
 #include "Triangle.h"
 #include "MeshTriangle.h"

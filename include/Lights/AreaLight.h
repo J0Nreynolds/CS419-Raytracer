@@ -25,16 +25,14 @@ class AreaLight: public Light {
 		virtual ~AreaLight();             // deconstructor
         virtual AreaLight* clone() const; // clone
 
+        void set_object(GeometricObject* object);
+        void set_material(Material* mat);
+
         virtual Vector3D get_direction(ShadeRec& sr);
-
-        virtual bool in_shadow(const Ray& ray, const ShadeRec& sr) const;
-
         virtual RGBColor L(ShadeRec& sr);
-
         virtual float G(const ShadeRec& sr) const;
-
         virtual float pdf(const ShadeRec& sr) const;
-
+        virtual bool in_shadow(const Ray& ray, const ShadeRec& sr) const;
         virtual CLLight get_cl_light();
 
      private:
@@ -45,5 +43,13 @@ class AreaLight: public Light {
         Normal light_normal;       // normal at sample point
         Vector3D wi;     // unit vector from hit point to sample point
 };
+
+inline void AreaLight::set_object(GeometricObject* object){
+    object_ptr = object;
+    material_ptr = object->get_material();
+}
+inline void AreaLight::set_material(Material* mat){
+    material_ptr = mat;
+}
 
 #endif

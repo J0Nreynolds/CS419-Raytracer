@@ -4,8 +4,6 @@
 
 
 // This file contains the definition of the class Pinhole
-using namespace std;
-
 #include "SDL.h"
 #include <time.h>
 #include <fstream>
@@ -16,6 +14,8 @@ using namespace std;
 #include "AmbientOccluder.h"
 
 #include "Pinhole.h"
+
+using namespace std;
 
 Pinhole::Pinhole()
 : Camera(), zoom(1.0) {}

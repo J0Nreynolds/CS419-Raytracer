@@ -13,14 +13,14 @@
 // ---------------------------------------------------------------------- default constructor
 
 GeometricObject::GeometricObject()
-	: 	color(black), material_ptr(NULL)
+	: shadows(true), color(black), material_ptr(NULL)
 {}
 
 
 // ---------------------------------------------------------------------- copy constructor
 
 GeometricObject::GeometricObject (const GeometricObject& object)
-	: 	color(object.color), material_ptr(object.material_ptr) {
+	: shadows(object.shadows), color(object.color), material_ptr(object.material_ptr) {
 }
 
 
@@ -29,7 +29,8 @@ GeometricObject::GeometricObject (const GeometricObject& object)
 GeometricObject& GeometricObject::operator= (const GeometricObject& rhs) {
 	if (this == &rhs)
 		return (*this);
-
+		
+	shadows = rhs.shadows;
 	color = rhs.color;
 	material_ptr = rhs.material_ptr;
 

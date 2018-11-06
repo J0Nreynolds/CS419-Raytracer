@@ -67,16 +67,16 @@ Matte* Matte::clone() const{
 RGBColor Matte::shade(ShadeRec& sr) {
     Vector3D wo = -sr.ray.d;
     RGBColor L = ambient_brdf->rho(sr, wo) * sr.w.ambient_ptr->L(sr);
-    int numLights = sr.w.lights.size();
+    int num_lights = sr.w.lights.size();
 
-    for (int j = 0; j < numLights; j++){
+    for (int j = 0; j < num_lights; j++){
         Vector3D wi = sr.w.lights[j]->get_direction(sr);
         float ndotwi = sr.normal * wi;
 
         if (ndotwi > 0.0){
             bool in_shadow = false;
 
-            if (sr.w.lights[j]->has_shadows()) {
+            if (sr.w.lights[j]->casts_shadows()) {
                 Ray shadow_ray(sr.hit_point, wi);
                 in_shadow = sr.w.lights[j]->in_shadow(shadow_ray, sr);
             }
@@ -92,16 +92,16 @@ RGBColor Matte::shade(ShadeRec& sr) {
 RGBColor Matte::area_light_shade(ShadeRec& sr) {
     Vector3D wo = -sr.ray.d;
     RGBColor L = ambient_brdf->rho(sr, wo) * sr.w.ambient_ptr->L(sr);
-    int numLights = sr.w.lights.size();
+    int num_lights = sr.w.lights.size();
 
-    for (int j = 0; j < numLights; j++){
+    for (int j = 0; j < num_lights; j++) {
         Vector3D wi = sr.w.lights[j]->get_direction(sr);
         float ndotwi = sr.normal * wi;
 
-        if (ndotwi > 0.0){
+        if (ndotwi > 0.0) {
             bool in_shadow = false;
 
-            if (sr.w.lights[j]->has_shadows()) {
+            if (sr.w.lights[j]->casts_shadows()) {
                 Ray shadow_ray(sr.hit_point, wi);
                 in_shadow = sr.w.lights[j]->in_shadow(shadow_ray, sr);
             }
