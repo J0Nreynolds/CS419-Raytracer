@@ -843,7 +843,7 @@ __kernel void pinhole_tracer(__global float3 *dst,
 	render_components.mesh_normals = mesh_normals;
 	render_components.hemi_samples = hemi_samples;
 	render_components.hemi_shuffled_indices = hemi_shuffled_indices;
-	render_components.seed = (3 * r + c) % 5;
+	render_components.seed = id % 337; // choose something that is likely to be unique locally ?
 	render_components.hemi_count = 0;
 	render_components.hemi_jump = 0;
 
