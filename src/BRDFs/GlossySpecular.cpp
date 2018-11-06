@@ -22,6 +22,25 @@ GlossySpecular::GlossySpecular(float _ks, float _exp)
 
 GlossySpecular::~GlossySpecular(){}
 
+GlossySpecular::GlossySpecular(const GlossySpecular& gs)
+: BRDF(gs), ks(gs.ks), exp(gs.exp)
+{}
+
+GlossySpecular& GlossySpecular::operator=(const GlossySpecular& rhs){
+	if (this == &rhs)
+		return (*this);
+
+    BRDF::operator=(rhs);
+    ks = rhs.ks;
+    exp = rhs.exp;
+
+	return (*this);
+}
+
+GlossySpecular* GlossySpecular::clone() const{
+    return (new GlossySpecular(*this));
+}
+
 RGBColor GlossySpecular::f(const ShadeRec& sr, const Vector3D& wo, const Vector3D&
                     wi) const {
     RGBColor L;

@@ -13,7 +13,7 @@ class Hammersley: public Sampler {
 		Hammersley(int num_samples, int num_sets);
 		Hammersley(const Hammersley& u);
 		Hammersley& operator=(const Hammersley& rhs);
-		Hammersley* clone() const;
+		virtual Hammersley* clone() const;
 		virtual ~Hammersley();
 		void generate_samples();
 

@@ -7,17 +7,17 @@
 #include "AmbientOccluder.h"
 
 AmbientOccluder::AmbientOccluder()
-: Ambient(), min_amount(0.5), sampler_ptr(NULL)
+: Ambient(), sampler_ptr(NULL), min_amount(0.5)
 {
 }
 
 AmbientOccluder::AmbientOccluder(RGBColor c)
-: Ambient(c), min_amount(0.5), sampler_ptr(NULL)
+: Ambient(c), sampler_ptr(NULL), min_amount(0.5)
 {
 }
 
 AmbientOccluder::AmbientOccluder(RGBColor c, float amount)
-: Ambient(c), min_amount(amount), sampler_ptr(NULL)
+: Ambient(c), sampler_ptr(NULL), min_amount(amount)
 {
 }
 
@@ -29,18 +29,45 @@ AmbientOccluder::~AmbientOccluder()
     }
 }
 
-CLLight AmbientOccluder::get_cl_light()
+AmbientOccluder::AmbientOccluder(const AmbientOccluder& ao)
+: Ambient(ao), u(ao.u), v(ao.v), w(ao.w), min_amount(ao.min_amount)
 {
-	CLLight ret = Light::get_cl_light();
-	ret.dir = (cl_double3){min_amount.r, min_amount.g, min_amount.b};
-	ret.pos = (cl_double3){0, 0, 0};
-    ret.color = (cl_float3){color.r, color.g, color.b};
-    ret.ls = (cl_float)ls;
-    ret.shadows = (cl_char)true;
-	return ret;
+    if(sampler_ptr){
+    	delete sampler_ptr;
+    	sampler_ptr = NULL;
+    }
+    if(ao.sampler_ptr){
+    	sampler_ptr = ao.sampler_ptr->clone();
+    }
 }
 
-RGBColor AmbientOccluder::L(ShadeRec sr)
+AmbientOccluder& AmbientOccluder::operator=(const AmbientOccluder& rhs){
+	if (this == &rhs)
+		return (*this);
+
+	Light::operator=(rhs);
+
+    u = rhs.u;
+    v = rhs.v;
+    w = rhs.w;
+    min_amount = rhs.min_amount;
+
+    if(sampler_ptr){
+    	delete sampler_ptr;
+    	sampler_ptr = NULL;
+    }
+    if(rhs.sampler_ptr){
+    	sampler_ptr = rhs.sampler_ptr->clone();
+    }
+
+	return (*this);
+}
+
+AmbientOccluder* AmbientOccluder::clone() const{
+	return (new AmbientOccluder(*this));
+}
+
+RGBColor AmbientOccluder::L(ShadeRec& sr)
 {
     w = sr.normal;
     // jitter up vector in case normal is vertical
@@ -58,7 +85,7 @@ RGBColor AmbientOccluder::L(ShadeRec sr)
         return (ls * color);
 }
 
-Vector3D AmbientOccluder::get_direction(ShadeRec sr)
+Vector3D AmbientOccluder::get_direction(ShadeRec& sr)
 {
     Point3D sp = sampler_ptr->sample_hemisphere();
     return (sp.x * u + sp.y * v + sp.z * w);
@@ -73,4 +100,15 @@ bool AmbientOccluder::in_shadow(const Ray& ray, const ShadeRec& sr) const {
         }
     }
     return false;
+}
+
+CLLight AmbientOccluder::get_cl_light()
+{
+	CLLight ret = Light::get_cl_light();
+	ret.dir = (cl_double3){min_amount.r, min_amount.g, min_amount.b};
+	ret.pos = (cl_double3){0, 0, 0};
+    ret.color = (cl_float3){color.r, color.g, color.b};
+    ret.ls = (cl_float)ls;
+    ret.shadows = (cl_char)true;
+	return ret;
 }

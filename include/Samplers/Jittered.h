@@ -13,7 +13,7 @@ class Jittered: public Sampler {
 		Jittered(int num_samples, int num_sets);
 		Jittered(const Jittered& u);
 		Jittered& operator=(const Jittered& rhs);
-		Jittered* clone() const;
+		virtual Jittered* clone() const;
 		virtual ~Jittered();
 		void generate_samples();
 

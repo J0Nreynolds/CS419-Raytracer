@@ -12,6 +12,10 @@ class Matte: public Material {
     public:
 
         Matte();
+        virtual ~Matte();
+		Matte(const Matte& e);
+        Matte& operator=(const Matte& rhs);
+		virtual Matte* clone() const;
 
         void set_ka(const float k);
 
@@ -20,6 +24,8 @@ class Matte: public Material {
         void set_cd(const RGBColor& c);
 
         virtual RGBColor shade(ShadeRec& sr);
+
+        virtual RGBColor area_light_shade(ShadeRec& sr);
 
 		virtual CLMaterial get_cl_material();
 

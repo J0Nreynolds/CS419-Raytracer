@@ -27,6 +27,7 @@ class Sampler {
 			Sampler(const Sampler& s);
 			Sampler& operator= (const Sampler& rhs);
 			virtual ~Sampler();
+			virtual Sampler* clone() const = 0;
 			int get_num_samples();
 			void set_num_sets(const int n_sets);
 

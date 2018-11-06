@@ -2,6 +2,7 @@
 #define __GEOMETRIC_OBJECT__
 
 // 	Copyright (C) Kevin Suffern 2000-2007.
+// 	Modified work (C) Jonathan Reynolds 2018.
 //	This C++ code is for non-commercial purposes only.
 //	This C++ code is licensed under the GNU General Public License Version 2.
 //	See the file COPYING.txt for the full license.
@@ -29,17 +30,13 @@ class GeometricObject {
 
 		GeometricObject(const GeometricObject& object);
 
-		virtual GeometricObject*
-		clone() const = 0;
+		virtual GeometricObject* clone() const = 0;
 
-		virtual
-		~GeometricObject();
+		virtual ~GeometricObject();
 
-		virtual bool
-		hit(const Ray& ray, double& t, ShadeRec& s) const = 0;
+		virtual bool hit(const Ray& ray, double& t, ShadeRec& s) const = 0;
 
-		virtual bool
-		shadow_hit(const Ray& ray, float& tmin) const = 0;
+		virtual bool shadow_hit(const Ray& ray, float& tmin) const = 0;
 
 		// Allows us to ask an object for its bounding box
 		virtual BBox get_bounding_box();
@@ -47,14 +44,11 @@ class GeometricObject {
 
 		// The following three functions are only required for Chapter 3
 
-		void
-		set_color(const RGBColor& c);
+		void set_color(const RGBColor& c);
 
-		void
-		set_color(const float r, const float g, const float b);
+		void set_color(const float r, const float g, const float b);
 
-		RGBColor
-		get_color();
+		RGBColor get_color();
 
 		// The following two functions are only required for Chapter 14 and on
 
@@ -62,26 +56,22 @@ class GeometricObject {
 
 		Material* get_material();
 
-		virtual void 										// required for compound objects
-		add_object(GeometricObject* object_ptr);
+		virtual void add_object(GeometricObject* object_ptr);	// required for compound objects
+
 
 
 		// The following two functions are only required for objects that are light sources, eg disks, rectangles, and spheres
 
-		virtual Point3D
-		sample();
+		virtual Point3D sample();
 
-		virtual float
-		pdf(ShadeRec& sr);
+		virtual float pdf(const ShadeRec& sr);
 
 
 		// The following two functions allow us to simplify the code for smooth shaded triangle meshes
 
-		virtual Normal
-		get_normal() const;
+		virtual Normal get_normal() const;
 
-		virtual Normal
-		get_normal(const Point3D& p);
+		virtual Normal get_normal(const Point3D& p);
 
 
 	protected:
@@ -94,15 +84,13 @@ class GeometricObject {
 
 // --------------------------------------------------------------------  set_color
 
-inline void
-GeometricObject::set_color(const RGBColor& c) {
+inline void GeometricObject::set_color(const RGBColor& c) {
 	color = c;
 }
 
 // --------------------------------------------------------------------  set_color
 
-inline void
-GeometricObject::set_color(const float r, const float g, const float b) {
+inline void GeometricObject::set_color(const float r, const float g, const float b) {
 	color.r = r;
 	color.b = b;
 	color.g = g;
@@ -110,8 +98,7 @@ GeometricObject::set_color(const float r, const float g, const float b) {
 
 // --------------------------------------------------------------------  get_color
 
-inline RGBColor
-GeometricObject::get_color() {
+inline RGBColor GeometricObject::get_color() {
 	return (color);
 }
 

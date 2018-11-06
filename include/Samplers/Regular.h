@@ -12,7 +12,7 @@ class Regular: public Sampler {
 		Regular(int num_samples);
 		Regular(const Regular& u);
 		Regular& operator=(const Regular& rhs);
-		Regular* clone() const;
+		virtual Regular* clone() const;
 		virtual ~Regular();
 		void generate_samples();
 

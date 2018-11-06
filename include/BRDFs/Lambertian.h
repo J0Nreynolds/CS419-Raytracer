@@ -13,6 +13,9 @@ class Lambertian: public BRDF {
         Lambertian(RGBColor cd);
         Lambertian(float kd, RGBColor cd);
         virtual ~Lambertian();
+		Lambertian(const Lambertian& l);
+        Lambertian& operator=(const Lambertian& rhs);
+		virtual Lambertian* clone() const;
 
         void set_kd(float kd_new);
         float get_kd();

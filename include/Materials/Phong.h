@@ -13,6 +13,10 @@ class Phong: public Material {
     public:
 
         Phong();
+        virtual ~Phong();
+		Phong(const Phong& e);
+        Phong& operator=(const Phong& rhs);
+		virtual Phong* clone() const;
 
         void set_ka(const float k);
 

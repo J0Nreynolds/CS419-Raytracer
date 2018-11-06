@@ -10,8 +10,25 @@ Light::Light()
 : shadows(true)
 {}
 
-Light::~Light(){}
+Light::~Light()
+{}
 
+Light::Light(const Light& ls)
+:shadows(ls.shadows)
+{
+}
+
+Light& Light::operator= (const Light& rhs){
+	shadows = rhs.shadows;
+}
+
+float Light::G(const ShadeRec& sr) const {
+	return 1.0;
+}
+
+float Light::pdf(const ShadeRec& sr) const {
+	return 1.0;
+}
 
 CLLight Light::get_cl_light()
 {

@@ -1,11 +1,13 @@
 #ifndef __PLANE__
 #define __PLANE__
 
-// 	Copyright (C) Kevin Suffern 2000-2007.
+// 	Copyright (C) Kevin Suffern 2000-2007.
+// 	Modified work (C) Jonathan Reynolds 2018.
 //	This C++ code is for non-commercial purposes only.
 //	This C++ code is licensed under the GNU General Public License Version 2.
 //	See the file COPYING.txt for the full license.
 
+// This file contains the declaration of the class Plane
 
 #include "GeometricObject.h"
 #include "CLPlane.h"

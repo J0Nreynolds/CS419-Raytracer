@@ -13,7 +13,7 @@ class MultiJittered: public Sampler {
 		MultiJittered(int num_samples, int num_sets);
 		MultiJittered(const MultiJittered& u);
 		MultiJittered& operator=(const MultiJittered& rhs);
-		MultiJittered* clone() const;
+		virtual MultiJittered* clone() const;
 		virtual ~MultiJittered();
 		void generate_samples();
 

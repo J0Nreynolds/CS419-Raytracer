@@ -26,8 +26,7 @@ GeometricObject::GeometricObject (const GeometricObject& object)
 
 // ---------------------------------------------------------------------- assignment operator
 
-GeometricObject&
-GeometricObject::operator= (const GeometricObject& rhs) {
+GeometricObject& GeometricObject::operator= (const GeometricObject& rhs) {
 	if (this == &rhs)
 		return (*this);
 
@@ -47,8 +46,7 @@ GeometricObject::~GeometricObject () {
 // ---------------------------------------------------------------------- add_object
 // required for Compound objects
 
-void
-GeometricObject::add_object(GeometricObject* object_ptr) {}
+void GeometricObject::add_object(GeometricObject* object_ptr) {}
 
 // required for objects with bboxes
 BBox GeometricObject::get_bounding_box() {
@@ -57,16 +55,14 @@ BBox GeometricObject::get_bounding_box() {
 
 // ----------------------------------------------------------------------- get_normal
 
-Normal
-GeometricObject::get_normal() const{
+Normal GeometricObject::get_normal() const{
 	return (Normal());
 }
 
 
 // ----------------------------------------------------------------------- compute_normal
 
-Normal
-GeometricObject::get_normal(const Point3D& p) {
+Normal GeometricObject::get_normal(const Point3D& p) {
 	return (Normal());
 }
 
@@ -75,8 +71,7 @@ GeometricObject::get_normal(const Point3D& p) {
 // ----------------------------------------------------------------------- sample
 // returns a sample point on the object for area light shading
 
-Point3D
-GeometricObject::sample() {
+Point3D GeometricObject::sample() {
 	return (Point3D(0.0));
 }
 
@@ -84,7 +79,6 @@ GeometricObject::sample() {
 // ----------------------------------------------------------------------- pdf
 // returns the probability density function for area light shading
 
-float
-GeometricObject::pdf(ShadeRec& sr) {
+float GeometricObject::pdf(const ShadeRec& sr) {
 	return (0.0);
 }

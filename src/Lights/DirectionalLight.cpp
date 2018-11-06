@@ -26,6 +26,29 @@ DirectionalLight::DirectionalLight(RGBColor c, Vector3D dir)
 DirectionalLight::~DirectionalLight()
 {}
 
+DirectionalLight::DirectionalLight(const DirectionalLight& dl)
+: Light(dl), d(dl.d), color(dl.color), ls(dl.ls)
+{
+}
+
+DirectionalLight& DirectionalLight::operator=(const DirectionalLight& rhs){
+	if (this == &rhs)
+		return (*this);
+
+	Light::operator=(rhs);
+
+	d = rhs.d;
+	color = rhs.color;
+	ls = rhs.ls;
+
+	return (*this);
+}
+
+DirectionalLight* DirectionalLight::clone() const{
+	return (new DirectionalLight(*this));
+}
+
+
 CLLight DirectionalLight::get_cl_light()
 {
 	CLLight ret = Light::get_cl_light();
@@ -36,12 +59,12 @@ CLLight DirectionalLight::get_cl_light()
 	return ret;
 }
 
-RGBColor DirectionalLight::L(ShadeRec sr)
+RGBColor DirectionalLight::L(ShadeRec& sr)
 {
     return ls * color;
 }
 
-Vector3D DirectionalLight::get_direction(ShadeRec sr)
+Vector3D DirectionalLight::get_direction(ShadeRec& sr)
 {
     return -d.hat();
 }

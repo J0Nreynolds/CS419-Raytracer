@@ -13,7 +13,7 @@ class NRooks: public Sampler {
 		NRooks(int num_samples, int num_sets);
 		NRooks(const NRooks& u);
 		NRooks& operator=(const NRooks& rhs);
-		NRooks* clone() const;
+		virtual NRooks* clone() const;
 		virtual ~NRooks();
 		void generate_samples();
 		void shuffle_x_coordinates();

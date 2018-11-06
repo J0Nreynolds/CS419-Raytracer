@@ -11,12 +11,19 @@ class Material {
     public:
 
         Material();
+        virtual ~Material();
+		Material(const Material& m);
+        Material& operator=(const Material& rhs);
+		virtual Material* clone() const = 0;
+
 
         virtual RGBColor shade(ShadeRec& sr);
 
         virtual RGBColor area_light_shade(ShadeRec& sr);
 
         virtual RGBColor path_shade(ShadeRec& sr);
+
+        virtual RGBColor get_Le(ShadeRec& sr) const;
 
 		virtual CLMaterial get_cl_material() = 0;
 };

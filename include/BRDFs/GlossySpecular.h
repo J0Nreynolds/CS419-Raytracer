@@ -12,6 +12,9 @@ class GlossySpecular: public BRDF {
         GlossySpecular(float ks);
         GlossySpecular(float ks, float e);
         virtual ~GlossySpecular();
+		GlossySpecular(const GlossySpecular& gs);
+        GlossySpecular& operator=(const GlossySpecular& rhs);
+		virtual GlossySpecular* clone() const;
 
         void set_ks(float kd_new);
         float get_ks();

@@ -13,7 +13,7 @@ class Random: public Sampler {
 		Random(int num_samples, int num_sets);
 		Random(const Random& u);
 		Random& operator=(const Random& rhs);
-		Random* clone() const;
+		virtual Random* clone() const;
 		virtual ~Random();
 		void generate_samples();
 

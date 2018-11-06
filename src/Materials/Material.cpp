@@ -10,6 +10,17 @@
 Material::Material()
 {}
 
+Material::~Material()
+{}
+
+Material::Material(const Material& m)
+{}
+
+Material& Material::operator=(const Material& rhs)
+{
+    return (*this);
+}
+
 RGBColor Material::shade(ShadeRec& sr){
     return black;
 }
@@ -19,5 +30,9 @@ RGBColor Material::area_light_shade(ShadeRec& sr){
 }
 
 RGBColor Material::path_shade(ShadeRec& sr){
+    return black;
+}
+
+RGBColor Material::get_Le(ShadeRec& sr) const{
     return black;
 }

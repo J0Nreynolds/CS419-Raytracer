@@ -10,8 +10,11 @@
 
 class BRDF {
     public:
-        BRDF();
-        virtual ~BRDF();
+        BRDF();                         // default constructor
+        virtual ~BRDF();                // destructor
+		BRDF(const BRDF& brdf);         // copy constructor
+        BRDF& operator=(const BRDF& rhs);// assignment operator
+		virtual BRDF* clone() const = 0; // clone
 
         void set_sampler_ptr(Sampler* ptr);
         Sampler* get_sampler_ptr();

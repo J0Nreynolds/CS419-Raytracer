@@ -13,7 +13,70 @@ Phong::Phong (void)
     diffuse_brdf(new Lambertian),
     specular_brdf(new GlossySpecular)
 {}
-    
+
+Phong::~Phong()
+{
+    delete ambient_brdf;
+    delete diffuse_brdf;
+    delete specular_brdf;
+}
+
+Phong::Phong(const Phong& p)
+: Material(p)
+{
+    if(p.ambient_brdf){
+        ambient_brdf = p.ambient_brdf->clone();
+    }
+    else ambient_brdf = NULL;
+
+    if(p.diffuse_brdf){
+        diffuse_brdf = p.diffuse_brdf->clone();
+    }
+    else diffuse_brdf = NULL;
+
+    if(p.specular_brdf){
+        specular_brdf = p.specular_brdf->clone();
+    }
+    else specular_brdf = NULL;
+}
+
+Phong& Phong::operator=(const Phong& rhs){
+	if (this == &rhs)
+		return (*this);
+
+    Material::operator=(rhs);
+
+    if(ambient_brdf){
+        delete ambient_brdf;
+        ambient_brdf = NULL;
+    }
+    if(rhs.ambient_brdf){
+        ambient_brdf = rhs.ambient_brdf->clone();
+    }
+
+    if(diffuse_brdf){
+        delete diffuse_brdf;
+        diffuse_brdf = NULL;
+    }
+    if(rhs.diffuse_brdf){
+        diffuse_brdf = rhs.diffuse_brdf->clone();
+    }
+
+    if(specular_brdf){
+        delete specular_brdf;
+        specular_brdf = NULL;
+    }
+    if(rhs.specular_brdf){
+        specular_brdf = rhs.specular_brdf->clone();
+    }
+
+	return (*this);
+}
+
+Phong* Phong::clone() const{
+    return (new Phong(*this));
+}
+
 RGBColor Phong::shade(ShadeRec& sr) {
     Vector3D wo = -sr.ray.d;
     RGBColor L = ambient_brdf->rho(sr, wo) * sr.w.ambient_ptr->L(sr);

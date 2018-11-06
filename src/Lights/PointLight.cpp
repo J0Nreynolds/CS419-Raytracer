@@ -26,6 +26,29 @@ PointLight::PointLight(RGBColor c, Point3D pos)
 PointLight::~PointLight()
 {}
 
+PointLight::PointLight(const PointLight& pl)
+: Light(pl), p(pl.p), color(pl.color), ls(pl.ls)
+{
+}
+
+PointLight& PointLight::operator=(const PointLight& rhs){
+	if (this == &rhs)
+		return (*this);
+
+	Light::operator=(rhs);
+
+	p = rhs.p;
+	color = rhs.color;
+	ls = rhs.ls;
+
+	return (*this);
+}
+
+PointLight* PointLight::clone() const{
+	return (new PointLight(*this));
+}
+
+
 CLLight PointLight::get_cl_light()
 {
 	CLLight ret = Light::get_cl_light();
@@ -36,12 +59,12 @@ CLLight PointLight::get_cl_light()
 	return ret;
 }
 
-RGBColor PointLight::L(ShadeRec sr)
+RGBColor PointLight::L(ShadeRec& sr)
 {
     return ls * color;
 }
 
-Vector3D PointLight::get_direction(ShadeRec sr)
+Vector3D PointLight::get_direction(ShadeRec& sr)
 {
     return((p - sr.local_hit_point).hat());
 }
