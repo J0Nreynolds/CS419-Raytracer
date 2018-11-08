@@ -154,43 +154,6 @@ uint random(__local ulong* seed_ptr)
 	return result;
 }
 
-int sample_index(const int sampler_index, __private const SceneInfo* scene_info,
-	__private const RenderComponents* render_components){
-
-	__global const Sampler* sampler = &(render_components->samplers[sampler_index]);
-	__local SamplerState* state = &(render_components->sampler_states[sampler_index]);
-	__global const int* shuffled_indices = render_components->ints + (sampler_index * sampler->num_sets * sampler->num_samples);
-
-	int random_num = random(&(state->seed));
-	int count = (state->count);
-	int jump = (state->jump);
-
-
-	if (count % sampler->num_samples == 0){      // start of a new pixel
-		jump = (random_num % sampler->num_sets) * sampler->num_samples;
-		state->jump = jump;
-	}
-
-	state->count = count+1;
-	return (jump + shuffled_indices[jump + (count % sampler->num_samples)]);
-}
-
-double2 sample_double2_array(const int sampler_index, __private const SceneInfo* scene_info,
-	__private const RenderComponents* render_components)
-{
-	__global const Sampler* sampler = &(render_components->samplers[sampler_index]);
-	int index = sample_index(sampler_index, scene_info, render_components);
-	return (render_components->double2_samples[sampler->samples_index + index]);
-}
-
-double3 sample_double3_array(const int sampler_index, __private const SceneInfo* scene_info,
-	__private const RenderComponents* render_components)
-{
-	__global const Sampler* sampler = &(render_components->samplers[sampler_index]);
-	int index = sample_index(sampler_index, scene_info, render_components);
-	return (render_components->double3_samples[sampler->samples_index + index]);
-}
-
 bool intersect_sphere(__global const Sphere* sphere, __private const Ray* ray,
 	__private double* tmin, __private ShadeRec* sr){
 	double t;

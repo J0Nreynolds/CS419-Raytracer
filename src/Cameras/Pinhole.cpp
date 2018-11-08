@@ -106,7 +106,7 @@ void Pinhole::opencl_render_scene(World& w) {
     // OPENCL KERNEL //
     ///////////////////
 
-    std::ifstream t("./src/pinhole_area_lighting_tracer.cl");
+    std::ifstream t("./src/pinhole_mesh_tracer.cl");
     std::string str((std::istreambuf_iterator<char>(t)),
                   std::istreambuf_iterator<char>());
     const char* source_string = str.c_str();
@@ -206,7 +206,7 @@ void Pinhole::opencl_render_scene(World& w) {
 	cl::Buffer cl_buffer_j = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_samplers * sizeof(CLSampler), cl_samplers);
 	cl::Buffer cl_buffer_k = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_mesh_vertices * sizeof(cl_double3), cl_mesh_vertices);
 	cl::Buffer cl_buffer_l = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_mesh_normals * sizeof(cl_double3), cl_mesh_normals);
-	cl::Buffer cl_buffer_m = cl::Buffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, num_samplers * sizeof(CLSamplerState), NULL);
+	// cl::Buffer cl_buffer_m = cl::Buffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, num_samplers * sizeof(CLSamplerState), NULL);
 
     // Specify the arguments for the OpenCL kernel
 	kernel.setArg(0, cl_output);
@@ -223,7 +223,7 @@ void Pinhole::opencl_render_scene(World& w) {
 	kernel.setArg(11, cl_buffer_j);
 	kernel.setArg(12, cl_buffer_k);
 	kernel.setArg(13, cl_buffer_l);
-	kernel.setArg(14, cl_buffer_m);
+	// kernel.setArg(14, cl_buffer_m);
 
     // Create a command queue for the OpenCL device
     // the command queue allows kernel execution commands to be sent to the device
