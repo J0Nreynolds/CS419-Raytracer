@@ -11,6 +11,7 @@
 // This file contains the declaration of the class Rectangle
 
 #include "Sampler.h"
+#include "CLRectangle.h"
 #include "GeometricObject.h"
 
 //-------------------------------------------------------------------------------- class Rectangle
@@ -47,6 +48,8 @@ class Rectangle: public GeometricObject {
         virtual float pdf(const ShadeRec& sr);
 
         virtual Normal get_normal(const Point3D& p);
+
+		CLRectangle get_cl_rectangle();
 
     private:
 

@@ -63,6 +63,5 @@ CLLight Ambient::get_cl_light()
 	ret.pos = (cl_double3){0, 0, 0};
     ret.color = (cl_float3){color.r, color.g, color.b};
     ret.ls = (cl_float)ls;
-    ret.shadows = (cl_char)false;
 	return ret;
 }

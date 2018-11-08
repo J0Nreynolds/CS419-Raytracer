@@ -104,11 +104,11 @@ bool AmbientOccluder::in_shadow(const Ray& ray, const ShadeRec& sr) const {
 
 CLLight AmbientOccluder::get_cl_light()
 {
-	CLLight ret = Light::get_cl_light();
+	CLLight ret = Ambient::get_cl_light();
 	ret.dir = (cl_double3){min_amount.r, min_amount.g, min_amount.b};
 	ret.pos = (cl_double3){0, 0, 0};
     ret.color = (cl_float3){color.r, color.g, color.b};
     ret.ls = (cl_float)ls;
-    ret.shadows = (cl_char)true;
+    ret.sampler_index = sampler_ptr->get_cl_index();
 	return ret;
 }

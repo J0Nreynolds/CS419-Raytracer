@@ -59,7 +59,8 @@ using namespace std;
 #include "RayCast.h"
 
 World::World():
-	ambient_ptr(NULL), tracer_ptr(NULL), renderer(NULL), camera_ptr(NULL), cur_cl_index(0)
+	ambient_ptr(NULL), tracer_ptr(NULL), renderer(NULL), camera_ptr(NULL),
+	cur_mesh_cl_index(0), cur_d2_samples_cl_index(0), cur_d3_samples_cl_index(0)
 {}
 
 World::~World(){
@@ -95,12 +96,15 @@ void World::build(){
 	renderer = new SDLRenderer;
 	int num_samples = 100;
 
+	MultiJittered* sampler_ptr = new MultiJittered(num_samples);
+
 	vp.set_gamma(1.0);
 	vp.set_show_out_of_gamut(false);
 	vp.set_hres(400);
 	vp.set_vres(400);
 	vp.set_pixel_size(1);
-	vp.set_samples(num_samples);
+	vp.set_sampler(sampler_ptr);
+	add_double2_sampler(sampler_ptr);
 
 	tracer_ptr = new AreaLighting(this);
 
@@ -109,9 +113,11 @@ void World::build(){
 
 	AmbientOccluder* occluder_ptr = new AmbientOccluder;
 	occluder_ptr->set_color(white);
-	occluder_ptr->set_min_amount(0.0);
+	occluder_ptr->set_ls(4);
+	occluder_ptr->set_min_amount(0.15);
 	occluder_ptr->set_sampler(occ_sampler_ptr);
 	set_ambient_light(occluder_ptr);
+	add_double3_sampler(occ_sampler_ptr);
 
 	Pinhole* pinhole_ptr = new Pinhole();
 	pinhole_ptr->set_eye(50, 50, -75);
@@ -130,16 +136,17 @@ void World::build(){
 	rectangle_ptr->set_shadows(false);
 	rectangle_ptr->set_sampler(area_sampler_ptr);
 	add_object(rectangle_ptr);
+	add_double2_sampler(area_sampler_ptr);
 
 	AreaLight* area_light_ptr = new AreaLight;
 	area_light_ptr->set_object(rectangle_ptr);
 	area_light_ptr->set_shadows(true);
-	add_light(area_light_ptr);
+	// add_light(area_light_ptr);
 
 	Matte* matte_ptr1 = new Matte;
 	matte_ptr1->set_ka(0.15);
 	matte_ptr1->set_kd(0.85);
-	matte_ptr1->set_cd(RGBColor(0.4, 0, 1)); // blue
+	matte_ptr1->set_cd(RGBColor(1, 1, 0)); // blue
 
 	Sphere* sphere_ptr1 = new Sphere (Point3D(0, 1, 0), 1);
 	sphere_ptr1->set_material(matte_ptr1);
@@ -161,6 +168,23 @@ void World::build(){
 	Plane* plane_ptr1 = new Plane(Point3D(0), Normal(0, 1, 0));
 	plane_ptr1->set_material(matte_ptr2);
 	add_object(plane_ptr1);
+
+	// MultiJittered* area_sampler_ptr1 = new MultiJittered(num_samples);
+	//
+	// Emissive* emissive_ptr1 = new Emissive;
+	// emissive_ptr1->scale_radiance(20.0);
+	// emissive_ptr1->set_ce(white);
+	//
+	// Rectangle* rectangle_ptr1 = new Rectangle(Point3D(-2.5, 7, 2), Vector3D(2, 0, 0),Vector3D(0, 0, 2));
+	// rectangle_ptr1->set_material(emissive_ptr1);
+	// rectangle_ptr1->set_shadows(false);
+	// rectangle_ptr1->set_sampler(area_sampler_ptr1);
+	// add_object(rectangle_ptr1);
+	//
+	// AreaLight* area_light_ptr1 = new AreaLight;
+	// area_light_ptr1->set_object(rectangle_ptr1);
+	// area_light_ptr1->set_shadows(true);
+	// add_light(area_light_ptr1);
 
 	/**
 	 * BASIC SPHERE WITH AMBIENT OCCLUSION
@@ -276,10 +300,10 @@ void World::build(){
 	// // l1->set_ls(5.0);
 	// // add_light(l1);
 	//
-	// PointLight* l = new PointLight(Point3D(300,50,500));
-	// l->set_shadows(true);
-	// l->set_ls(3.0);
-	// add_light(l);
+	PointLight* l = new PointLight(Point3D(300,50,500));
+	l->set_shadows(true);
+	l->set_ls(3.0);
+	add_light(l);
 	//
 	// Phong* orange_material = new Phong();
 	// orange_material->set_ks(0.15);

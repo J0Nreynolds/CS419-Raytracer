@@ -34,5 +34,6 @@ CLLight Light::get_cl_light()
 {
 	CLLight ret;
 	ret.shadows = (cl_char)shadows;
+	ret.sampler_index = -1;
 	return ret;
 }

@@ -16,6 +16,7 @@
 #include "CLTriangle.h"
 #include "CLMeshTriangle.h"
 #include "CLPlane.h"
+#include "CLRectangle.h"
 #include "World.h"
 
 class CLUtil {
@@ -24,11 +25,16 @@ class CLUtil {
 		template <class To, class From> static void get_all_cl(const World& world, To*& output, int& num_type);
 		static void get_cl_spheres(const World& world, CLSphere*& spheres, int& num_spheres);
 		static void get_cl_triangles(const World& world, CLTriangle*& triangles, int& num_triangles);
+		static void get_cl_rectangles(const World& world, CLRectangle*& rectangles, int& num_rectangles);
 		static void get_cl_mesh_triangles(const World& world, CLMeshTriangle*& mesh_triangles, int& num_mesh_triangles);
 		static void get_cl_mesh_vertices(const World& world, cl_double3*& mesh_vertices, int& num_mesh_vertices);
 		static void get_cl_mesh_normals(const World& world, cl_double3*& mesh_normals, int& num_mesh_normals);
 		static void get_cl_planes(const World& world, CLPlane*& planes, int& num_planes);
 		static void get_cl_lights(const World& world, CLLight*& lights, int& num_lights);
+		static void get_cl_samplers(const World& world, CLSampler*& samplers, int& num_samplers);
+		static void get_cl_ints(const World& world, cl_int*& ints, int& num_ints);
+		static void get_cl_double2_samples(const World& world, cl_double2*& double2_samples, int& num_double2_samples);
+		static void get_cl_double3_samples(const World& world, cl_double3*& double3_samples, int& num_double3_samples);
 		static void attempt_build_program(cl::Program program, cl::Device device);
 };
 

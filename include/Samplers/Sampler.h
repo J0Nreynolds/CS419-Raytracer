@@ -16,6 +16,7 @@
 
 #include "Point2D.h"
 #include "Point3D.h"
+#include "CLSampler.h"
 
 class Sampler {
 	 public:
@@ -57,6 +58,17 @@ class Sampler {
 			// get next sample on unit hemisphere
 			Point3D sample_hemisphere();
 
+	        void set_cl_index(int idx);
+	        int get_cl_index();
+
+	        void set_samples_index(int idx);
+	        int get_samples_index();
+
+	        void set_sampler_type(char type);
+	        char get_sampler_type();
+
+			CLSampler get_cl_sampler();
+
 	  protected:
 
 			int num_samples;  // the number of sample points in a pattern
@@ -68,6 +80,12 @@ class Sampler {
 
 			std::vector<Point2D> disk_samples; // sample points on a unit disk
 			std::vector<Point3D> hemisphere_samples;
+
+	  private:
+
+	        int cl_index;
+	        int samples_index;
+	        char sampler_type;
 };
 
 inline int Sampler::get_num_samples(){
@@ -76,6 +94,31 @@ inline int Sampler::get_num_samples(){
 
 inline int Sampler::get_num_sets(){
 	return num_sets;
+}
+
+inline void Sampler::set_cl_index(int idx){
+    cl_index = idx;
+}
+
+inline int Sampler::get_cl_index(){
+    return cl_index;
+}
+
+inline void Sampler::set_samples_index(int idx){
+    samples_index = idx;
+}
+
+inline int Sampler::get_samples_index(){
+    return samples_index;
+}
+
+
+inline void Sampler::set_sampler_type(char type){
+	sampler_type = type;
+}
+
+inline char Sampler::get_sampler_type(){
+	return sampler_type;
 }
 
 #endif

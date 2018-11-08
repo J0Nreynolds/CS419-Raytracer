@@ -9,8 +9,11 @@
 #include <fstream>
 #include <iostream>
 #include <chrono>
+#include <algorithm>
+#include <iterator>
 
 #include "CLUtil.h"
+#include "CLSamplerState.h"
 #include "AmbientOccluder.h"
 
 #include "Pinhole.h"
@@ -83,13 +86,16 @@ void Pinhole::opencl_render_scene(World& w) {
 		cl_int vres;         // vertical image resolution
 		cl_int num_planes;  // number of planes in scene
 		cl_int num_triangles;  // number of triangles in scene
+		cl_int num_rectangles;  // number of triangles in scene
 		cl_int num_spheres;  // number of spheres in scene
 		cl_int num_mesh_triangles;  // number of mesh triangles in scene
 		cl_int num_lights;  // number of lights in scene
+		cl_int num_samplers;  // number of samplers in scene
 		cl_int num_samples;  // number of samples per pixel
 		cl_int num_sets;     // number of samples patterns
-		cl_int seed;         // seed for random num generation
+		cl_int vp_sampler_index; // index for viewplane sampler
 	};
+
 	cl::Device device = CLUtil::choose_platform_and_device();
 
     // Create an OpenCL context on that device.
@@ -100,7 +106,7 @@ void Pinhole::opencl_render_scene(World& w) {
     // OPENCL KERNEL //
     ///////////////////
 
-    std::ifstream t("./src/pinhole_mesh_tracer.cl");
+    std::ifstream t("./src/pinhole_area_lighting_tracer.cl");
     std::string str((std::istreambuf_iterator<char>(t)),
                   std::istreambuf_iterator<char>());
     const char* source_string = str.c_str();
@@ -115,23 +121,23 @@ void Pinhole::opencl_render_scene(World& w) {
 
 	ViewPlane vp(w.vp);
     // Constructs the arguments for the kernel
-	Sampler* sampler = w.vp.sampler_ptr;
+	Sampler* sampler = vp.sampler_ptr;
 
-	Sampler* hemi_sampler = NULL;
-	AmbientOccluder* ambient_occ = dynamic_cast<AmbientOccluder*>(w.ambient_ptr);
-	if(ambient_occ){
-		hemi_sampler = ambient_occ->get_sampler();
-	}
+	CLSampler* cl_samplers;
+	int num_samplers;
+	CLUtil::get_cl_samplers(w, cl_samplers, num_samplers);
 
-	int samples_count;
-	int indices_count;
-	cl_double2* cl_samples = sampler->get_cl_samples(samples_count);
-	cl_int* cl_shuffled_indices = sampler->get_cl_shuffled_indices(indices_count);
+	cl_double2* cl_double2_samples;
+	int num_double2_samples;
+	CLUtil::get_cl_double2_samples(w, cl_double2_samples, num_double2_samples);
 
-	int hemi_samples_count = 0;
-	int hemi_indices_count = 0;
-	cl_double3* cl_hemi_samples = hemi_sampler ? hemi_sampler->get_cl_hemisphere_samples(hemi_samples_count): NULL;
-	cl_int* cl_hemi_shuffled_indices = hemi_sampler ?  hemi_sampler->get_cl_shuffled_indices(hemi_indices_count): NULL;
+	cl_double3* cl_double3_samples;
+	int num_double3_samples;
+	CLUtil::get_cl_double3_samples(w, cl_double3_samples, num_double3_samples);
+
+	cl_int* cl_ints;
+	int num_ints;
+	CLUtil::get_cl_ints(w, cl_ints, num_ints);
 
 	CLPlane* cl_planes;
 	int num_planes;
@@ -139,6 +145,9 @@ void Pinhole::opencl_render_scene(World& w) {
 	CLTriangle* cl_triangles;
 	int num_triangles;
 	CLUtil::get_cl_triangles(w, cl_triangles, num_triangles);
+	CLRectangle* cl_rectangles;
+	int num_rectangles;
+	CLUtil::get_cl_rectangles(w, cl_rectangles, num_rectangles);
 	CLSphere* cl_spheres;
 	int num_spheres;
 	CLUtil::get_cl_spheres(w, cl_spheres, num_spheres);
@@ -172,28 +181,32 @@ void Pinhole::opencl_render_scene(World& w) {
 		vp.vres,
 		num_planes,
 		num_triangles,
+		num_rectangles,
 		num_spheres,
 		num_mesh_triangles,
 		num_lights,
+		num_samplers,
 		vp.num_samples,
 		sampler->get_num_sets(),
-		(int) time(NULL)
+		sampler->get_cl_index()
 	};
 
     // Create buffers (memory objects) on the OpenCL device, allocate memory and copy input data to device.
     // Flags indicate how the buffer should be used e.g. read-only, write-only, read-write
 	cl::Buffer cl_output = cl::Buffer(context, CL_MEM_WRITE_ONLY, vp.hres * vp.vres * sizeof(cl_float3), NULL);
-	cl::Buffer cl_buffer_a = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, samples_count * sizeof(cl_double2), cl_samples);
-	cl::Buffer cl_buffer_b = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, indices_count * sizeof(cl_int), cl_shuffled_indices);
-	cl::Buffer cl_buffer_c = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, hemi_samples_count * sizeof(cl_double3), cl_hemi_samples);
-	cl::Buffer cl_buffer_d = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, hemi_indices_count * sizeof(cl_int), cl_hemi_shuffled_indices);
-	cl::Buffer cl_buffer_e = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_planes * sizeof(CLPlane), cl_planes);
-	cl::Buffer cl_buffer_f = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_triangles * sizeof(CLTriangle), cl_triangles);
+	cl::Buffer cl_buffer_a = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_double2_samples * sizeof(cl_double2), cl_double2_samples);
+	cl::Buffer cl_buffer_b = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_double3_samples * sizeof(cl_double3), cl_double3_samples);
+	cl::Buffer cl_buffer_c = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_ints * sizeof(cl_int), cl_ints);
+	cl::Buffer cl_buffer_d = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_planes * sizeof(CLPlane), cl_planes);
+	cl::Buffer cl_buffer_e = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_triangles * sizeof(CLTriangle), cl_triangles);
+	cl::Buffer cl_buffer_f = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_rectangles * sizeof(CLRectangle), cl_rectangles);
 	cl::Buffer cl_buffer_g = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_spheres * sizeof(CLSphere), cl_spheres);
 	cl::Buffer cl_buffer_h = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_mesh_triangles * sizeof(CLMeshTriangle), cl_mesh_triangles);
 	cl::Buffer cl_buffer_i = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_lights * sizeof(CLLight), cl_lights);
-	cl::Buffer cl_buffer_j = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_mesh_vertices * sizeof(cl_double3), cl_mesh_vertices);
-	cl::Buffer cl_buffer_k = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_mesh_normals * sizeof(cl_double3), cl_mesh_normals);
+	cl::Buffer cl_buffer_j = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_samplers * sizeof(CLSampler), cl_samplers);
+	cl::Buffer cl_buffer_k = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_mesh_vertices * sizeof(cl_double3), cl_mesh_vertices);
+	cl::Buffer cl_buffer_l = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, num_mesh_normals * sizeof(cl_double3), cl_mesh_normals);
+	cl::Buffer cl_buffer_m = cl::Buffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, num_samplers * sizeof(CLSamplerState), NULL);
 
     // Specify the arguments for the OpenCL kernel
 	kernel.setArg(0, cl_output);
@@ -209,6 +222,8 @@ void Pinhole::opencl_render_scene(World& w) {
 	kernel.setArg(10, cl_buffer_i);
 	kernel.setArg(11, cl_buffer_j);
 	kernel.setArg(12, cl_buffer_k);
+	kernel.setArg(13, cl_buffer_l);
+	kernel.setArg(14, cl_buffer_m);
 
     // Create a command queue for the OpenCL device
     // the command queue allows kernel execution commands to be sent to the device
@@ -223,7 +238,7 @@ void Pinhole::opencl_render_scene(World& w) {
 
 	// Open the renderer
 	w.open_window(vp.hres, vp.vres);
-	int stop = time(NULL) + 10;
+	int stop = time(NULL) + 5;
 	int num_draws = 0;
 	SDL_Event e;
 	while(time(NULL) < stop){

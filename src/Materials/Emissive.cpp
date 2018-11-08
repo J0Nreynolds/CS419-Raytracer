@@ -51,6 +51,10 @@ RGBColor Emissive::area_light_shade(ShadeRec& sr) {
 
 CLMaterial Emissive::get_cl_material(){
     CLMaterial ret;
+    ret.ambient_brdf.cd = (cl_float3){ce.r, ce.g, ce.b};
+    ret.ambient_brdf.kd = (cl_float)ls;
+    ret.diffuse_brdf.cd = (cl_float3){0, 0, 0};
+    ret.diffuse_brdf.kd = 0;
     ret.specular_brdf.cd = (cl_float3){0, 0, 0};
     ret.specular_brdf.kd = 0;
     ret.specular_brdf.exp = 0;

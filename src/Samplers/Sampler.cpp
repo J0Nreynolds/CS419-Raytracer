@@ -203,3 +203,12 @@ cl_int* Sampler::get_cl_shuffled_indices(int& count) {
 	}
 	return cl_indices;
 }
+
+CLSampler Sampler::get_cl_sampler(){
+	CLSampler ret;
+	ret.num_samples = (cl_int)num_samples;
+	ret.num_sets = (cl_int)num_sets;
+	ret.samples_index = (cl_int)samples_index;
+	ret.sampler_type = (cl_char)sampler_type;
+	return ret;
+}

@@ -41,6 +41,19 @@ typedef struct Triangle{
 	double3 v2;
 } Triangle;
 
+typedef struct Rectangle{
+	Material material;
+	double3 p0;
+	double3 a;
+	double3 b;
+	double3 normal;
+	double a_len_squared;	// square of the length of side a
+	double b_len_squared;	// square of the length of side b
+	float area;			// for rectangular lights
+	float inv_area;		// for rectangular lights
+	int sampler_index;	// for rectangular lights
+} Rectangle;
+
 typedef struct MeshTriangle{
     Material material;
     double3 normal;
@@ -62,8 +75,22 @@ typedef struct Light{
 	double3 dir;
 	float3  color;
 	float   ls;
+	int     sampler_index;
 	char    shadows;
 } Light;
+
+typedef struct Sampler{
+	int num_samples;
+    int num_sets;
+    int samples_index;
+    char type;
+} Sampler;
+
+typedef struct SamplerState{
+    ulong seed;
+    int jump;
+    int count;
+} SamplerState;
 
 typedef struct SceneInfo {
 	Light ambient_light; // ambient light coming from background of scene
@@ -80,27 +107,30 @@ typedef struct SceneInfo {
 	int vres;         // vertical image resolution
 	int num_planes;  // number of planes in scene
 	int num_triangles;  // number of triangles in scene
+	int num_rectangles;  // number of rectangles in scene
 	int num_spheres;  // number of spheres in scene
 	int num_mesh_triangles;  // number of mesh triangles in scene
 	int num_lights;  // number of lights in scene
+	int num_samplers;  // number of samplers in scene
 	int num_samples;  // number of samples per pixel
 	int num_sets;     // number of samples patterns
-	int seed;         // seed for random number generation
+	int vp_sampler_index;  // index for viewplane sampler
 } SceneInfo;
 
 typedef struct RenderComponents {
+	__global const double2* double2_samples;
+	__global const double3* double3_samples;
+	__global const int* ints;
 	__global const Plane* planes;
 	__global const Triangle* triangles;
+	__global const Rectangle* rectangles;
 	__global const Sphere* spheres;
 	__global const MeshTriangle* mesh_triangles;
 	__global const Light* lights;
+	__global const Sampler* samplers;
+	__local SamplerState* sampler_states;
 	__global const double3* mesh_vertices;
 	__global const double3* mesh_normals;
-	__global const double3* hemi_samples;
-	__global const int* hemi_shuffled_indices;
-	ulong seed;
-	int hemi_count;
-	int hemi_jump;
 } RenderComponents;
 
 typedef struct ShadeRec{
@@ -115,7 +145,7 @@ typedef struct ShadeRec{
 } ShadeRec;
 
 
-uint random(__private ulong* seed_ptr)
+uint random(__local ulong* seed_ptr)
 {
 	ulong seed = (*seed_ptr);
 	seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
@@ -124,39 +154,41 @@ uint random(__private ulong* seed_ptr)
 	return result;
 }
 
-int sample_index(__global const int* shuffled_indices, __private int num_samples,
-	__private int num_sets, __private int* count_ptr,__private int* jump_ptr,
-	__private ulong* seed_ptr){
-	int random_num = random(seed_ptr);
-	int count = (*count_ptr);
-	int jump = (*jump_ptr);
+int sample_index(const int sampler_index, __private const SceneInfo* scene_info,
+	__private const RenderComponents* render_components){
+
+	__global const Sampler* sampler = &(render_components->samplers[sampler_index]);
+	__local SamplerState* state = &(render_components->sampler_states[sampler_index]);
+	__global const int* shuffled_indices = render_components->ints + (sampler_index * sampler->num_sets * sampler->num_samples);
+
+	int random_num = random(&(state->seed));
+	int count = (state->count);
+	int jump = (state->jump);
 
 
-	if (count % num_samples == 0){      // start of a new pixel
-		jump = (random_num % num_sets) * num_samples;
-		(*jump_ptr) = jump;
+	if (count % sampler->num_samples == 0){      // start of a new pixel
+		jump = (random_num % sampler->num_sets) * sampler->num_samples;
+		state->jump = jump;
 	}
 
-	(*count_ptr) = count+1;
-	return (jump + shuffled_indices[jump + (count % num_samples)]);
+	state->count = count+1;
+	return (jump + shuffled_indices[jump + (count % sampler->num_samples)]);
 }
 
-double2 sample_double2_array(__global const double2* samples, __global const int* shuffled_indices,
-	 __private int num_samples, __private int num_sets, __private int* count_ptr,
-	 __private int* jump_ptr, __private ulong* seed_ptr)
+double2 sample_double2_array(const int sampler_index, __private const SceneInfo* scene_info,
+	__private const RenderComponents* render_components)
 {
-	int index = sample_index(shuffled_indices, num_samples, num_sets, count_ptr,
-							 jump_ptr, seed_ptr);
-	return (samples[index]);
+	__global const Sampler* sampler = &(render_components->samplers[sampler_index]);
+	int index = sample_index(sampler_index, scene_info, render_components);
+	return (render_components->double2_samples[sampler->samples_index + index]);
 }
 
-double3 sample_double3_array(__global const double3* samples, __global const int* shuffled_indices,
-	 __private int num_samples, __private int num_sets, __private int* count_ptr,
-	 __private int* jump_ptr, __private ulong* seed_ptr)
+double3 sample_double3_array(const int sampler_index, __private const SceneInfo* scene_info,
+	__private const RenderComponents* render_components)
 {
-	int index = sample_index(shuffled_indices, num_samples, num_sets, count_ptr,
-							 jump_ptr, seed_ptr);
-	return (samples[index]);
+	__global const Sampler* sampler = &(render_components->samplers[sampler_index]);
+	int index = sample_index(sampler_index, scene_info, render_components);
+	return (render_components->double3_samples[sampler->samples_index + index]);
 }
 
 bool intersect_sphere(__global const Sphere* sphere, __private const Ray* ray,
@@ -629,10 +661,7 @@ bool Light_in_shadow(__global const Light* light, __private const Ray* ray,
 double3 ambientOccluder_get_direction(__private const Light* light, __private ShadeRec* sr,
 	double3 u, double3 v, double3 w, __private const SceneInfo* scene_info,
 	__private const RenderComponents* render_components){
-    double3 sp = sample_double3_array(render_components->hemi_samples,
-		render_components->hemi_shuffled_indices, scene_info->num_samples,
-		scene_info->num_sets, &(render_components->hemi_count),
-		&(render_components->hemi_jump), &(render_components->seed));
+    double3 sp = sample_double3_array(light->sampler_index, scene_info, render_components);
     return (sp.x * u + sp.y * v + sp.z * w);
 }
 
@@ -809,21 +838,19 @@ float3 clamp_to_color(__private const float3 raw_color) {
 }
 
 __kernel void pinhole_tracer(__global float3 *dst,
-	__private SceneInfo scene_info, __global double2* samples,
-	__global int* shuffled_indices, __global double3* hemi_samples,
-	__global int* hemi_shuffled_indices,__global Plane* planes,
-	__global Triangle* triangles, __global Sphere* spheres,
+	__private SceneInfo scene_info, __global double2* double2_samples,
+	__global double3* double3_samples, __global int* ints,
+	__global Plane* planes, __global Triangle* triangles,
+	__global Rectangle* rectangles, __global Sphere* spheres,
 	__global MeshTriangle* mesh_triangles, __global Light* lights,
-	__global double3* mesh_vertices, __global double3* mesh_normals)
+	__global Sampler* samplers, __global double3* mesh_vertices,
+	__global double3* mesh_normals, __local SamplerState* sampler_states)
 {
 
 	const int id = get_global_id(0);
 
 	int c = id % scene_info.hres;
 	int r = id / scene_info.hres;
-	int jump = 0;
-	int count = 0;
-	ulong seed = c;
 
 	Ray ray;
 	double2 sp; // sample point in [0, 1] x [0, 1]
@@ -834,22 +861,29 @@ __kernel void pinhole_tracer(__global float3 *dst,
 	ray.o = scene_info.eye;
 
 	RenderComponents render_components;
+	render_components.double2_samples = double2_samples;
+	render_components.double3_samples = double3_samples;
+	render_components.ints = ints;
 	render_components.planes = planes;
 	render_components.triangles = triangles;
+	render_components.rectangles = rectangles;
 	render_components.spheres = spheres;
 	render_components.mesh_triangles = mesh_triangles;
 	render_components.lights = lights;
+	render_components.samplers = samplers;
+	render_components.sampler_states = sampler_states;
 	render_components.mesh_vertices = mesh_vertices;
 	render_components.mesh_normals = mesh_normals;
-	render_components.hemi_samples = hemi_samples;
-	render_components.hemi_shuffled_indices = hemi_shuffled_indices;
-	render_components.seed = id % 337; // choose something that is likely to be unique locally ?
-	render_components.hemi_count = 0;
-	render_components.hemi_jump = 0;
+
+	// initialize sampler states
+	for (int j = 0; j < scene_info.num_samplers; j++) {
+		sampler_states[j].seed = (ulong) c;
+		sampler_states[j].count = 0;
+		sampler_states[j].jump = 0;
+	}
 
 	for (int j = 0; j < scene_info.num_samples; j++) {
-		sp = sample_double2_array(samples, shuffled_indices, scene_info.num_samples,
-			scene_info.num_sets, &count, &jump, &seed);
+		sp = sample_double2_array(scene_info.vp_sampler_index, &scene_info, &render_components);
 		pp.s0 = s * (c - 0.5 * scene_info.hres + sp.s0);
 		pp.s1 = s * (r - 0.5 * scene_info.vres + sp.s1);
 		ray.d = ray_direction(pp, scene_info.u, scene_info.v, scene_info.w, scene_info.d);

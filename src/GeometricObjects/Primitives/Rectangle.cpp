@@ -227,3 +227,18 @@ Normal Rectangle::get_normal(const Point3D& p) {
 float Rectangle::pdf(const ShadeRec& sr) {
 	return (inv_area);
 }
+
+CLRectangle Rectangle::get_cl_rectangle(){
+	CLRectangle ret;
+	ret.p0 = (cl_double3){p0.x, p0.y, p0.z};
+	ret.a = (cl_double3){a.x, a.y, a.z};
+	ret.b = (cl_double3){b.x, b.y, b.z};
+	ret.normal = (cl_double3){normal.x, normal.y, normal.z};
+	ret.a_len_squared = (cl_double)a_len_squared;
+	ret.b_len_squared = (cl_double)b_len_squared;
+	ret.area = (cl_float)area;
+	ret.inv_area = (cl_float)inv_area;
+	ret.material = material_ptr->get_cl_material();
+	ret.sampler_index = sampler_ptr->get_cl_index();
+	return ret;
+}
