@@ -3,12 +3,11 @@
 // 	Copyright (C) Jonathan Reynolds 2018
 //	This C++ code is for non-commercial purposes only.
 //	This C++ code is licensed under the GNU General Public License Version 2.
-#include "RGBColor.h"
 #include "PerfectSpecular.h"
 #include "Phong.h"
 
 class Reflective: public Phong {
-     public:
+    public:
 
         Reflective();
         virtual ~Reflective();
@@ -23,7 +22,7 @@ class Reflective: public Phong {
 
 		virtual CLMaterial get_cl_material();
 
-     private:
+    protected:
 
         PerfectSpecular* reflective_brdf;
 };

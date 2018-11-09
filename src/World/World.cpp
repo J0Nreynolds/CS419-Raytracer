@@ -56,8 +56,11 @@ using namespace std;
 
 #include "Rectangle.h"
 #include "AreaLighting.h"
+
 #include "Whitted.h"
 #include "Reflective.h"
+
+#include "Transparent.h"
 
 #include "MultipleObjects.h"
 #include "RayCast.h"
@@ -98,7 +101,7 @@ World::~World(){
 void World::build(){
 	background_color = black;
 	renderer = new SDLRenderer;
-	int num_samples = 100;
+	int num_samples = 225;
 
 	MultiJittered* sampler_ptr = new MultiJittered(num_samples);
 
@@ -157,7 +160,18 @@ void World::build(){
 	// area_light_ptr->set_object(rectangle_ptr);
 	// area_light_ptr->set_shadows(true);
 	// add_light(area_light_ptr);
-	//
+
+	// transparent sphere
+
+	Transparent* glass_ptr = new Transparent;
+	glass_ptr->set_ka(0);
+	glass_ptr->set_kd(0);
+	glass_ptr->set_ks(0.5);
+	glass_ptr->set_exp(2000.0);
+	glass_ptr->set_ior(1.5);
+	glass_ptr->set_kr(0.1);
+	glass_ptr->set_kt(0.9);
+
 	Phong* phong_ptr1 = new Phong;
 	phong_ptr1->set_ka(0.15);
 	phong_ptr1->set_kd(0.85);
@@ -174,7 +188,7 @@ void World::build(){
 	add_object(sphere_ptr2);
 
 	Sphere* sphere_ptr3 = new Sphere (Point3D(-4, 1, 4), 1);
-	sphere_ptr3->set_material(phong_ptr1);
+	sphere_ptr3->set_material(glass_ptr);
 	add_object(sphere_ptr3);
 
 	Matte* matte_ptr2 = new Matte;
