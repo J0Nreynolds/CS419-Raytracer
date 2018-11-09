@@ -109,6 +109,7 @@ CLLight AmbientOccluder::get_cl_light()
 	ret.pos = (cl_double3){0, 0, 0};
     ret.color = (cl_float3){color.r, color.g, color.b};
     ret.ls = (cl_float)ls;
+    ret.shadows = (cl_bool) true;
     ret.sampler_index = sampler_ptr->get_cl_index();
 	return ret;
 }

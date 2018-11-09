@@ -612,17 +612,11 @@ ShadeRec hit_objects(__private const Ray* ray, __private const SceneInfo* scene_
 }
 
 float areaLight_G(__global const Light* light, __private ShadeRec* sr){
-	// TODO find way to access wi
-	float ndotd = dot(-light->dir, wi); //access area light normal in light->dir
-	// TODO find way to access sample_point
-	float d2 = sample_point.d_squared(sr->hit_point);
-
-
-	return (ndotd / d2);
+	return 1.0;
 }
 
 float Light_G(__global const Light* light, __private ShadeRec* sr){
-    if(light->shadows == -1){ // is an area light
+    if(all(light->dir == 0) && all(light->pos == 0)){ // is an area light
         return areaLight_G(light, sr);
     }
     else {
@@ -631,25 +625,16 @@ float Light_G(__global const Light* light, __private ShadeRec* sr){
 }
 
 float areaLight_pdf(__global const Light* light, __private ShadeRec* sr){
-	return object_pdf(object_ptr, sr);// TODO: find access to object
+	return 1.0;
 }
 
 float Light_pdf(__global const Light* light, __private ShadeRec* sr){
-    if(light->shadows == -1){ // is an area light
+    if(all(light->dir == 0) && all(light->pos == 0)){ // is an area light
         return areaLight_pdf(light, sr);
     }
     else {
 		return 1.0;
     }
-}
-
-float3 areaLight_L(__global const Light* light, __private ShadeRec* sr){
-	float ndotd = dot(-light->dir, wi); //access area light normal in light->dir
-
-	if (ndotd > 0.0)
-		return (material_ptr->get_Le(sr)); 	// TODO find way to access material/object
-	else
-		return (black);
 }
 
 float3 directionalLight_L(__global const Light* light, __private ShadeRec* sr){
@@ -661,10 +646,7 @@ float3 pointLight_L(__global const Light* light, __private ShadeRec* sr){
 }
 
 float3 Light_L(__global const Light* light, __private ShadeRec* sr){
-    if(light->shadows == -1){ // is an area light
-        return areaLight_L(light, sr);
-    }
-    else if(all(light->dir == 0)){
+    if(all(light->dir == 0)){
         return pointLight_L(light, sr);
     }
     else {
@@ -685,53 +667,13 @@ double3 pointLight_get_direction(__global const Light* light, __private ShadeRec
 }
 
 double3 Light_get_direction(__global const Light* light, __private ShadeRec* sr){
-	if(light->shadows == -1){ // is an area light
-        return areaLight_get_direction(light, sr);
-    }
-    else if(all(light->dir == 0)){
+    if(all(light->dir == 0)){
         return pointLight_get_direction(light, sr);
     }
     else {
         return directionalLight_get_direction(light, sr);
     }
 
-}
-
-bool areaLight_in_shadow(__global const Light* light, __private const Ray* ray,
-	__private ShadeRec* sr, __private const SceneInfo* scene_info,
-	__private const RenderComponents* render_components){
-	__global const Plane* planes = render_components->planes;
-	__global const Triangle* triangles = render_components->triangles;
-	__global const Rectangle* rectangles = render_components->rectangles;
-	__global const Sphere* spheres = render_components->spheres;
-	__global const MeshTriangle* mesh_triangles = render_components->mesh_triangles;
-	__global const double3* mesh_vertices = render_components->mesh_vertices;
-
-	//TODO get sample point from earlier
-    float t;
-	float ts = dot((sample_point - ray->o), ray->d);
-
-	for (int j = 0; j < scene_info->num_planes; j++)
-		if (shadow_intersect_plane(&planes[j], ray, &t) && t < ts)
-			return (true);
-
-	for (int j = 0; j < scene_info->num_triangles; j++)
-		if (shadow_intersect_triangle(&triangles[j], ray, &t) && t < ts)
-			return (true);
-
-	for (int j = 0; j < scene_info->num_rectangles; j++)
-		if (shadow_intersect_rectangle(&rectangles[j], ray, &t) && t < ts)
-			return (true);
-
-	for (int j = 0; j < scene_info->num_mesh_triangles; j++)
-		if (shadow_intersect_mesh_triangle(&mesh_triangles[j], ray, &t, mesh_vertices) && t < ts)
-			return (true);
-
-	for (int j = 0; j < scene_info->num_spheres; j++)
-		if (shadow_intersect_sphere(&spheres[j], ray, &t) && t < ts)
-			return (true);
-
-	return (false);
 }
 
 bool pointLight_in_shadow(__global const Light* light, __private const Ray* ray,
@@ -745,26 +687,26 @@ bool pointLight_in_shadow(__global const Light* light, __private const Ray* ray,
 	__global const double3* mesh_vertices = render_components->mesh_vertices;
 
     float t;
-	float ts = dot(light->pos - ray->o, ray->d);
+	float d = length(light->pos - ray->o);
 
 	for (int j = 0; j < scene_info->num_planes; j++)
-		if (shadow_intersect_plane(&planes[j], ray, &t) && t < ts)
+		if (shadow_intersect_plane(&planes[j], ray, &t) && length(t * ray->d) < d)
 			return (true);
 
 	for (int j = 0; j < scene_info->num_triangles; j++)
-		if (shadow_intersect_triangle(&triangles[j], ray, &t) &&  t < ts)
+		if (shadow_intersect_triangle(&triangles[j], ray, &t) && length(t * ray->d) < d)
 			return (true);
 
 	for (int j = 0; j < scene_info->num_rectangles; j++)
-		if (shadow_intersect_rectangle(&rectangles[j], ray, &t) && t < ts)
+		if (shadow_intersect_rectangle(&rectangles[j], ray, &t) && length(t * ray->d) < d)
 			return (true);
 
 	for (int j = 0; j < scene_info->num_mesh_triangles; j++)
-		if (shadow_intersect_mesh_triangle(&mesh_triangles[j], ray, &t, mesh_vertices) && t < ts)
+		if (shadow_intersect_mesh_triangle(&mesh_triangles[j], ray, &t, mesh_vertices) && length(t * ray->d) < d)
 			return (true);
 
 	for (int j = 0; j < scene_info->num_spheres; j++)
-		if (shadow_intersect_sphere(&spheres[j], ray, &t) && t < ts)
+		if (shadow_intersect_sphere(&spheres[j], ray, &t) &&  length(t * ray->d) < d)
 			return (true);
 
 	return (false);
@@ -808,10 +750,7 @@ bool directionalLight_in_shadow(__global const Light* light, __private const Ray
 bool Light_in_shadow(__global const Light* light, __private const Ray* ray,
 	__private ShadeRec* sr, __private const SceneInfo* scene_info,
 	__private const RenderComponents* render_components){
-	if(light->shadows == -1){ // is an area light
-        return areaLight_in_shadow(light, ray, sr, scene_info, render_components);
-    }
-	else if(all(light->dir == 0)){ // is a point light
+    if(all(light->dir == 0)){
         return pointLight_in_shadow(light, ray, sr, scene_info, render_components);
     }
     else {
@@ -1099,7 +1038,7 @@ __kernel void pinhole_tracer(__global float3 *dst,
 	__global Sampler* samplers, __global double3* mesh_vertices,
 	__global double3* mesh_normals)
 {
-	int num_sampler_states = 300;
+	int num_sampler_states = 15;
 	__private SamplerState sampler_states[num_sampler_states];
 
 	const int id = get_global_id(0);

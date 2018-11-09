@@ -113,7 +113,7 @@ void World::build(){
 
 	AmbientOccluder* occluder_ptr = new AmbientOccluder;
 	occluder_ptr->set_color(white);
-	occluder_ptr->set_ls(4);
+	occluder_ptr->set_ls(1);
 	occluder_ptr->set_min_amount(0.15);
 	occluder_ptr->set_sampler(occ_sampler_ptr);
 	set_ambient_light(occluder_ptr);
@@ -141,7 +141,7 @@ void World::build(){
 	AreaLight* area_light_ptr = new AreaLight;
 	area_light_ptr->set_object(rectangle_ptr);
 	area_light_ptr->set_shadows(true);
-	// add_light(area_light_ptr);
+	add_light(area_light_ptr);
 
 	Matte* matte_ptr1 = new Matte;
 	matte_ptr1->set_ka(0.15);
@@ -300,10 +300,10 @@ void World::build(){
 	// // l1->set_ls(5.0);
 	// // add_light(l1);
 	//
-	PointLight* l = new PointLight(Point3D(300,50,500));
-	l->set_shadows(true);
-	l->set_ls(3.0);
-	add_light(l);
+	// PointLight* l = new PointLight(Point3D(300,50,500));
+	// l->set_shadows(true);
+	// l->set_ls(3.0);
+	// add_light(l);
 	//
 	// Phong* orange_material = new Phong();
 	// orange_material->set_ks(0.15);
