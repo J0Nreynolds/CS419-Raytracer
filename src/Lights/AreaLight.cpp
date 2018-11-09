@@ -135,7 +135,6 @@ CLLight AreaLight::get_cl_light()
 	ret.pos = (cl_double3){0, 0, 0};
     ret.color = (cl_float3){0, 0, 0};
     ret.ls = (cl_float)0;
-	ret.sampler_index = (cl_int) object_ptr->get_cl_index();
     ret.shadows = (cl_char)-1;
 	return ret;
 }
