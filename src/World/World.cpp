@@ -110,85 +110,71 @@ void World::build(){
 	vp.set_sampler(sampler_ptr);
 	add_double2_sampler(sampler_ptr);
 
-	vp.set_max_depth(100);
+	vp.set_max_depth(10);
 
-	tracer_ptr = new AreaLighting(this);
+	tracer_ptr = new Whitted(this);
+
+	Reflective* reflective_ptr1 = new Reflective();
+	reflective_ptr1->set_ka(0);
+	reflective_ptr1->set_kd(0);
+	reflective_ptr1->set_cd(RGBColor(0.75, 0.75, 0));
+	reflective_ptr1->set_ks(0);
+	reflective_ptr1->set_exp(100);
+	reflective_ptr1->set_kr(1);
+	reflective_ptr1->set_cr(white);
 
 	MultiJittered* occ_sampler_ptr = new MultiJittered(num_samples);
+	// MultiJittered* area_sampler_ptr = new MultiJittered(num_samples);
 
 	AmbientOccluder* occluder_ptr = new AmbientOccluder;
 	occluder_ptr->set_color(white);
-	occluder_ptr->set_shadows(true);
-	occluder_ptr->set_ls(1);
+	occluder_ptr->set_ls(2);
 	occluder_ptr->set_min_amount(0.15);
 	occluder_ptr->set_sampler(occ_sampler_ptr);
 	set_ambient_light(occluder_ptr);
 	add_double3_sampler(occ_sampler_ptr);
 
-	MultiJittered* env_sampler_ptr = new MultiJittered(num_samples);
+	Pinhole* pinhole_ptr = new Pinhole();
+	pinhole_ptr->set_eye(140, 50, 75);
+	pinhole_ptr->set_lookat(0, 0, 0);
+	pinhole_ptr->set_view_distance(4500); // set d
+	pinhole_ptr->set_roll_angle(0); //rotate camera
+	pinhole_ptr->compute_uvw();
+	set_camera(pinhole_ptr);
 
-	Emissive* emissive_ptr = new Emissive();
-	emissive_ptr->set_ce(1.0, 1.0, 0.5);
-	emissive_ptr->scale_radiance(1.0);
-
-	EnvironmentLight* light_ptr = new EnvironmentLight;
-	light_ptr->set_material(emissive_ptr);
-	light_ptr->set_sampler(env_sampler_ptr);
-	light_ptr->set_shadows(true);
-	add_light(light_ptr);
-	add_double3_sampler(env_sampler_ptr);
-
-	// Mesh* mesh_ptr = new Mesh();
-	// Grid* grid_ptr = new Grid(mesh_ptr);
+	// Emissive* emissive_ptr = new Emissive;
+	// emissive_ptr->scale_radiance(20.0);
+	// emissive_ptr->set_ce(red);
 	//
-    // grid_ptr->read_obj_file("./src/dragon.obj");       // read obj file
-	// grid_ptr->set_material(reflective_ptr1);
+	// Rectangle* rectangle_ptr = new Rectangle(Point3D(-4, 0, -4), Vector3D(2, 0, 0), Vector3D(0, 2, 0));
+	// rectangle_ptr->set_material(emissive_ptr);
+	// rectangle_ptr->set_shadows(false);
+	// rectangle_ptr->set_sampler(area_sampler_ptr);
+	// add_object(rectangle_ptr);
+	// add_double2_sampler(area_sampler_ptr);
 	//
-	// grid_ptr->setup_cells();
-	// grid_ptr->add_object(plane_ptr1);
-	// add_object(grid_ptr);
-	// add_mesh(mesh_ptr);
-
-	Pinhole* camera_ptr = new Pinhole;
-	camera_ptr->set_eye(50, 50, -75);
-	camera_ptr->set_lookat(0, 0, 0);
-	camera_ptr->set_view_distance(4500);
-	camera_ptr->set_roll_angle(0); //rotate camera
-	camera_ptr->compute_uvw();
-	set_camera(camera_ptr);
-
-	Emissive* emissive_ptr1 = new Emissive;
-	emissive_ptr1->scale_radiance(20.0);
-	emissive_ptr1->set_ce(red);
-
-	MultiJittered* area_sampler_ptr1 = new MultiJittered(num_samples);
-
-	Rectangle* rectangle_ptr1 = new Rectangle(Point3D(0, 0, -2), Vector3D(2, 0, 0),Vector3D(0, 2, 0));
-	rectangle_ptr1->set_material(emissive_ptr1);
-	rectangle_ptr1->set_shadows(false);
-	rectangle_ptr1->set_sampler(area_sampler_ptr1);
-	// add_object(rectangle_ptr1);
-
-	AreaLight* area_light_ptr1 = new AreaLight;
-	area_light_ptr1->set_object(rectangle_ptr1);
-	area_light_ptr1->set_shadows(true);
-	// add_light(area_light_ptr1);
-
-	Matte* matte_ptr1 = new Matte;
-	matte_ptr1->set_ka(0.15);
-	matte_ptr1->set_kd(0.85);
-	matte_ptr1->set_cd(RGBColor(1, 1, 1)); // blue
+	// AreaLight* area_light_ptr = new AreaLight;
+	// area_light_ptr->set_object(rectangle_ptr);
+	// area_light_ptr->set_shadows(true);
+	// add_light(area_light_ptr);
+	//
+	Phong* phong_ptr1 = new Phong;
+	phong_ptr1->set_ka(0.15);
+	phong_ptr1->set_kd(0.85);
+	phong_ptr1->set_cd(RGBColor(1, 1, 0)); // blue
+	phong_ptr1->set_ks(0.15);
+	phong_ptr1->set_exp(100);
 
 	Sphere* sphere_ptr1 = new Sphere (Point3D(0, 1, 0), 1);
-	sphere_ptr1->set_material(matte_ptr1);
+	sphere_ptr1->set_material(phong_ptr1);
 	add_object(sphere_ptr1);
 
 	Sphere* sphere_ptr2 = new Sphere (Point3D(-2, 1, 2), 1);
-	sphere_ptr2->set_material(matte_ptr1);
+	sphere_ptr2->set_material(reflective_ptr1);
 	add_object(sphere_ptr2);
 
 	Sphere* sphere_ptr3 = new Sphere (Point3D(-4, 1, 4), 1);
-	sphere_ptr3->set_material(matte_ptr1);
+	sphere_ptr3->set_material(phong_ptr1);
 	add_object(sphere_ptr3);
 
 	Matte* matte_ptr2 = new Matte;
@@ -199,6 +185,11 @@ void World::build(){
 	Plane* plane_ptr1 = new Plane(Point3D(0), Normal(0, 1, 0));
 	plane_ptr1->set_material(matte_ptr2);
 	add_object(plane_ptr1);
+
+	DirectionalLight* l1 = new DirectionalLight(Vector3D(-1, -1, -1));
+	l1->set_shadows(true);
+	l1->set_ls(2.0);
+	add_light(l1);
 
 	/**
 	 * BASIC SPHERE WITH AMBIENT OCCLUSION
