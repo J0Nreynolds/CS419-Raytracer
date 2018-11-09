@@ -19,11 +19,11 @@ class BRDF {
         void set_sampler_ptr(Sampler* ptr);
         Sampler* get_sampler_ptr();
 
-        virtual RGBColor f(const ShadeRec& sr, const Vector3D& wi, const Vector3D& wo) const = 0;
+        virtual RGBColor f(const ShadeRec& sr, const Vector3D& wi, const Vector3D& wo) const;
 
-        virtual RGBColor sample_f(const ShadeRec& sr, Vector3D& wi, const Vector3D& wo) const = 0;
+        virtual RGBColor sample_f(const ShadeRec& sr, Vector3D& wi, const Vector3D& wo) const;
 
-        virtual RGBColor rho(const ShadeRec& sr, const Vector3D& wo) const = 0;
+        virtual RGBColor rho(const ShadeRec& sr, const Vector3D& wo) const;
 
         virtual CLBRDF get_cl_brdf() = 0;
 

@@ -13,7 +13,7 @@ class AreaLighting : public Tracer {
 		virtual
 		~AreaLighting();
 
-		virtual RGBColor			// only overridden in the tracers SingleSphere and MultipleObjects
+		virtual RGBColor
 		trace_ray(const Ray& ray) const;
 
 		virtual RGBColor

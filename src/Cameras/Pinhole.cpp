@@ -36,7 +36,7 @@ void Pinhole::render_scene(World& w) {
 	RGBColor L;
 	ViewPlane vp(w.vp);
 	Ray ray;
-	// int depth = 0;            // recursion depth
+	int depth = 0;            // recursion depth
 	Point2D sp;               // sample point in [0, 1] X [0, 1]
 	Point2D pp;               // sample point on a pixel
 
@@ -56,8 +56,7 @@ void Pinhole::render_scene(World& w) {
 				pp.x = vp.s * (c - 0.5 * vp.hres + sp.x);
 				pp.y = vp.s * (r - 0.5 * vp.vres + sp.y);
 				ray.d = ray_direction(pp);
-				// L += w.tracer_ptr->trace_ray(ray, depth);
-				L += w.tracer_ptr->trace_ray(ray);
+				L += w.tracer_ptr->trace_ray(ray, 0);
 			}
 
 			L /= vp.num_samples;

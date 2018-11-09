@@ -1,17 +1,17 @@
-#ifndef __RAY_CAST__
-#define __RAY_CAST__
+#ifndef __WHITTED__
+#define __WHITTED__
 
-#include "Tracer.h"
+#include "Whitted.h"
 
-class RayCast : public Tracer {
+class Whitted : public Tracer {
 	public:
 
-		RayCast();
+		Whitted();
 
-		RayCast(World* _world_ptr);
+		Whitted(World* _world_ptr);
 
 		virtual
-		~RayCast();
+		~Whitted();
 
 		virtual RGBColor
 		trace_ray(const Ray& ray) const;

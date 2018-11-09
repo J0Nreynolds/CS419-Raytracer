@@ -14,6 +14,7 @@ class ViewPlane {
 		int         hres;         // horizontal image resolution
 		int         vres;         // vertical image resolution
 		int         num_samples;  // number of samples per pixel
+		int         max_depth;    // max recursion depth for reflected rays
 		float       s;            // pixel size
 		float       gamma;        // monitor gamma factor
 		float       inv_gamma;    // one over gamma
@@ -21,6 +22,7 @@ class ViewPlane {
 
 		void set_hres(const int h_res);
 		void set_vres(const int v_res);
+		void set_max_depth(const int depth);
 		void set_pixel_size(const double size);
 		void set_gamma(const double g);
 		void set_show_out_of_gamut(const bool enabled);
@@ -35,6 +37,10 @@ inline void ViewPlane::set_hres(const int h_res) {
 
 inline void ViewPlane::set_vres(const int v_res) {
 	vres = v_res;
+}
+
+inline void ViewPlane::set_max_depth(const int depth) {
+	max_depth = depth;
 }
 
 inline void ViewPlane::set_pixel_size(const double size) {
