@@ -111,13 +111,13 @@ void World::build(){
 	MultiJittered* occ_sampler_ptr = new MultiJittered(num_samples);
 	MultiJittered* area_sampler_ptr = new MultiJittered(num_samples);
 
-	Ambient* occluder_ptr = new Ambient;
-	// occluder_ptr->set_color(white);
-	// occluder_ptr->set_ls(4);
-	// occluder_ptr->set_min_amount(0.15);
-	// occluder_ptr->set_sampler(occ_sampler_ptr);
+	AmbientOccluder* occluder_ptr = new AmbientOccluder;
+	occluder_ptr->set_color(white);
+	occluder_ptr->set_ls(4);
+	occluder_ptr->set_min_amount(0.15);
+	occluder_ptr->set_sampler(occ_sampler_ptr);
 	set_ambient_light(occluder_ptr);
-	// add_double3_sampler(occ_sampler_ptr);
+	add_double3_sampler(occ_sampler_ptr);
 
 	Pinhole* pinhole_ptr = new Pinhole();
 	pinhole_ptr->set_eye(50, 50, -75);

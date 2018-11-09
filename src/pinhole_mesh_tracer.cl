@@ -130,6 +130,7 @@ typedef struct RenderComponents {
 	__global const Sampler* samplers;
 	__global const double3* mesh_vertices;
 	__global const double3* mesh_normals;
+	__private SamplerState* sampler_states;
 } RenderComponents;
 
 typedef struct ShadeRec{
@@ -153,10 +154,11 @@ uint random(__private ulong* seed_ptr)
 	return result;
 }
 
-int sample_index(__private SamplerState* state, const int sampler_index, __private const SceneInfo* scene_info,
+int sample_index(const int sampler_index, __private const SceneInfo* scene_info,
 	__private const RenderComponents* render_components){
 
-	__global const Sampler* sampler = &(render_components->samplers[sampler_index]);
+	__global const Sampler* sampler = render_components->samplers + sampler_index;
+	__private SamplerState* state = render_components->sampler_states + sampler_index;
 	__global const int* shuffled_indices = render_components->ints + (sampler_index * sampler->num_sets * sampler->num_samples);
 
 	int random_num = random(&(state->seed));
@@ -173,19 +175,19 @@ int sample_index(__private SamplerState* state, const int sampler_index, __priva
 	return (jump + shuffled_indices[jump + (count % sampler->num_samples)]);
 }
 
-double2 sample_double2_array(__private SamplerState* state, const int sampler_index, __private const SceneInfo* scene_info,
+double2 sample_double2_array(const int sampler_index, __private const SceneInfo* scene_info,
 	__private const RenderComponents* render_components)
 {
-	__global const Sampler* sampler = &(render_components->samplers[sampler_index]);
-	int index = sample_index(state, sampler_index, scene_info, render_components);
+	__global const Sampler* sampler = render_components->samplers + sampler_index;
+	int index = sample_index(sampler_index, scene_info, render_components);
 	return (render_components->double2_samples[sampler->samples_index + index]);
 }
 
-double3 sample_double3_array(__private SamplerState* state, const int sampler_index, __private const SceneInfo* scene_info,
+double3 sample_double3_array(const int sampler_index, __private const SceneInfo* scene_info,
 	__private const RenderComponents* render_components)
 {
-	__global const Sampler* sampler = &(render_components->samplers[sampler_index]);
-	int index = sample_index(state, sampler_index, scene_info, render_components);
+	__global const Sampler* sampler = render_components->samplers + sampler_index;
+	int index = sample_index(sampler_index, scene_info, render_components);
 	return (render_components->double3_samples[sampler->samples_index + index]);
 }
 
@@ -659,9 +661,8 @@ bool Light_in_shadow(__global const Light* light, __private const Ray* ray,
 double3 ambientOccluder_get_direction(__private const Light* light, __private ShadeRec* sr,
 	double3 u, double3 v, double3 w, __private const SceneInfo* scene_info,
 	__private const RenderComponents* render_components){
-    // double3 sp = sample_double3_array(light->sampler_index, scene_info, render_components);
-    // return (sp.x * u + sp.y * v + sp.z * w);
-	return (1*u);
+    double3 sp = sample_double3_array(light->sampler_index, scene_info, render_components);
+    return (sp.x * u + sp.y * v + sp.z * w);
 }
 
 float3 ambientOccluder_L(__private const Light* light, __private ShadeRec* sr,
@@ -845,20 +846,13 @@ __kernel void pinhole_tracer(__global float3 *dst,
 	__global Sampler* samplers, __global double3* mesh_vertices,
 	__global double3* mesh_normals)
 {
+	int num_sampler_states = 15;
+	__private SamplerState sampler_states[num_sampler_states];
 
 	const int id = get_global_id(0);
 
 	int c = id % scene_info.hres;
 	int r = id / scene_info.hres;
-
-	int jump = 0;
-	int count = 0;
-	ulong seed = c;
-
-	SamplerState state;
-	state.jump = 0;
-	state.count = 0;
-	state.seed = c;
 
 	Ray ray;
 	double2 sp; // sample point in [0, 1] x [0, 1]
@@ -881,9 +875,21 @@ __kernel void pinhole_tracer(__global float3 *dst,
 	render_components.samplers = samplers;
 	render_components.mesh_vertices = mesh_vertices;
 	render_components.mesh_normals = mesh_normals;
+	render_components.sampler_states = sampler_states;
+
+	// initialize sampler states
+	if(scene_info.num_samplers > num_sampler_states){
+		printf("Too many samplers in scene. Increase # of private sampler_states\n");
+		return;
+	}
+	for (int j = 0; j < scene_info.num_samplers; j++) {
+		sampler_states[j].seed = (ulong) (id % 337);
+		sampler_states[j].count = 0;
+		sampler_states[j].jump = 0;
+	}
 
 	for (int j = 0; j < scene_info.num_samples; j++) {
-		sp = sample_double2_array(&state, scene_info.vp_sampler_index, &scene_info, &render_components);
+		sp = sample_double2_array(scene_info.vp_sampler_index, &scene_info, &render_components);
 		pp.s0 = s * (c - 0.5 * scene_info.hres + sp.s0);
 		pp.s1 = s * (r - 0.5 * scene_info.vres + sp.s1);
 		ray.d = ray_direction(pp, scene_info.u, scene_info.v, scene_info.w, scene_info.d);

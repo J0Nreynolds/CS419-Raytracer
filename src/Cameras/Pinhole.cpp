@@ -106,7 +106,7 @@ void Pinhole::opencl_render_scene(World& w) {
     // OPENCL KERNEL //
     ///////////////////
 
-    std::ifstream t("./src/pinhole_mesh_tracer.cl");
+    std::ifstream t("./src/pinhole_area_lighting_tracer.cl");
     std::string str((std::istreambuf_iterator<char>(t)),
                   std::istreambuf_iterator<char>());
     const char* source_string = str.c_str();
@@ -238,7 +238,7 @@ void Pinhole::opencl_render_scene(World& w) {
 
 	// Open the renderer
 	w.open_window(vp.hres, vp.vres);
-	int stop = time(NULL) + 5;
+	int stop = time(NULL) + 10;
 	int num_draws = 0;
 	SDL_Event e;
 	while(time(NULL) < stop){

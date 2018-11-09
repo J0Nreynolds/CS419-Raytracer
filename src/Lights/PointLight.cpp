@@ -48,17 +48,6 @@ PointLight* PointLight::clone() const{
 	return (new PointLight(*this));
 }
 
-
-CLLight PointLight::get_cl_light()
-{
-	CLLight ret = Light::get_cl_light();
-	ret.pos = (cl_double3){p.x, p.y, p.z};
-	ret.dir = (cl_double3){0, 0, 0};
-    ret.color = (cl_float3){color.r, color.g, color.b};
-    ret.ls = (cl_float)ls;
-	return ret;
-}
-
 RGBColor PointLight::L(ShadeRec& sr)
 {
     return ls * color;
@@ -72,11 +61,21 @@ Vector3D PointLight::get_direction(ShadeRec& sr)
 bool PointLight::in_shadow(const Ray& ray, const ShadeRec& sr) const {
 	float t;
 	int num_objects = sr.w.objects.size();
-	float d = p.distance(ray.o);
+	float ts = (p - ray.o) * ray.d;
 
 	for (int j = 0; j < num_objects; j++)
-		if (sr.w.objects[j]->shadow_hit(ray, t) && t < d)
+		if (sr.w.objects[j]->shadow_hit(ray, t) && t < ts)
 			return (true);
 
 	return (false);
+}
+
+CLLight PointLight::get_cl_light()
+{
+	CLLight ret = Light::get_cl_light();
+	ret.pos = (cl_double3){p.x, p.y, p.z};
+	ret.dir = (cl_double3){0, 0, 0};
+    ret.color = (cl_float3){color.r, color.g, color.b};
+    ret.ls = (cl_float)ls;
+	return ret;
 }
