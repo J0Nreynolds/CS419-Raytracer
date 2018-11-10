@@ -12,14 +12,14 @@
 // -------------------------------------------------------------------- default constructor
 
 Whitted::Whitted()
-	: Tracer()
+	: Tracer(), ray_count(0)
 {}
 
 
 // -------------------------------------------------------------------- constructor
 
 Whitted::Whitted(World* _worldPtr)
-	: Tracer(_worldPtr)
+	: Tracer(_worldPtr), ray_count(0)
 {}
 
 
@@ -42,6 +42,7 @@ Whitted::trace_ray(const Ray& ray) const {
 
 RGBColor
 Whitted::trace_ray(const Ray ray, const int depth) const {
+	ray_count ++;
     if (depth > world_ptr->vp.max_depth)
         return (black);
     else {
@@ -50,7 +51,7 @@ Whitted::trace_ray(const Ray ray, const int depth) const {
             sr.depth = depth;
             sr.ray = ray;
 
-            return (sr.material_ptr->shade(sr));
+            return (sr.material_ptr->area_light_shade(sr));
         }
         else
             return (world_ptr->background_color);

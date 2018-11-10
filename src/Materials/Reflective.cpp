@@ -60,8 +60,21 @@ RGBColor Reflective::shade(ShadeRec& sr) {
     return (L);
 }
 
+RGBColor Reflective::area_light_shade(ShadeRec& sr) {
+    RGBColor L(Phong::area_light_shade(sr)); // direct illumination
+
+    Vector3D wo = -sr.ray.d;
+    Vector3D wi;
+    RGBColor fr = reflective_brdf->sample_f(sr, wi, wo);
+    Ray reflected_ray(sr.hit_point, wi);
+
+    L += fr * sr.w.tracer_ptr->trace_ray(reflected_ray, sr.depth + 1) * (sr.normal * wi);
+
+    return (L);
+}
+
 CLMaterial Reflective::get_cl_material(){
     CLMaterial ret;
-    ret.specular_brdf = reflective_brdf->get_cl_brdf();
+    ret.diffuse_brdf = reflective_brdf->get_cl_brdf();
     return ret;
 }

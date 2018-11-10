@@ -16,7 +16,7 @@ class PerfectTransmitter: public BTDF {
         void set_kt(float kr);
         void set_ior(float ior);
 
-        virtual RGBColor sample_f(const ShadeRec& sr, Vector3D& wi, const Vector3D& wo) const;
+        virtual RGBColor sample_f(const ShadeRec& sr, Vector3D& wt, const Vector3D& wo) const;
 
         virtual bool tir(const ShadeRec& sr) const;
 

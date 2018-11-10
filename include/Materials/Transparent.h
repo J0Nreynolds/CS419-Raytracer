@@ -19,6 +19,7 @@ class Transparent: public Reflective {
         void set_ior(float ior);
 
         virtual RGBColor shade(ShadeRec& sr);
+        virtual RGBColor area_light_shade(ShadeRec& sr);
 
 		virtual CLMaterial get_cl_material();
 

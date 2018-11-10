@@ -16,6 +16,7 @@
 #include "CLSamplerState.h"
 #include "AmbientOccluder.h"
 
+#include "Whitted.h"
 #include "Pinhole.h"
 
 using namespace std;
@@ -65,6 +66,9 @@ void Pinhole::render_scene(World& w) {
 		}
 	int end = duration_cast< milliseconds >(system_clock::now().time_since_epoch()).count();
 	std::cout << (int)(end-start) << "ms to render" << std::endl;
+	Whitted* whitted = dynamic_cast<Whitted*>(w.tracer_ptr);
+	if(whitted)
+		std::cout << whitted->get_ray_count() << " rays used during render" << std::endl;
  	w.renderer->display(); // Display for a second before saving
  	w.renderer->save_png("renders/pinhole.png");
 }

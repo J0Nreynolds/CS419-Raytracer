@@ -22,6 +22,15 @@ class Whitted : public Tracer {
 		virtual RGBColor
 		trace_ray(const Ray ray, float& tmin, const int depth) const;
 
+		int get_ray_count();
+
+	private:
+		mutable int ray_count;
+
 };
+
+inline int Whitted::get_ray_count(){
+	return ray_count;
+}
 
 #endif

@@ -19,6 +19,7 @@ class Reflective: public Phong {
         void set_cr(const RGBColor& c);
 
         virtual RGBColor shade(ShadeRec& sr);
+        virtual RGBColor area_light_shade(ShadeRec& sr);
 
 		virtual CLMaterial get_cl_material();
 

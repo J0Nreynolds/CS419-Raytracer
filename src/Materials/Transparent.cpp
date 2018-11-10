@@ -54,26 +54,51 @@ RGBColor Transparent::shade(ShadeRec& sr) {
     RGBColor fr = reflective_brdf->sample_f(sr, wi, wo); // computes wi
     Ray reflected_ray(sr.hit_point, wi);
 
-    if(specular_btdf->tir(sr))
-        L += sr.w.tracer_ptr->trace_ray(reflected_ray, sr.depth + 1);
+    if(specular_btdf->tir(sr)){
+        L += fr * sr.w.tracer_ptr->trace_ray(reflected_ray, sr.depth + 1) * (sr.normal * wi);
         // kr = 1.0
+    }
     else {
         Vector3D wt;
         RGBColor ft = specular_btdf->sample_f(sr, wt, wo); // computes wt
         Ray transmitted_ray(sr.hit_point, wt);
 
         L += fr * sr.w.tracer_ptr->trace_ray(reflected_ray, sr.depth + 1)
-           * fabs(sr.normal * wi);
-        L += ft * sr.w.tracer_ptr->trace_ray(transmitted_ray, sr.depth + 1)
-           * fabs(sr.normal * wt);
+           * (sr.normal * wi);
+        L += ft * sr.w.tracer_ptr->trace_ray(transmitted_ray, sr.depth + 1);
     }
 
     return (L);
+}
 
+RGBColor Transparent::area_light_shade(ShadeRec& sr) {
+    RGBColor L(Phong::shade(sr));
+
+    Vector3D wo = -sr.ray.d;
+    Vector3D wi;
+    RGBColor fr = reflective_brdf->sample_f(sr, wi, wo); // computes wi
+    Ray reflected_ray(sr.hit_point, wi);
+
+    if(specular_btdf->tir(sr)){
+        L += fr * sr.w.tracer_ptr->trace_ray(reflected_ray, sr.depth + 1) * (sr.normal * wi);
+        // kr = 1.0
+    }
+    else {
+        Vector3D wt;
+        RGBColor ft = specular_btdf->sample_f(sr, wt, wo); // computes wt
+        Ray transmitted_ray(sr.hit_point, wt);
+
+        L += fr * sr.w.tracer_ptr->trace_ray(reflected_ray, sr.depth + 1)
+           * (sr.normal * wi);
+        L += ft * sr.w.tracer_ptr->trace_ray(transmitted_ray, sr.depth + 1);
+    }
+
+    return (L);
 }
 
 CLMaterial Transparent::get_cl_material(){
     CLMaterial ret;
+    ret.diffuse_brdf = reflective_brdf->get_cl_brdf();
     ret.specular_brdf = specular_btdf->get_cl_btdf();
     return ret;
 }
