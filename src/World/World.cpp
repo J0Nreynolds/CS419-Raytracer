@@ -59,6 +59,7 @@ using namespace std;
 
 #include "Whitted.h"
 #include "Reflective.h"
+#include "GlossyReflector.h"
 
 #include "Transparent.h"
 
@@ -125,6 +126,18 @@ void World::build(){
 	reflective_ptr1->set_exp(100);
 	reflective_ptr1->set_kr(1);
 	reflective_ptr1->set_cr(RGBColor(1.0, 1.0, 1.0));
+
+	float exp = 100.0;
+	GlossyReflector* glossy = new GlossyReflector();
+	glossy->set_samples(num_samples, exp);
+	glossy->set_ka(0.0);
+	glossy->set_kd(0.0);
+	glossy->set_ks(0.0);
+	glossy->set_exp(exp);
+	glossy->set_cd(RGBColor(1.0, 1.0, 0.3));
+	glossy->set_kr(0.9);
+	glossy->set_exponent(exp);
+	glossy->set_cr(RGBColor(1.0, 1.0, 0.3));
 
 	MultiJittered* occ_sampler_ptr = new MultiJittered(num_samples);
 
@@ -199,8 +212,8 @@ void World::build(){
 	phong_ptr1->set_exp(100);
 
 	Rectangle* rectangle_ptr1 = new Rectangle(Point3D(-5, 0, 12), Vector3D(10, 0, 0), Vector3D(0, 0, -10));
-	rectangle_ptr1->set_material(reflective_ptr1);
-	// add_object(rectangle_ptr1);
+	rectangle_ptr1->set_material(glossy);
+	add_object(rectangle_ptr1);
 
 	Sphere* sphere_ptr1 = new Sphere (Point3D(-3.75, 1, 0), 1);
 	sphere_ptr1->set_material(phong_ptr1);
@@ -208,7 +221,7 @@ void World::build(){
 
 	Sphere* sphere_ptr2 = new Sphere (Point3D(-1.25, 1, 0), 1);
 	sphere_ptr2->set_material(reflective_ptr1);
-	// add_object(sphere_ptr2);
+	add_object(sphere_ptr2);
 
 	Matte* matte_ptr0 = new Matte;
 	matte_ptr0->set_ka(0.15);
