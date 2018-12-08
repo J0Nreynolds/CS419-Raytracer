@@ -15,6 +15,7 @@ typedef struct CLLight{
 	cl_float   ls;
 	cl_int     sampler_index;
 	cl_char    shadows;
+	cl_char    type;
 } CLLight;
 
 #endif

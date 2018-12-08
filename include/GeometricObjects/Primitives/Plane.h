@@ -40,6 +40,7 @@ class Plane: public GeometricObject {
 		shadow_hit(const Ray& ray, float& tmin) const;
 
 		CLPlane get_cl_plane();
+		virtual char get_cl_type() const;
 
 	private:
 
@@ -48,6 +49,10 @@ class Plane: public GeometricObject {
 
 		static const double kEpsilon;   // for shadows and secondary rays
 };
+
+inline char Plane::get_cl_type() const {
+	return 'p';
+}
 
 #endif
 

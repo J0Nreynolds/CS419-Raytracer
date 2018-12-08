@@ -131,10 +131,11 @@ float AreaLight::pdf(const ShadeRec& sr) const {
 CLLight AreaLight::get_cl_light()
 {
 	CLLight ret = Light::get_cl_light();
-	ret.dir = (cl_double3){light_normal.x, light_normal.y, light_normal.z};
+	ret.dir = (cl_double3){0, 0, 0};
 	ret.pos = (cl_double3){0, 0, 0};
     ret.color = (cl_float3){0, 0, 0};
     ret.ls = (cl_float)0;
-    ret.shadows = (cl_char)-1;
+	ret.type = (cl_char) object_ptr->get_cl_type();
+	ret.sampler_index = (cl_int) object_ptr->get_cl_index();
 	return ret;
 }

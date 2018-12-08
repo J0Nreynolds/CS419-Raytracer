@@ -62,9 +62,15 @@ class GeometricObject {
 		virtual Normal get_normal() const;
 		virtual Normal get_normal(const Point3D& p);
 
+		// OpenCL functions
+        void set_cl_index(int idx);
+		int get_cl_index() const;
+		virtual char get_cl_type() const = 0;
+
 
 	protected:
 		bool 				shadows;
+		int 				cl_index; 			// for referencing objects in OpenCL
 		RGBColor 			color;				// only used for Bare Bones ray tracing
 		mutable Material* 	material_ptr;
 		GeometricObject& operator=(const GeometricObject& rhs);
@@ -112,6 +118,18 @@ inline void GeometricObject::set_shadows(bool enabled){
 
 inline bool GeometricObject::has_shadows() const {
 	return shadows;
+}
+
+// -------------------------------------------------------------------- set_cl_index
+
+inline void GeometricObject::set_cl_index(int idx) {
+	cl_index = idx;
+}
+
+// -------------------------------------------------------------------- set_cl_index
+
+inline int GeometricObject::get_cl_index() const {
+	return cl_index;
 }
 
 #endif

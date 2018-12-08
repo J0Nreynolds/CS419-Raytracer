@@ -620,7 +620,7 @@ Point3D Grid::max_coordinates(){
 }
 
 void Grid::read_obj_file(std::string file_name){
-    int multiplier = 400;
+    int multiplier = 6;
     std::ifstream file(file_name);
     if(!file.is_open())
     {

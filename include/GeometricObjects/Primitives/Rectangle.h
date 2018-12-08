@@ -50,6 +50,7 @@ class Rectangle: public GeometricObject {
         virtual Normal get_normal(const Point3D& p);
 
 		CLRectangle get_cl_rectangle();
+		virtual char get_cl_type() const;
 
     private:
 
@@ -67,5 +68,9 @@ class Rectangle: public GeometricObject {
         static const double kEpsilon;   // for shadows and secondary rays
 
 };
+
+inline char Rectangle::get_cl_type() const {
+	return 'r';
+}
 
 #endif

@@ -24,9 +24,15 @@ class SmoothMeshTriangle: public MeshTriangle {
 		operator= (const SmoothMeshTriangle& mesh_triangle);
 		virtual bool hit(const Ray& ray, double& t, ShadeRec& s) const;
 
+		virtual char get_cl_type() const;
+
 	private:
 		Normal interpolate_normal(double beta, double gamma) const;
 
 };
+
+inline char SmoothMeshTriangle::get_cl_type() const {
+    return 'S';
+}
 
 #endif

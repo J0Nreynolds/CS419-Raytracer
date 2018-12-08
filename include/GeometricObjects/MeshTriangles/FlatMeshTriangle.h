@@ -24,6 +24,12 @@ class FlatMeshTriangle: public MeshTriangle {
 		operator= (const FlatMeshTriangle& mesh_triangle);
 
 		virtual bool hit(const Ray& ray, double& t, ShadeRec& s) const;
+
+		virtual char get_cl_type() const;
 };
+
+inline char FlatMeshTriangle::get_cl_type() const {
+    return 'F';
+}
 
 #endif

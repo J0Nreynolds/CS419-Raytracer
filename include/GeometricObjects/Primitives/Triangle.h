@@ -42,6 +42,7 @@ class Triangle: public GeometricObject {
         virtual BBox get_bounding_box();
 
 		CLTriangle get_cl_triangle();
+		virtual char get_cl_type() const;
 
 	private:
 		Point3D 	v0;   			// first corner of triangle
@@ -50,5 +51,9 @@ class Triangle: public GeometricObject {
 
 		static const double kEpsilon;   // for shadows and secondary rays
 };
+
+inline char Triangle::get_cl_type() const {
+	return 't';
+}
 
 #endif

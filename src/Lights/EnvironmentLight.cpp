@@ -101,7 +101,6 @@ CLLight EnvironmentLight::get_cl_light()
 	ret.dir = (cl_double3){0, 0, 0};
 	ret.pos = (cl_double3){0, 0, 0};
 	ret.color = (cl_float3){0, 0, 0};
-	ret.ls = (cl_float)0;
-	ret.shadows = (cl_char)-2;
+	ret.ls = (cl_float)(-1);
 	return ret;
 }

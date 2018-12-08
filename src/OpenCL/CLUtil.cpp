@@ -88,6 +88,7 @@ void CLUtil::get_cl_spheres(const World& world, CLSphere*& spheres, int& num_sph
     for(int i = 0; i < num_objects && j < num_spheres; i++){
         Sphere* sphere = dynamic_cast<Sphere*> (world.objects[i]);
         if(sphere != NULL){
+            sphere->set_cl_index(j);
             spheres[j++] = sphere->get_cl_sphere();
         }
     }
@@ -107,6 +108,7 @@ void CLUtil::get_cl_triangles(const World& world, CLTriangle*& triangles, int& n
     for(int i = 0; i < num_objects && j < num_triangles; i++){
         Triangle* triangle = dynamic_cast<Triangle*> (world.objects[i]);
         if(triangle != NULL){
+            triangle->set_cl_index(j);
             triangles[j++] = triangle->get_cl_triangle();
         }
     }
@@ -126,6 +128,7 @@ void CLUtil::get_cl_rectangles(const World& world, CLRectangle*& rectangles, int
     for(int i = 0; i < num_objects && j < num_rectangles; i++){
         Rectangle* rectangle = dynamic_cast<Rectangle*> (world.objects[i]);
         if(rectangle != NULL){
+            rectangle->set_cl_index(j);
             rectangles[j++] = rectangle->get_cl_rectangle();
         }
     }
@@ -180,6 +183,7 @@ void CLUtil::get_cl_planes(const World& world, CLPlane*& planes, int& num_planes
     for(int i = 0; i < num_objects && j < num_planes; i++){
         Plane* plane = dynamic_cast<Plane*> (world.objects[i]);
         if(plane != NULL){
+            plane->set_cl_index(j);
             planes[j++] = plane->get_cl_plane();
         }
     }

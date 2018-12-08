@@ -54,6 +54,7 @@ class Sphere: public GeometricObject {
         virtual BBox get_bounding_box();
 
 		CLSphere get_cl_sphere();
+		virtual char get_cl_type() const;
 
 	private:
 
@@ -88,6 +89,10 @@ inline Point3D Sphere::get_center() {
 
 inline double Sphere::get_radius() {
 	return radius;
+}
+
+inline char Sphere::get_cl_type() const {
+	return 's';
 }
 
 #endif

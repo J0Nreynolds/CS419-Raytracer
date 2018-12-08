@@ -77,6 +77,7 @@ typedef struct Light{
 	float   ls;
 	int     sampler_index;
 	char    shadows;
+	char    type;
 } Light;
 
 typedef struct Sampler{
@@ -154,12 +155,11 @@ uint random(__private ulong* seed_ptr)
 	return result;
 }
 
-int sample_index(const int sampler_index, __private const SceneInfo* scene_info,
-	__private const RenderComponents* render_components){
+int sample_index(const int sampler_index, __private const RenderComponents* rc){
 
-	__global const Sampler* sampler = render_components->samplers + sampler_index;
-	__private SamplerState* state = render_components->sampler_states + sampler_index;
-	__global const int* shuffled_indices = render_components->ints + (sampler_index * sampler->num_sets * sampler->num_samples);
+	__global const Sampler* sampler = rc->samplers + sampler_index;
+	__private SamplerState* state = rc->sampler_states + sampler_index;
+	__global const int* shuffled_indices = rc->ints + (sampler_index * sampler->num_sets * sampler->num_samples);
 
 	int random_num = random(&(state->seed));
 	int count = (state->count);
@@ -175,20 +175,44 @@ int sample_index(const int sampler_index, __private const SceneInfo* scene_info,
 	return (jump + shuffled_indices[jump + (count % sampler->num_samples)]);
 }
 
-double2 sample_double2_array(const int sampler_index, __private const SceneInfo* scene_info,
-	__private const RenderComponents* render_components)
-{
-	__global const Sampler* sampler = render_components->samplers + sampler_index;
-	int index = sample_index(sampler_index, scene_info, render_components);
-	return (render_components->double2_samples[sampler->samples_index + index]);
+int resample_index(const int sampler_index, __private const RenderComponents* rc){
+
+	__global const Sampler* sampler = rc->samplers + sampler_index;
+	__private SamplerState* state = rc->sampler_states + sampler_index;
+	__global const int* shuffled_indices = rc->ints + (sampler_index * sampler->num_sets * sampler->num_samples);
+
+	int count = (state->count);
+	int jump = (state->jump);
+
+	return (jump + shuffled_indices[jump + (count % sampler->num_samples)]);
 }
 
-double3 sample_double3_array(const int sampler_index, __private const SceneInfo* scene_info,
-	__private const RenderComponents* render_components)
+double2 sample_double2_array(const int sampler_index, __private const RenderComponents* rc)
 {
-	__global const Sampler* sampler = render_components->samplers + sampler_index;
-	int index = sample_index(sampler_index, scene_info, render_components);
-	return (render_components->double3_samples[sampler->samples_index + index]);
+	__global const Sampler* sampler = rc->samplers + sampler_index;
+	int index = sample_index(sampler_index, rc);
+	return (rc->double2_samples[sampler->samples_index + index]);
+}
+
+double2 resample_double2_array(const int sampler_index, __private const RenderComponents* rc)
+{
+	__global const Sampler* sampler = rc->samplers + sampler_index;
+	int index = resample_index(sampler_index, rc);
+	return (rc->double2_samples[sampler->samples_index + index]);
+}
+
+double3 sample_double3_array(const int sampler_index, __private const RenderComponents* rc)
+{
+	__global const Sampler* sampler = rc->samplers + sampler_index;
+	int index = sample_index(sampler_index, rc);
+	return (rc->double3_samples[sampler->samples_index + index]);
+}
+
+double3 resample_double3_array(const int sampler_index, __private const RenderComponents* rc)
+{
+	__global const Sampler* sampler = rc->samplers + sampler_index;
+	int index = resample_index(sampler_index, rc);
+	return (rc->double3_samples[sampler->samples_index + index]);
 }
 
 bool intersect_sphere(__global const Sphere* sphere, __private const Ray* ray,
@@ -531,14 +555,14 @@ bool shadow_intersect_rectangle(__global const Rectangle* rectangle,
 }
 
 ShadeRec hit_objects(__private const Ray* ray, __private const SceneInfo* scene_info,
-	__private const RenderComponents* render_components){
-	__global const Plane* planes = render_components->planes;
-	__global const Triangle* triangles = render_components->triangles;
-	__global const Rectangle* rectangles = render_components->rectangles;
-	__global const Sphere* spheres = render_components->spheres;
-	__global const MeshTriangle* mesh_triangles = render_components->mesh_triangles;
-	__global const double3* mesh_vertices = render_components->mesh_vertices;
-	__global const double3* mesh_normals = render_components->mesh_normals;
+	__private const RenderComponents* rc){
+	__global const Plane* planes = rc->planes;
+	__global const Triangle* triangles = rc->triangles;
+	__global const Rectangle* rectangles = rc->rectangles;
+	__global const Sphere* spheres = rc->spheres;
+	__global const MeshTriangle* mesh_triangles = rc->mesh_triangles;
+	__global const double3* mesh_vertices = rc->mesh_vertices;
+	__global const double3* mesh_normals = rc->mesh_normals;
 
 	ShadeRec sr;
 	sr.hit_an_object = false;
@@ -611,30 +635,98 @@ ShadeRec hit_objects(__private const Ray* ray, __private const SceneInfo* scene_
 	return (sr);
 }
 
-float areaLight_G(__global const Light* light, __private ShadeRec* sr){
+double3 sample_rectangle(__global const Rectangle* rectangle, __private const RenderComponents* rc){
+	double2 sample_point = sample_double2_array(rectangle->sampler_index, rc);
+	return (rectangle->p0 + sample_point.x * rectangle->a + sample_point.y * rectangle->b);
+}
+
+double3 resample_rectangle(__global const Rectangle* rectangle, __private const RenderComponents* rc){
+	double2 sample_point = resample_double2_array(rectangle->sampler_index, rc);
+	return (rectangle->p0 + sample_point.x * rectangle->a + sample_point.y * rectangle->b);
+}
+
+double3 rectangle_get_normal(__global const Rectangle* rectangle, double3 sample_point) {
+	return rectangle->normal;
+}
+
+float areaLight_G(__global const Light* light, __private ShadeRec* sr, __private const RenderComponents* rc){
+	if(light->type == 'r'){
+		__global const Rectangle* rect = (rc->rectangles + light->sampler_index);
+		// get the same sample point used in areaLight_get_direction
+	    double3 sp = resample_rectangle(rect, rc);
+		// recompute the light direction returned in get_direction
+		double3 diff = sp - sr->hit_point;
+		double3 wi = normalize(diff);
+		double3 light_normal = rectangle_get_normal(rect, sp);
+
+		float ndotd = dot(-light_normal, wi);
+		float d2 = dot(diff, diff);
+		return (ndotd / d2);
+	}
 	return 1.0;
 }
 
-float Light_G(__global const Light* light, __private ShadeRec* sr){
+float Light_G(__global const Light* light, __private ShadeRec* sr, __private const RenderComponents* rc){
     if(all(light->dir == 0) && all(light->pos == 0)){ // is an area light
-        return areaLight_G(light, sr);
+        return areaLight_G(light, sr, rc);
     }
     else {
 		return 1.0;
     }
 }
 
-float areaLight_pdf(__global const Light* light, __private ShadeRec* sr){
+float rectangle_pdf(__global const Rectangle* rectangle, __private ShadeRec* sr) {
+	return rectangle->inv_area;
+}
+
+float areaLight_pdf(__global const Light* light, __private ShadeRec* sr, __private const RenderComponents* rc){
+	if(light->type == 'r'){
+		return rectangle_pdf(rc->rectangles + light->sampler_index, sr);
+	}
 	return 1.0;
 }
 
-float Light_pdf(__global const Light* light, __private ShadeRec* sr){
+float Light_pdf(__global const Light* light, __private ShadeRec* sr, __private const RenderComponents* rc){
     if(all(light->dir == 0) && all(light->pos == 0)){ // is an area light
-        return areaLight_pdf(light, sr);
+        return areaLight_pdf(light, sr, rc);
     }
     else {
 		return 1.0;
     }
+}
+
+float3 emissive_get_Le(__global const Material* material, __private ShadeRec* sr){
+    return material->ambient_brdf.cd * material->ambient_brdf.kd;
+}
+
+float3 get_Le(__global const Material* material, __private ShadeRec* sr){
+
+    if(material->specular_brdf.ks == 0 && material->specular_brdf.e == 0
+		&& material->diffuse_brdf.kd == 0){
+		return emissive_get_Le(material, sr);
+	}
+	return (float3)(0.0, 0.0, 0.0);
+}
+
+float3 areaLight_L(__global const Light* light, __private ShadeRec* sr, __private const RenderComponents* rc){
+	if(light->type == 'r'){
+		__global const Rectangle* rect = (rc->rectangles + light->sampler_index);
+		// get the same sample point used in areaLight_get_direction
+		double3 sp = resample_rectangle(rect, rc);
+		// recompute the light direction returned in get_direction
+		double3 diff = sp - sr->hit_point;
+		double3 wi = normalize(diff);
+		double3 light_normal = rectangle_get_normal(rect, sp);
+
+		float ndotd = dot(-light_normal, wi);
+		if(ndotd > 0.0){
+			return get_Le(&(rect->material), sr);
+		}
+		else {
+			return (float3)(0.0, 0.0, 0.0);
+		}
+	}
+	return (float3)(1.0, 1.0, 1.0);
 }
 
 float3 directionalLight_L(__global const Light* light, __private ShadeRec* sr){
@@ -645,8 +737,11 @@ float3 pointLight_L(__global const Light* light, __private ShadeRec* sr){
     return light->color * light->ls;
 }
 
-float3 Light_L(__global const Light* light, __private ShadeRec* sr){
-    if(all(light->dir == 0)){
+float3 Light_L(__global const Light* light, __private ShadeRec* sr, __private const RenderComponents* rc){
+	if(all(light->dir == 0) && all(light->pos == 0)){ // is an area light
+		return areaLight_L(light, sr, rc);
+	}
+    else if(all(light->dir == 0)){
         return pointLight_L(light, sr);
     }
     else {
@@ -658,6 +753,19 @@ float3 ambient_L(__private const Light* light, __private ShadeRec* sr){
     return light->color * light->ls;
 }
 
+double3 areaLight_get_direction(__global const Light* light, __private ShadeRec* sr,
+	__private const RenderComponents* rc){
+	if(light->type == 'r'){
+		__global const Rectangle* rect = (rc->rectangles + light->sampler_index);
+		// get the same sample point used in areaLight_get_direction
+	    double3 sp = sample_rectangle(rect, rc);
+		// recompute the light direction returned in get_direction
+		double3 diff = sp - sr->hit_point;
+		return normalize(diff);
+	}
+	return (double3)(0, -1, 0);
+}
+
 double3 directionalLight_get_direction(__global const Light* light, __private ShadeRec* sr){
     return normalize(-light->dir);
 }
@@ -666,8 +774,12 @@ double3 pointLight_get_direction(__global const Light* light, __private ShadeRec
     return normalize(light->pos - sr->local_hit_point);
 }
 
-double3 Light_get_direction(__global const Light* light, __private ShadeRec* sr){
-    if(all(light->dir == 0)){
+double3 Light_get_direction(__global const Light* light, __private ShadeRec* sr,
+	__private const RenderComponents* rc){
+	if(all(light->dir == 0) && all(light->pos == 0)){ // is an area light
+		return areaLight_get_direction(light, sr, rc);
+	}
+	else if(all(light->dir == 0)){
         return pointLight_get_direction(light, sr);
     }
     else {
@@ -676,37 +788,77 @@ double3 Light_get_direction(__global const Light* light, __private ShadeRec* sr)
 
 }
 
-bool pointLight_in_shadow(__global const Light* light, __private const Ray* ray,
+bool areaLight_in_shadow(__global const Light* light, __private const Ray* ray,
 	__private ShadeRec* sr, __private const SceneInfo* scene_info,
-	__private const RenderComponents* render_components){
-	__global const Plane* planes = render_components->planes;
-	__global const Triangle* triangles = render_components->triangles;
-	__global const Rectangle* rectangles = render_components->rectangles;
-	__global const Sphere* spheres = render_components->spheres;
-	__global const MeshTriangle* mesh_triangles = render_components->mesh_triangles;
-	__global const double3* mesh_vertices = render_components->mesh_vertices;
+	__private const RenderComponents* rc){
+	__global const Plane* planes = rc->planes;
+	__global const Triangle* triangles = rc->triangles;
+	__global const Rectangle* rectangles = rc->rectangles;
+	__global const Sphere* spheres = rc->spheres;
+	__global const MeshTriangle* mesh_triangles = rc->mesh_triangles;
+	__global const double3* mesh_vertices = rc->mesh_vertices;
+
+	__global const Rectangle* rect = (rc->rectangles + light->sampler_index);
+	// get the same sample point used in areaLight_get_direction
+	double3 sp = resample_rectangle(rect, rc);
 
     float t;
-	float d = length(light->pos - ray->o);
+	float ts = dot(sp - ray->o, ray->d);
 
 	for (int j = 0; j < scene_info->num_planes; j++)
-		if (shadow_intersect_plane(&planes[j], ray, &t) && length(t * ray->d) < d)
+		if (shadow_intersect_plane(&planes[j], ray, &t) && t < ts)
 			return (true);
 
 	for (int j = 0; j < scene_info->num_triangles; j++)
-		if (shadow_intersect_triangle(&triangles[j], ray, &t) && length(t * ray->d) < d)
+		if (shadow_intersect_triangle(&triangles[j], ray, &t) && t < ts)
 			return (true);
 
 	for (int j = 0; j < scene_info->num_rectangles; j++)
-		if (shadow_intersect_rectangle(&rectangles[j], ray, &t) && length(t * ray->d) < d)
+		if (shadow_intersect_rectangle(&rectangles[j], ray, &t) && t < ts)
 			return (true);
 
 	for (int j = 0; j < scene_info->num_mesh_triangles; j++)
-		if (shadow_intersect_mesh_triangle(&mesh_triangles[j], ray, &t, mesh_vertices) && length(t * ray->d) < d)
+		if (shadow_intersect_mesh_triangle(&mesh_triangles[j], ray, &t, mesh_vertices) && t < ts)
 			return (true);
 
 	for (int j = 0; j < scene_info->num_spheres; j++)
-		if (shadow_intersect_sphere(&spheres[j], ray, &t) &&  length(t * ray->d) < d)
+		if (shadow_intersect_sphere(&spheres[j], ray, &t) && t < ts)
+			return (true);
+
+	return (false);
+}
+
+bool pointLight_in_shadow(__global const Light* light, __private const Ray* ray,
+	__private ShadeRec* sr, __private const SceneInfo* scene_info,
+	__private const RenderComponents* rc){
+	__global const Plane* planes = rc->planes;
+	__global const Triangle* triangles = rc->triangles;
+	__global const Rectangle* rectangles = rc->rectangles;
+	__global const Sphere* spheres = rc->spheres;
+	__global const MeshTriangle* mesh_triangles = rc->mesh_triangles;
+	__global const double3* mesh_vertices = rc->mesh_vertices;
+
+    float t;
+	float ts = dot(light->pos - ray->o, ray->d);
+
+	for (int j = 0; j < scene_info->num_planes; j++)
+		if (shadow_intersect_plane(&planes[j], ray, &t) && t < ts)
+			return (true);
+
+	for (int j = 0; j < scene_info->num_triangles; j++)
+		if (shadow_intersect_triangle(&triangles[j], ray, &t) && t < ts)
+			return (true);
+
+	for (int j = 0; j < scene_info->num_rectangles; j++)
+		if (shadow_intersect_rectangle(&rectangles[j], ray, &t) && t < ts)
+			return (true);
+
+	for (int j = 0; j < scene_info->num_mesh_triangles; j++)
+		if (shadow_intersect_mesh_triangle(&mesh_triangles[j], ray, &t, mesh_vertices) && t < ts)
+			return (true);
+
+	for (int j = 0; j < scene_info->num_spheres; j++)
+		if (shadow_intersect_sphere(&spheres[j], ray, &t) && t < ts)
 			return (true);
 
 	return (false);
@@ -714,13 +866,13 @@ bool pointLight_in_shadow(__global const Light* light, __private const Ray* ray,
 
 bool directionalLight_in_shadow(__global const Light* light, __private const Ray* ray,
 	__private ShadeRec* sr, __private const SceneInfo* scene_info,
-	__private const RenderComponents* render_components){
-	__global const Plane* planes = render_components->planes;
-	__global const Triangle* triangles = render_components->triangles;
-	__global const Rectangle* rectangles = render_components->rectangles;
-	__global const Sphere* spheres = render_components->spheres;
-	__global const MeshTriangle* mesh_triangles = render_components->mesh_triangles;
-	__global const double3* mesh_vertices = render_components->mesh_vertices;
+	__private const RenderComponents* rc){
+	__global const Plane* planes = rc->planes;
+	__global const Triangle* triangles = rc->triangles;
+	__global const Rectangle* rectangles = rc->rectangles;
+	__global const Sphere* spheres = rc->spheres;
+	__global const MeshTriangle* mesh_triangles = rc->mesh_triangles;
+	__global const double3* mesh_vertices = rc->mesh_vertices;
 
 	float t;
 
@@ -749,24 +901,26 @@ bool directionalLight_in_shadow(__global const Light* light, __private const Ray
 
 bool Light_in_shadow(__global const Light* light, __private const Ray* ray,
 	__private ShadeRec* sr, __private const SceneInfo* scene_info,
-	__private const RenderComponents* render_components){
-    if(all(light->dir == 0)){
-        return pointLight_in_shadow(light, ray, sr, scene_info, render_components);
+	__private const RenderComponents* rc){
+    if(all(light->dir == 0) && all(light->pos == 0)){
+        return areaLight_in_shadow(light, ray, sr, scene_info, rc);
+    }
+    else if(all(light->dir == 0)){
+        return pointLight_in_shadow(light, ray, sr, scene_info, rc);
     }
     else {
-        return directionalLight_in_shadow(light, ray, sr, scene_info, render_components);
+        return directionalLight_in_shadow(light, ray, sr, scene_info, rc);
     }
 }
 
 double3 ambientOccluder_get_direction(__private const Light* light, __private ShadeRec* sr,
-	double3 u, double3 v, double3 w, __private const SceneInfo* scene_info,
-	__private const RenderComponents* render_components){
-    double3 sp = sample_double3_array(light->sampler_index, scene_info, render_components);
+	double3 u, double3 v, double3 w, __private const RenderComponents* rc){
+    double3 sp = sample_double3_array(light->sampler_index, rc);
     return (sp.x * u + sp.y * v + sp.z * w);
 }
 
 float3 ambientOccluder_L(__private const Light* light, __private ShadeRec* sr,
-	__private const SceneInfo* scene_info, __private const RenderComponents* render_components){
+	__private const SceneInfo* scene_info, __private const RenderComponents* rc){
     double3 w = sr->normal;
     // jitter up vector in case normal is vertical
     double3 v = cross(w, (double3)(0.0072, 1.0, 0.0034));
@@ -775,9 +929,9 @@ float3 ambientOccluder_L(__private const Light* light, __private ShadeRec* sr,
 
     Ray shadow_ray;
     shadow_ray.o = sr->hit_point;
-    shadow_ray.d = ambientOccluder_get_direction(light, sr, u, v, w, scene_info, render_components);
+    shadow_ray.d = ambientOccluder_get_direction(light, sr, u, v, w, rc);
 
-    if (directionalLight_in_shadow(0, &shadow_ray, sr, scene_info, render_components)){
+    if (directionalLight_in_shadow(0, &shadow_ray, sr, scene_info, rc)){
 		float3 min_amount = (float3)(light->dir.x, light->dir.y, light->dir.z);
         return (min_amount * light->ls * light->color);
 	}
@@ -812,7 +966,7 @@ float3 glossy_specular_rho(BRDF brdf, __private ShadeRec* sr, double3 wo){
 }
 
 float3 shade_emissive(__private ShadeRec* sr, __private const SceneInfo* scene_info,
-	__private const RenderComponents* render_components){
+	__private const RenderComponents* rc){
      if (dot(-sr->normal, sr->ray.d) > 0.0){
 		float ls = sr->material_ptr->ambient_brdf.kd;
    		float3 ce = sr->material_ptr->ambient_brdf.cd;
@@ -823,13 +977,13 @@ float3 shade_emissive(__private ShadeRec* sr, __private const SceneInfo* scene_i
 }
 
 float3 area_light_shade_emissive(__private ShadeRec* sr, __private const SceneInfo* scene_info,
-	__private const RenderComponents* render_components){
-	return shade_emissive(sr, scene_info, render_components);
+	__private const RenderComponents* rc){
+	return shade_emissive(sr, scene_info, rc);
 }
 
 float3 shade_matte(__private ShadeRec* sr, __private const SceneInfo* scene_info,
-	__private const RenderComponents* render_components){
-	__global const Light* lights = render_components->lights;
+	__private const RenderComponents* rc){
+	__global const Light* lights = rc->lights;
 
     double3 wo = -sr->ray.d;
 
@@ -839,14 +993,14 @@ float3 shade_matte(__private ShadeRec* sr, __private const SceneInfo* scene_info
 	__private const Light* ambient_light = &(scene_info->ambient_light);
 	float3 L;
 	if(ambient_light->shadows){ //Render with ambient occlusion
-    	L = lambertian_rho(ambient_brdf, sr, wo) * ambientOccluder_L(ambient_light, sr, scene_info, render_components);
+    	L = lambertian_rho(ambient_brdf, sr, wo) * ambientOccluder_L(ambient_light, sr, scene_info, rc);
 	}
 	else {
     	L = lambertian_rho(ambient_brdf, sr, wo) * ambient_L(ambient_light, sr);
 	}
 
     for (int j = 0; j < scene_info->num_lights; j++){
-        double3 wi = Light_get_direction(&lights[j], sr);
+        double3 wi = Light_get_direction(&lights[j], sr, rc);
         float ndotwi = dot(sr->normal, wi);
 
         if (ndotwi > 0.0){
@@ -855,11 +1009,11 @@ float3 shade_matte(__private ShadeRec* sr, __private const SceneInfo* scene_info
 			if (lights[j].shadows) {
 				Ray shadow_ray = {sr->hit_point, wi};
 				in_shadow = Light_in_shadow(&lights[j], &shadow_ray, sr,
-					scene_info, render_components);
+					scene_info, rc);
 			}
 
 			if (!in_shadow)
-				L += lambertian_f(diffuse_brdf, sr, wo, wi) * Light_L(&lights[j], sr) * ndotwi;
+				L += lambertian_f(diffuse_brdf, sr, wo, wi) * Light_L(&lights[j], sr, rc) * ndotwi;
 		}
     }
 
@@ -867,8 +1021,8 @@ float3 shade_matte(__private ShadeRec* sr, __private const SceneInfo* scene_info
 }
 
 float3 area_light_shade_matte(__private ShadeRec* sr, __private const SceneInfo* scene_info,
-	__private const RenderComponents* render_components){
-	__global const Light* lights = render_components->lights;
+	__private const RenderComponents* rc){
+	__global const Light* lights = rc->lights;
 
     double3 wo = -sr->ray.d;
 
@@ -878,14 +1032,14 @@ float3 area_light_shade_matte(__private ShadeRec* sr, __private const SceneInfo*
 	__private const Light* ambient_light = &(scene_info->ambient_light);
 	float3 L;
 	if(ambient_light->shadows){ //Render with ambient occlusion
-    	L = lambertian_rho(ambient_brdf, sr, wo) * ambientOccluder_L(ambient_light, sr, scene_info, render_components);
+    	L = lambertian_rho(ambient_brdf, sr, wo) * ambientOccluder_L(ambient_light, sr, scene_info, rc);
 	}
 	else {
     	L = lambertian_rho(ambient_brdf, sr, wo) * ambient_L(ambient_light, sr);
 	}
 
     for (int j = 0; j < scene_info->num_lights; j++){
-        double3 wi = Light_get_direction(&lights[j], sr);
+        double3 wi = Light_get_direction(&lights[j], sr, rc);
         float ndotwi = dot(sr->normal, wi);
 
         if (ndotwi > 0.0){
@@ -894,12 +1048,12 @@ float3 area_light_shade_matte(__private ShadeRec* sr, __private const SceneInfo*
 			if (lights[j].shadows) {
 				Ray shadow_ray = {sr->hit_point, wi};
 				in_shadow = Light_in_shadow(&lights[j], &shadow_ray, sr,
-					scene_info, render_components);
+					scene_info, rc);
 			}
 
 			if (!in_shadow)
-				L += lambertian_f(diffuse_brdf, sr, wo, wi) * Light_L(&lights[j], sr)
-					* Light_G(&lights[j], sr) * ndotwi / Light_pdf(&lights[j], sr);
+				L += lambertian_f(diffuse_brdf, sr, wo, wi) * Light_L(&lights[j], sr, rc)
+					* Light_G(&lights[j], sr, rc) * ndotwi / Light_pdf(&lights[j], sr, rc);
 		}
     }
 
@@ -907,8 +1061,8 @@ float3 area_light_shade_matte(__private ShadeRec* sr, __private const SceneInfo*
 }
 
 float3 shade_phong(__private ShadeRec* sr, __private const SceneInfo* scene_info,
-	__private const RenderComponents* render_components){
-	__global const Light* lights = render_components->lights;
+	__private const RenderComponents* rc){
+	__global const Light* lights = rc->lights;
 
     double3 wo = -sr->ray.d;
 
@@ -919,14 +1073,14 @@ float3 shade_phong(__private ShadeRec* sr, __private const SceneInfo* scene_info
 	__private const Light* ambient_light = &(scene_info->ambient_light);
 	float3 L;
 	if(ambient_light->shadows){ //Render with ambient occlusion
-		L = lambertian_rho(ambient_brdf, sr, wo) * ambientOccluder_L(ambient_light, sr, scene_info, render_components);
+		L = lambertian_rho(ambient_brdf, sr, wo) * ambientOccluder_L(ambient_light, sr, scene_info, rc);
 	}
 	else {
 		L = lambertian_rho(ambient_brdf, sr, wo) * ambient_L(ambient_light, sr);
 	}
 
     for (int j = 0; j < scene_info->num_lights; j++) {
-        double3 wi = Light_get_direction(&lights[j], sr);
+        double3 wi = Light_get_direction(&lights[j], sr, rc);
         float ndotwi = dot(sr->normal, wi);
 
         if (ndotwi > 0.0){
@@ -934,71 +1088,106 @@ float3 shade_phong(__private ShadeRec* sr, __private const SceneInfo* scene_info
 
 			if (lights[j].shadows) {
 				Ray shadow_ray = {sr->hit_point, wi};
-				in_shadow = Light_in_shadow(&lights[j], &shadow_ray, sr, scene_info, render_components);
+				in_shadow = Light_in_shadow(&lights[j], &shadow_ray, sr, scene_info, rc);
 			}
 
 			if (!in_shadow)
 				L += (lambertian_f(diffuse_brdf, sr, wo, wi) +
-	                glossy_specular_f(specular_brdf, sr, wo, wi)) * Light_L(&lights[j], sr) * ndotwi;
+	                glossy_specular_f(specular_brdf, sr, wo, wi)) * Light_L(&lights[j], sr, rc) * ndotwi;
 		}
     }
 
     return (L);
 }
 
-
 float3 area_light_shade_phong(__private ShadeRec* sr, __private const SceneInfo* scene_info,
-	__private const RenderComponents* render_components){
-	return shade_phong(sr, scene_info, render_components); // No implementation for area lighting yet
+	__private const RenderComponents* rc){
+	__global const Light* lights = rc->lights;
+
+    double3 wo = -sr->ray.d;
+
+	BRDF ambient_brdf = sr->material_ptr->ambient_brdf;
+	BRDF diffuse_brdf = sr->material_ptr->diffuse_brdf;
+	BRDF specular_brdf = sr->material_ptr->specular_brdf;
+
+	__private const Light* ambient_light = &(scene_info->ambient_light);
+	float3 L;
+	if(ambient_light->shadows){ //Render with ambient occlusion
+		L = lambertian_rho(ambient_brdf, sr, wo) * ambientOccluder_L(ambient_light, sr, scene_info, rc);
+	}
+	else {
+		L = lambertian_rho(ambient_brdf, sr, wo) * ambient_L(ambient_light, sr);
+	}
+
+    for (int j = 0; j < scene_info->num_lights; j++) {
+        double3 wi = Light_get_direction(&lights[j], sr, rc);
+        float ndotwi = dot(sr->normal, wi);
+
+        if (ndotwi > 0.0){
+			bool in_shadow = false;
+
+			if (lights[j].shadows) {
+				Ray shadow_ray = {sr->hit_point, wi};
+				in_shadow = Light_in_shadow(&lights[j], &shadow_ray, sr, scene_info, rc);
+			}
+
+			if (!in_shadow)
+				L += (lambertian_f(diffuse_brdf, sr, wo, wi) +
+	                glossy_specular_f(specular_brdf, sr, wo, wi)) * Light_L(&lights[j], sr, rc)
+					* Light_G(&lights[j], sr, rc) * ndotwi / Light_pdf(&lights[j], sr, rc);
+		}
+    }
+
+    return (L);
 }
 
 float3 shade(__private ShadeRec* sr, __private const SceneInfo* scene_info,
-	__private const RenderComponents* render_components){
+	__private const RenderComponents* rc){
     if(sr->material_ptr->specular_brdf.ks == 0 && sr->material_ptr->specular_brdf.e == 0
 		&& sr->material_ptr->diffuse_brdf.kd == 0){
-        return shade_emissive(sr, scene_info, render_components);
+        return shade_emissive(sr, scene_info, rc);
     }
     else if(sr->material_ptr->specular_brdf.ks == 0 && sr->material_ptr->specular_brdf.e == 0){
-        return shade_matte(sr, scene_info, render_components);
+        return shade_matte(sr, scene_info, rc);
     }
     else {
-        return shade_phong(sr, scene_info, render_components);
+        return shade_phong(sr, scene_info, rc);
     }
 }
 
 float3 area_light_shade(__private ShadeRec* sr, __private const SceneInfo* scene_info,
-	__private const RenderComponents* render_components){
+	__private const RenderComponents* rc){
     if(sr->material_ptr->specular_brdf.ks == 0 && sr->material_ptr->specular_brdf.e == 0
 		&& sr->material_ptr->diffuse_brdf.kd == 0){
-        return area_light_shade_emissive(sr, scene_info, render_components);
+        return area_light_shade_emissive(sr, scene_info, rc);
     }
     else if(sr->material_ptr->specular_brdf.ks == 0 && sr->material_ptr->specular_brdf.e == 0){
-        return area_light_shade_matte(sr, scene_info, render_components);
+        return area_light_shade_matte(sr, scene_info, rc);
     }
     else {
-        return area_light_shade_phong(sr, scene_info, render_components);
+        return area_light_shade_phong(sr, scene_info, rc);
     }
 }
 
 float3 trace_ray(__private const Ray* ray, __private const SceneInfo* scene_info,
-	__private const RenderComponents* render_components) {
-	ShadeRec sr = hit_objects(ray, scene_info, render_components);
+	__private const RenderComponents* rc) {
+	ShadeRec sr = hit_objects(ray, scene_info, rc);
 
     if (sr.hit_an_object) {
 		sr.ray = *ray;
-        return shade(&sr, scene_info, render_components);
+        return shade(&sr, scene_info, rc);
     }
     else
         return scene_info->background_color;
 }
 
 float3 area_light_trace_ray(__private const Ray* ray, __private const SceneInfo* scene_info,
-	__private const RenderComponents* render_components) {
-	ShadeRec sr = hit_objects(ray, scene_info, render_components);
+	__private const RenderComponents* rc) {
+	ShadeRec sr = hit_objects(ray, scene_info, rc);
 
     if (sr.hit_an_object) {
 		sr.ray = *ray;
-        return area_light_shade(&sr, scene_info, render_components);
+        return area_light_shade(&sr, scene_info, rc);
     }
     else
         return scene_info->background_color;
@@ -1033,7 +1222,7 @@ __kernel void pinhole_tracer(__global float3 *dst,
 	__private SceneInfo scene_info, __global double2* double2_samples,
 	__global double3* double3_samples, __global int* ints,
 	__global Plane* planes, __global Triangle* triangles,
-	__global Rectangle* rectangles, __global Sphere* spheres,
+	__global const Rectangle* rectangles, __global Sphere* spheres,
 	__global MeshTriangle* mesh_triangles, __global Light* lights,
 	__global Sampler* samplers, __global double3* mesh_vertices,
 	__global double3* mesh_normals)
@@ -1054,20 +1243,20 @@ __kernel void pinhole_tracer(__global float3 *dst,
 	float s = scene_info.s / scene_info.zoom;
 	ray.o = scene_info.eye;
 
-	RenderComponents render_components;
-	render_components.double2_samples = double2_samples;
-	render_components.double3_samples = double3_samples;
-	render_components.ints = ints;
-	render_components.planes = planes;
-	render_components.triangles = triangles;
-	render_components.rectangles = rectangles;
-	render_components.spheres = spheres;
-	render_components.mesh_triangles = mesh_triangles;
-	render_components.lights = lights;
-	render_components.samplers = samplers;
-	render_components.mesh_vertices = mesh_vertices;
-	render_components.mesh_normals = mesh_normals;
-	render_components.sampler_states = sampler_states;
+	RenderComponents rc;
+	rc.double2_samples = double2_samples;
+	rc.double3_samples = double3_samples;
+	rc.ints = ints;
+	rc.planes = planes;
+	rc.triangles = triangles;
+	rc.rectangles = rectangles;
+	rc.spheres = spheres;
+	rc.mesh_triangles = mesh_triangles;
+	rc.lights = lights;
+	rc.samplers = samplers;
+	rc.mesh_vertices = mesh_vertices;
+	rc.mesh_normals = mesh_normals;
+	rc.sampler_states = sampler_states;
 
 	// initialize sampler states
 	if(scene_info.num_samplers > num_sampler_states){
@@ -1081,11 +1270,11 @@ __kernel void pinhole_tracer(__global float3 *dst,
 	}
 
 	for (int j = 0; j < scene_info.num_samples; j++) {
-		sp = sample_double2_array(scene_info.vp_sampler_index, &scene_info, &render_components);
+		sp = sample_double2_array(scene_info.vp_sampler_index, &rc);
 		pp.s0 = s * (c - 0.5 * scene_info.hres + sp.s0);
 		pp.s1 = s * (r - 0.5 * scene_info.vres + sp.s1);
 		ray.d = ray_direction(pp, scene_info.u, scene_info.v, scene_info.w, scene_info.d);
-		pixel_color += area_light_trace_ray(&ray, &scene_info, &render_components);
+		pixel_color += area_light_trace_ray(&ray, &scene_info, &rc);
 	}
 	pixel_color *= scene_info.exposure_time / scene_info.num_samples ; // average the colors
 

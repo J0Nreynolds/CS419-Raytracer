@@ -30,6 +30,8 @@ class Grid: public Compound {
 
 		virtual bool shadow_hit(const Ray& ray, float& tmin) const;
 
+		virtual char get_cl_type() const;
+
 	private:
 
 		std::vector<GeometricObject*> cells;    // cells are stored in a 1D array
@@ -54,6 +56,10 @@ Grid::reverse_mesh_normals(void) {
 inline void
 Grid::set_mesh_ptr(Mesh* _mesh_ptr) {
 	mesh_ptr = _mesh_ptr;
+}
+
+inline char Grid::get_cl_type() const {
+    return 'g';
 }
 
 #endif

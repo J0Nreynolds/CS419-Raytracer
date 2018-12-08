@@ -28,6 +28,8 @@ class Compound: public GeometricObject {
 
         virtual BBox get_bounding_box();
 
+		virtual char get_cl_type() const;
+
     protected:
         BBox bbox;
         std::vector<GeometricObject*> objects;
@@ -35,6 +37,10 @@ class Compound: public GeometricObject {
 
 inline std::vector<GeometricObject*>& Compound::get_objects(){
     return objects;
+}
+
+inline char Compound::get_cl_type() const {
+    return 'c';
 }
 
 #endif
