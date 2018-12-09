@@ -61,6 +61,9 @@ using namespace std;
 #include "Reflective.h"
 #include "GlossyReflector.h"
 
+#include "ConstantColor.h"
+#include "SV_Matte.h"
+
 #include "Transparent.h"
 
 #include "MultipleObjects.h"
@@ -223,10 +226,11 @@ void World::build(){
 	sphere_ptr2->set_material(reflective_ptr1);
 	add_object(sphere_ptr2);
 
-	Matte* matte_ptr0 = new Matte;
+	SV_Matte* matte_ptr0 = new SV_Matte;
 	matte_ptr0->set_ka(0.15);
 	matte_ptr0->set_kd(0.85);
-	matte_ptr0->set_cd(RGBColor(0.0, 0.4, 0.9)); // blue
+	ConstantColor* constantColor = new ConstantColor(RGBColor(0.0, 0.4, 0.9));
+	matte_ptr0->set_cd(constantColor); // blue
 
 	Sphere* sphere_ptr3 = new Sphere (Point3D(1.25, 1, 0), 1);
 	sphere_ptr3->set_material(matte_ptr0);

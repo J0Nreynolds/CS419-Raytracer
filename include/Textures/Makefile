@@ -1,15 +1,14 @@
 SHELL := bash
 CC := g++ -std=c++11# This is the main compiler
 
-SRCDIR := ../../src/BRDFs
+SRCDIR := ../../src/Textures
 BUILDDIR := ../../build
 
 SRCEXT := cpp
 SOURCES := $(wildcard $(SRCDIR)/*.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CFLAGS := -g -Wall
-INC := -I . -I ../Utilities -I ../Samplers -I ../Textures -I ../OpenCL/CLBRDFs \
-	-I ../OpenCL/CLObjects -I /System/Library/Frameworks/OpenCL.framework/Headers
+INC := -I . -I ../Utilities -I /System/Library/Frameworks/OpenCL.framework/Headers
 
 # Include OpenCL headers from NVIDIA GPU Computing Toolkit on Windows
 ifdef OS

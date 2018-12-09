@@ -11,7 +11,7 @@ CFLAGS := -g -Wall
 INC := -I . -I ../Utilities -I ../BRDFs -I ../Samplers -I ../World -I ../Graphics \
 -I ../Tracers -I ../Lights -I ../OpenCL -I ../OpenCL/CLObjects -I ../GeometricObjects \
 -I ../GeometricObjects/Primitives -I ../Cameras  -I ../OpenCL/CLMaterials -I ../OpenCL/CLBRDFs \
--I ../BTDFs -I /System/Library/Frameworks/OpenCL.framework/Headers
+-I ../BTDFs -I ../Textures -I /System/Library/Frameworks/OpenCL.framework/Headers
 
 # Include OpenCL headers from NVIDIA GPU Computing Toolkit on Windows
 ifdef OS

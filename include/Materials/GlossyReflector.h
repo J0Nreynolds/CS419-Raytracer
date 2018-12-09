@@ -16,7 +16,7 @@ class GlossyReflector: public Phong {
 		virtual GlossyReflector* clone() const;
 
         void set_samples(const int num_samples, const float exp);
-        void set_sampler(Sampler* sampler);
+        void set_sampler(Sampler* sampler, const float exp);
         void set_kr(const float k);
         void set_cr(const RGBColor c);
         void set_exponent(const float exp);
@@ -34,8 +34,8 @@ inline void GlossyReflector::set_samples(const int num_samples, const float exp)
     glossy_specular_brdf->set_samples(num_samples, exp);
 }
 
-inline void GlossyReflector::set_sampler(Sampler* sampler){
-    glossy_specular_brdf->set_sampler(sampler);
+inline void GlossyReflector::set_sampler(Sampler* sampler, const float exp){
+    glossy_specular_brdf->set_sampler(sampler, exp);
 }
 
 inline void GlossyReflector::set_kr(const float k) {

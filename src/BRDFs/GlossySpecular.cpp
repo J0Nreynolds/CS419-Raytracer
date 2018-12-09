@@ -70,7 +70,7 @@ void GlossySpecular::set_samples(const int num_samples, const float exp) {
     sampler_ptr->map_samples_to_hemisphere(exp);
 }
 
-void GlossySpecular::set_sampler(Sampler* sampler) {
+void GlossySpecular::set_sampler(Sampler* sampler, const float exp) {
     sampler_ptr = sampler;
     sampler_ptr->map_samples_to_hemisphere(exp);
 }

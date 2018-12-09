@@ -5,21 +5,21 @@
 
 // This file contains the definition of the class BRDF
 #include "World.h"
-#include "Matte.h"
+#include "SV_Matte.h"
 
-Matte::Matte (void)
+SV_Matte::SV_Matte (void)
     : Material(),
-    ambient_brdf(new Lambertian),
-    diffuse_brdf(new Lambertian)
+    ambient_brdf(new SV_Lambertian),
+    diffuse_brdf(new SV_Lambertian)
 {}
 
-Matte::~Matte()
+SV_Matte::~SV_Matte()
 {
     delete ambient_brdf;
     delete diffuse_brdf;
 }
 
-Matte::Matte(const Matte& m)
+SV_Matte::SV_Matte(const SV_Matte& m)
 : Material(m)
 {
     if(m.ambient_brdf){
@@ -33,7 +33,7 @@ Matte::Matte(const Matte& m)
     else diffuse_brdf = NULL;
 }
 
-Matte& Matte::operator=(const Matte& rhs){
+SV_Matte& SV_Matte::operator=(const SV_Matte& rhs){
 	if (this == &rhs)
 		return (*this);
 
@@ -58,11 +58,11 @@ Matte& Matte::operator=(const Matte& rhs){
 	return (*this);
 }
 
-Matte* Matte::clone() const{
-    return (new Matte(*this));
+SV_Matte* SV_Matte::clone() const{
+    return (new SV_Matte(*this));
 }
 
-RGBColor Matte::shade(ShadeRec& sr) {
+RGBColor SV_Matte::shade(ShadeRec& sr) {
     Vector3D wo = -sr.ray.d;
     RGBColor L = ambient_brdf->rho(sr, wo) * sr.w.ambient_ptr->L(sr);
     int num_lights = sr.w.lights.size();
@@ -87,7 +87,7 @@ RGBColor Matte::shade(ShadeRec& sr) {
     return (L);
 }
 
-RGBColor Matte::area_light_shade(ShadeRec& sr) {
+RGBColor SV_Matte::area_light_shade(ShadeRec& sr) {
     Vector3D wo = -sr.ray.d;
     RGBColor L = ambient_brdf->rho(sr, wo) * sr.w.ambient_ptr->L(sr);
     int num_lights = sr.w.lights.size();
@@ -113,7 +113,7 @@ RGBColor Matte::area_light_shade(ShadeRec& sr) {
     return (L);
 }
 
-CLMaterial Matte::get_cl_material(){
+CLMaterial SV_Matte::get_cl_material(){
     CLMaterial ret;
     ret.ambient_brdf = ambient_brdf->get_cl_brdf();
     ret.diffuse_brdf = diffuse_brdf->get_cl_brdf();

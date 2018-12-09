@@ -44,6 +44,10 @@ RGBColor BRDF::f(const ShadeRec& sr, const Vector3D& wi, const Vector3D& wo) con
     return black;
 }
 
+RGBColor BRDF::sample_f(const ShadeRec& sr, Vector3D& wi, const Vector3D& wo, float& pdf) const {
+    return black;
+}
+
 RGBColor BRDF::sample_f(const ShadeRec& sr, Vector3D& wi, const Vector3D& wo) const {
     return black;
 }
