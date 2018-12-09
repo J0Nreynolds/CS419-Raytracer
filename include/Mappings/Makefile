@@ -1,17 +1,14 @@
 SHELL := bash
 CC := g++ -std=c++11# This is the main compiler
 
-SRCDIR := ../../src/Textures
+SRCDIR := ../../src/Mappings
 BUILDDIR := ../../build
 
 SRCEXT := cpp
 SOURCES := $(wildcard $(SRCDIR)/*.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CFLAGS := -g -Wall
-INC := -I . -I ../Utilities -I /System/Library/Frameworks/OpenCL.framework/Headers \
-	-I ../Mappings
-
-MAGICK := `Magick++-config --cppflags`
+INC := -I . -I ../Utilities -I /System/Library/Frameworks/OpenCL.framework/Headers
 
 # Include OpenCL headers from NVIDIA GPU Computing Toolkit on Windows
 ifdef OS
@@ -22,8 +19,8 @@ all: $(OBJECTS)
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(BUILDDIR)
-	@echo " $(CC) $(CFLAGS) $(INC) -c -o $@ $< $(MAGICK)"
-	$(CC) $(CFLAGS) $(INC) -c -o $@ $< $(MAGICK)
+	@echo " $(CC) $(CFLAGS) $(INC) -c -o $@ $<"
+	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
 
 clean:
 	@echo " Cleaning..."

@@ -3,7 +3,7 @@
 //	This C++ code is licensed under the GNU General Public License Version 2.
 
 
-// This file contains the definition of the class Texture
+// This file contains the definition of the class ConstantColor
 #include "Constants.h"
 #include "ConstantColor.h"
 

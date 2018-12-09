@@ -1,5 +1,6 @@
 using namespace std;
 
+#include <Magick++.h>
 #include <iostream>
 #include <cstdlib>
 #include <time.h>
@@ -14,7 +15,8 @@ void signalHandler( int signum ) {
    exit(signum);
 }
 
-int main() {
+int main(int argc, char ** argv) {
+    Magick::InitializeMagick(*argv);
     signal(SIGINT, signalHandler);
     srand((int) time(NULL));
     w.build();

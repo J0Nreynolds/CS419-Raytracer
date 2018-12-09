@@ -3,7 +3,7 @@
 //	This C++ code is licensed under the GNU General Public License Version 2.
 
 
-// This file contains the definition of the class BRDF
+// This file contains the definition of the class SV_Matte
 #include "World.h"
 #include "SV_Matte.h"
 

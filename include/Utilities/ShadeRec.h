@@ -33,6 +33,8 @@ class ShadeRec {
 		int depth;                         // recursion depth
 		Vector3D dir;                      // for area lights
 		World& w;                          // world reference
+		float u;						   // for texture coordinates
+		float v;						   // for texture coordinates
 
 		ShadeRec(World& wr);					// constructor
 		ShadeRec(const ShadeRec& sr);			// copy constructor

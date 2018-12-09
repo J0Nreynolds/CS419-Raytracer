@@ -10,8 +10,8 @@ LIBL := -L C:/Program\ Files\ \(x86\)/GnuWin32/lib \
     -L C:/cygwin/lib
 else
 LIB := -framework OpenCL -lSDL2 -lpng
-LIBL :=
 endif
+MAGICK := `Magick++-config --cppflags --libs`
 
 SRCDIR := src
 SRCEXT := cpp
@@ -28,7 +28,7 @@ subdirs:
 # Update TARGET if
 $(TARGET): $(OBJECTS) # 1. Target doesn't exist  2. Objects have changed
 	@echo " Linking..."
-	@echo " $(CC) $(OBJECTS) -o $(TARGET) $(LIBL) $(LIB)"; $(CC) $(OBJECTS) -o $(TARGET) $(LIBL) $(LIB)
+	@echo " $(CC) $(OBJECTS) -o $(TARGET) $(LIBL) $(LIB) $(MAGICK)"; $(CC) $(OBJECTS) -o $(TARGET) $(LIBL) $(LIB) $(MAGICK)
 
 clean:
 	@echo " Cleaning...";
