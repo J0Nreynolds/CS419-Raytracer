@@ -110,7 +110,7 @@ World::~World(){
 void World::build(){
 	background_color = black;
 	renderer = new SDLRenderer;
-	int num_samples = 10;
+	int num_samples = 100;
 
 	MultiJittered* sampler_ptr = new MultiJittered(num_samples);
 
@@ -122,7 +122,7 @@ void World::build(){
 	vp.set_sampler(sampler_ptr);
 	add_double2_sampler(sampler_ptr);
 
-	vp.set_max_depth(100);
+	vp.set_max_depth(10);
 
 	tracer_ptr = new Whitted(this);
 

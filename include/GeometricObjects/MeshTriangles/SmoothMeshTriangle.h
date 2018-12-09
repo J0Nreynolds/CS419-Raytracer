@@ -26,7 +26,7 @@ class SmoothMeshTriangle: public MeshTriangle {
 
 		virtual char get_cl_type() const;
 
-	private:
+	protected:
 		Normal interpolate_normal(double beta, double gamma) const;
 
 };
