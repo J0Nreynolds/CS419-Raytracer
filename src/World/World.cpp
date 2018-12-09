@@ -71,6 +71,9 @@ using namespace std;
 #include "MultipleObjects.h"
 #include "RayCast.h"
 
+#include "Instance.h"
+#include "LightProbe.h"
+
 World::World():
 	ambient_ptr(NULL), tracer_ptr(NULL), renderer(NULL), camera_ptr(NULL),
 	cur_mesh_cl_index(0), cur_d2_samples_cl_index(0), cur_d3_samples_cl_index(0)
@@ -107,7 +110,7 @@ World::~World(){
 void World::build(){
 	background_color = black;
 	renderer = new SDLRenderer;
-	int num_samples = 100;
+	int num_samples = 10;
 
 	MultiJittered* sampler_ptr = new MultiJittered(num_samples);
 
@@ -155,7 +158,7 @@ void World::build(){
 	add_double3_sampler(occ_sampler_ptr);
 
 	Pinhole* pinhole_ptr = new Pinhole();
-	pinhole_ptr->set_eye(-20, 12.5, 40);
+	pinhole_ptr->set_eye(-20, 2.5, 40);
 	pinhole_ptr->set_lookat(0, 2, 0);
 	pinhole_ptr->set_view_distance(1000); // set d
 	pinhole_ptr->set_roll_angle(0); //rotate camera
@@ -237,13 +240,37 @@ void World::build(){
 	imageTexture->set_mapping(spherical_map_ptr);
 	matte_ptr0->set_cd(imageTexture);
 
+	Instance* instance = new Instance();
+
 	Sphere* sphere_ptr3 = new Sphere (Point3D(0, 0, 0), 1);
 	sphere_ptr3->set_material(matte_ptr0);
-	add_object(sphere_ptr3);
+	instance->set_object(sphere_ptr3);
+	instance->translate(Vector3D(1.25, 1.0, 0));
+	instance->scale(1.5);
 
-	Sphere* sphere_ptr4 = new Sphere (Point3D(3.75, 1, 0), 1);
-	sphere_ptr4->set_material(glass_ptr);
-	// add_object(sphere_ptr4);
+	add_object(instance);
+
+	Sphere* sphere_ptr4 = new Sphere (Point3D(0), 1);
+
+	SV_Matte* matte_ptr1 = new SV_Matte;
+	matte_ptr1->set_ka(0.15);
+	matte_ptr1->set_kd(0.85);
+	ImageTexture* imageTexture1 = new ImageTexture("./src/uffizi_probe.hdr");
+	LightProbe* light_probe_ptr = new LightProbe();
+	imageTexture1->set_mapping(light_probe_ptr);
+	matte_ptr1->set_cd(imageTexture1);
+
+
+	Instance* instance1 = new Instance();
+
+	sphere_ptr4->set_material(matte_ptr1);
+	instance1->set_object(sphere_ptr4);
+	// instance1->translate(Vector3D(0, 0, 0));
+	instance1->scale(50000);
+	instance1->transform_texture(true);
+	sphere_ptr4->set_shadows(false);
+
+	add_object(instance1);
 
 	Matte* matte_ptr2 = new Matte;
 	matte_ptr2->set_ka(0.15);

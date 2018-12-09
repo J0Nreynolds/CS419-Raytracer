@@ -115,6 +115,9 @@ Triangle::hit(const Ray& ray, double& tmin, ShadeRec& sr) const {
 
 bool
 Triangle::shadow_hit(const Ray& ray, float& tmin) const {
+	if(!has_shadows()){
+		return false;
+	}
 	// Find plane intersection
 	Vector3D v10 = Vector3D(v1 - v0);
 	Vector3D v20 = Vector3D(v2 - v0);

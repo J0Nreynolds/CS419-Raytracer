@@ -44,6 +44,6 @@ RGBColor ImageTexture::get_color(const ShadeRec& sr) const {
         column = (int)(sr.u * (image_ptr->columns() - 1));
     }
 
-    ColorRGB color = image_ptr->pixelColor(column, row);
+    ColorRGB color = image_ptr->pixelColor(column, image_ptr->rows() - 1 - row);
     return (RGBColor(color.red(), color.green(), color.blue()));
 }
