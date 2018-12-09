@@ -7,7 +7,7 @@
 //	This C++ code is licensed under the GNU General Public License Version 2.
 //	See the file COPYING.txt for the full license.
 
-
+#include "Matrix.h"
 #include "Vector3D.h"
 
 class Point3D {
@@ -104,5 +104,13 @@ Point3D::d_squared(const Point3D& p) const {
 			+ 	(y - p.y) * (y - p.y)
 			+	(z - p.z) * (z - p.z) );
 }
+
+// non-inlined non-member function
+
+// -------------------------------------------------------------- operator*
+// multiplication by a matrix on the left
+
+Point3D 											// prototype
+operator* (const Matrix& mat, const Point3D& p);
 
 #endif

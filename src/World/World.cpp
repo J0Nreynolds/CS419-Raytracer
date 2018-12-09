@@ -176,7 +176,7 @@ void World::build(){
 	add_double3_sampler(env_sampler_ptr);
 
 	Emissive* emissive_ptr = new Emissive;
-	emissive_ptr->scale_radiance(25.0);
+	emissive_ptr->scale_radiance(15.0);
 	emissive_ptr->set_ce(RGBColor(0.8, 0.2, 0));
 
 	MultiJittered* area_sampler_ptr = new MultiJittered(num_samples);
