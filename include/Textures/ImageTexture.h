@@ -26,15 +26,13 @@ class ImageTexture: public Texture {
         virtual RGBColor get_color(const ShadeRec& sr) const;
 
     private:
-		int hres;                 // horizontal image resolution
-		int vres;                 // vertical image resolution
 		Magick::Image* image_ptr;         // the image
 		Mapping* mapping_ptr;     // mapping technique used, if any
 };
 
 inline void ImageTexture::set_mapping(Mapping* mapping){
 	if(mapping_ptr){
-		delete image_ptr;
+		delete mapping_ptr;
 	}
 	mapping_ptr = mapping;
 }

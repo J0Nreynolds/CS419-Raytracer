@@ -5,6 +5,7 @@
 
 // This file contains the definition of the class ImageTexture
 #include <Magick++.h>
+#include <iostream>
 #include "ImageTexture.h"
 
 using namespace Magick;
@@ -35,8 +36,9 @@ ImageTexture* ImageTexture::clone() const
 RGBColor ImageTexture::get_color(const ShadeRec& sr) const {
     int row, column;
 
-    if (mapping_ptr)
-        mapping_ptr->get_texel_coordinates(sr.local_hit_point, hres, vres, row, column);
+    if (mapping_ptr){
+        mapping_ptr->get_texel_coordinates(sr.local_hit_point, (int) image_ptr->columns(), (int) image_ptr->rows(), row, column);
+    }
     else {
         row = (int)(sr.v * (image_ptr->rows() - 1));
         column = (int)(sr.u * (image_ptr->columns() - 1));

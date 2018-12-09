@@ -5,6 +5,7 @@
 
 // This file contains the definition of the class SphericalMap
 #include <math.h>
+#include <iostream>
 #include "Constants.h"
 #include "SphericalMap.h"
 
@@ -30,8 +31,8 @@ SphericalMap* SphericalMap::clone() const {
 void SphericalMap::get_texel_coordinates(const Point3D& local_hit_point,
     const int hres, const int vres, int& row, int& column) const {
     // first, compute theta and phi
-
-    float theta = acos(local_hit_point.y);
+    float len = local_hit_point.distance(Point3D(0)); // TODO: revisit why/if this is needed
+    float theta = acos(local_hit_point.y / len);
     float phi = atan2(local_hit_point.x, local_hit_point.z);
     if (phi < 0.0)
         phi += TWO_PI;

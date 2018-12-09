@@ -62,7 +62,9 @@ using namespace std;
 #include "GlossyReflector.h"
 
 #include "ConstantColor.h"
+#include "ImageTexture.h"
 #include "SV_Matte.h"
+#include "SphericalMap.h"
 
 #include "Transparent.h"
 
@@ -229,10 +231,13 @@ void World::build(){
 	SV_Matte* matte_ptr0 = new SV_Matte;
 	matte_ptr0->set_ka(0.15);
 	matte_ptr0->set_kd(0.85);
-	ConstantColor* constantColor = new ConstantColor(RGBColor(0.0, 0.4, 0.9));
-	matte_ptr0->set_cd(constantColor); // blue
+	ConstantColor* constantColor = new ConstantColor(RGBColor(0.7, 0.2, 0.0));
+	ImageTexture* imageTexture = new ImageTexture("./src/world_equirectangular.jpg");
+	SphericalMap* spherical_map_ptr = new SphericalMap();
+	imageTexture->set_mapping(spherical_map_ptr);
+	matte_ptr0->set_cd(imageTexture);
 
-	Sphere* sphere_ptr3 = new Sphere (Point3D(1.25, 1, 0), 1);
+	Sphere* sphere_ptr3 = new Sphere (Point3D(0, 0, 0), 1);
 	sphere_ptr3->set_material(matte_ptr0);
 	add_object(sphere_ptr3);
 

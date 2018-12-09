@@ -12,7 +12,9 @@ INC := -I . -I ../Utilities -I ../Tracers -I ../Graphics -I ../GeometricObjects 
 	-I ../OpenCL -I ../OpenCL/CLObjects -I ../Materials -I ../Textures -I ../BRDFs \
 	-I ../OpenCL/CLMaterials -I ../OpenCL/CLBRDFs -I ../BTDFs \
 	-I ../GeometricObjects/CompoundObjects -I /Library/Frameworks/SDL2.framework/Headers \
-	-I /System/Library/Frameworks/OpenCL.framework/Headers
+	-I /System/Library/Frameworks/OpenCL.framework/Headers -I ../Mappings
+
+MAGICK := `Magick++-config --cppflags`
 
 # Include OpenCL headers from NVIDIA GPU Computing Toolkit on Windows
 ifdef OS
@@ -23,8 +25,8 @@ all: $(OBJECTS)
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(BUILDDIR)
-	@echo " $(CC) $(CFLAGS) $(INC) -c -o $@ $<"
-	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
+	@echo " $(CC) $(CFLAGS) $(INC) -c -o $@ $< $(MAGICK)"
+	$(CC) $(CFLAGS) $(INC) -c -o $@ $< $(MAGICK)
 
 clean:
 	@echo " Cleaning..."
