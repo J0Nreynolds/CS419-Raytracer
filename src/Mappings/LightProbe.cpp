@@ -9,7 +9,7 @@
 #include "LightProbe.h"
 
 LightProbe::LightProbe()
-: map_type(0)
+: map_type(1)
 {}
 
 LightProbe::~LightProbe()

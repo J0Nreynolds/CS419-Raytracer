@@ -155,7 +155,7 @@ BBox Triangle::get_bounding_box() {
 	double maxy = std::max(v0.y, std::max(v1.y, v2.y)) + kEpsilon;
 	double minz = std::min(v0.z, std::min(v1.z, v2.z)) - kEpsilon;
 	double maxz = std::max(v0.z, std::max(v1.z, v2.z)) + kEpsilon;
-	return BBox(minx, miny, minz, maxx, maxy, maxz);
+	return BBox(minx, maxx, miny, maxy, minz, maxz);
 }
 
 CLTriangle Triangle::get_cl_triangle(){

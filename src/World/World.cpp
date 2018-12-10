@@ -110,7 +110,7 @@ World::~World(){
 void World::build(){
 	background_color = black;
 	renderer = new SDLRenderer;
-	int num_samples = 100;
+	int num_samples = 10;
 
 	MultiJittered* sampler_ptr = new MultiJittered(num_samples);
 
@@ -184,11 +184,13 @@ void World::build(){
 
 	MultiJittered* area_sampler_ptr = new MultiJittered(num_samples);
 
+	Grid* grid_ptr = new Grid();
+
 	Rectangle* rectangle_ptr = new Rectangle(Point3D(-5, 0, -3), Vector3D(4, 0, 0), Vector3D(0, 4, 0));
 	rectangle_ptr->set_material(emissive_ptr);
 	rectangle_ptr->set_shadows(false);
 	rectangle_ptr->set_sampler(area_sampler_ptr);
-	add_object(rectangle_ptr);
+	grid_ptr->add_object(rectangle_ptr);
 	add_double2_sampler(area_sampler_ptr);
 
 	AreaLight* area_light_ptr = new AreaLight;
@@ -219,17 +221,17 @@ void World::build(){
 	phong_ptr1->set_ks(0.15);
 	phong_ptr1->set_exp(100);
 
-	Rectangle* rectangle_ptr1 = new Rectangle(Point3D(-5, 0, 12), Vector3D(10, 0, 0), Vector3D(0, 0, -10));
+	Rectangle* rectangle_ptr1 = new Rectangle(Point3D(-5, 0.01, 12), Vector3D(10, 0, 0), Vector3D(0, 0, -10));
 	rectangle_ptr1->set_material(glossy);
-	add_object(rectangle_ptr1);
+	grid_ptr->add_object(rectangle_ptr1);
 
 	Sphere* sphere_ptr1 = new Sphere (Point3D(-3.75, 1, 0), 1);
 	sphere_ptr1->set_material(phong_ptr1);
-	add_object(sphere_ptr1);
+	grid_ptr->add_object(sphere_ptr1);
 
 	Sphere* sphere_ptr2 = new Sphere (Point3D(-1.25, 1, 0), 1);
 	sphere_ptr2->set_material(reflective_ptr1);
-	add_object(sphere_ptr2);
+	grid_ptr->add_object(sphere_ptr2);
 
 	SV_Matte* matte_ptr0 = new SV_Matte;
 	matte_ptr0->set_ka(0.15);
@@ -247,8 +249,9 @@ void World::build(){
 	instance->set_object(sphere_ptr3);
 	instance->translate(Vector3D(1.25, 1.0, 0));
 	instance->scale(1.5);
+	instance->compute_bounding_box();
 
-	add_object(instance);
+	grid_ptr->add_object(instance);
 
 	Sphere* sphere_ptr4 = new Sphere (Point3D(0), 1);
 
@@ -266,9 +269,10 @@ void World::build(){
 	sphere_ptr4->set_material(matte_ptr1);
 	instance1->set_object(sphere_ptr4);
 	// instance1->translate(Vector3D(0, 0, 0));
-	instance1->scale(50000);
+	instance1->scale(5000);
 	instance1->transform_texture(true);
 	sphere_ptr4->set_shadows(false);
+	instance1->compute_bounding_box();
 
 	add_object(instance1);
 
@@ -286,16 +290,31 @@ void World::build(){
 	l1->set_ls(2);
 	// add_light(l1);
 
-	// Mesh* mesh_ptr = new Mesh();
-	// Grid* grid_ptr = new Grid(mesh_ptr);
-	//
-	// grid_ptr->read_obj_file("./src/dragon.obj");       // read obj file
-	// grid_ptr->set_material(glass_ptr);
-	//
-	// grid_ptr->setup_cells();
-	// grid_ptr->add_object(plane_ptr1);
-	// add_object(grid_ptr);
-	// add_mesh(mesh_ptr);
+	Mesh* mesh_ptr = new Mesh();
+	Instance* instance2 = new Instance();
+	Grid* dragon_ptr = new Grid(mesh_ptr);
+	dragon_ptr->read_obj_file("./src/dragon.obj");       // read obj file
+	add_mesh(mesh_ptr);
+
+
+	SV_Matte* matte_ptr3 = new SV_Matte;
+	matte_ptr3->set_ka(0.15);
+	matte_ptr3->set_kd(0.85);
+	SphericalMap* spherical_map_ptr1 = new SphericalMap();
+	imageTexture->set_mapping(spherical_map_ptr1);
+	// matte_ptr3->set_cd(constantColor);
+	matte_ptr3->set_cd(imageTexture);
+
+	dragon_ptr->set_material(matte_ptr3);
+	dragon_ptr->setup_cells();
+	instance2->set_object(dragon_ptr);
+	instance2->translate(Vector3D(0, 1, 4));
+	instance2->scale(2.0);
+	instance2->compute_bounding_box();
+
+	grid_ptr->add_object(instance2);
+	grid_ptr->setup_cells();
+	add_object(grid_ptr);
 
 	/**
 	 * BASIC SPHERE WITH AMBIENT OCCLUSION

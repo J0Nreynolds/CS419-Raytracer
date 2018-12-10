@@ -12,7 +12,9 @@
 
 #include "MeshTriangle.h"
 #include "FlatMeshTriangle.h"
+#include "FlatUVMeshTriangle.h"
 #include "SmoothMeshTriangle.h"
+#include "SmoothUVMeshTriangle.h"
 
 #include "Triangle.h"
 
@@ -620,7 +622,6 @@ Point3D Grid::max_coordinates(){
 }
 
 void Grid::read_obj_file(std::string file_name){
-    int multiplier = 6;
     std::ifstream file(file_name);
     if(!file.is_open())
     {
@@ -634,29 +635,51 @@ void Grid::read_obj_file(std::string file_name){
     size_t pos;
     int i;
     bool prepareFaces = false;
+    bool hasTextureCoords = false;
     int vertexCount = 0;
     int triangleCount = 0;
     while (std::getline(file, str))
     {
         if(str[0] == 'v'){ //process vertex
-            pos = 0;
-            i = 0;
-            while (i < 4 && (pos = str.find(delimiter))) {
-                token = str.substr(0, pos);
-                if(i == 1){
-                    x = stod(token);
-                }
-                else if(i == 2){
-                    y = stod(token);
-                }
-                else if(i == 3){
-                    z = stod(token);
-                }
-                str.erase(0, pos + delimiter.length());
-                i++;
-            }
-            mesh_ptr->vertices.push_back(Point3D(x*multiplier,y*multiplier,z*multiplier));
-            vertexCount += 1;
+			if(str[1] == 't'){
+				hasTextureCoords = true;
+	            pos = 0;
+	            i = 0;
+	            while (i < 3 && (pos = str.find(delimiter))) {
+	                token = str.substr(0, pos);
+	                if(i == 1){
+	                    x = stod(token);
+	                }
+	                else if(i == 2){
+	                    y = stod(token);
+	                }
+	                str.erase(0, pos + delimiter.length());
+	                i++;
+	            }
+	            mesh_ptr->u.push_back(x);
+	            mesh_ptr->v.push_back(y);
+	            vertexCount += 1;
+			}
+			else {
+	            pos = 0;
+	            i = 0;
+	            while (i < 4 && (pos = str.find(delimiter))) {
+	                token = str.substr(0, pos);
+	                if(i == 1){
+	                    x = stod(token);
+	                }
+	                else if(i == 2){
+	                    y = stod(token);
+	                }
+	                else if(i == 3){
+	                    z = stod(token);
+	                }
+	                str.erase(0, pos + delimiter.length());
+	                i++;
+	            }
+	            mesh_ptr->vertices.push_back(Point3D(x,y,z));
+	            vertexCount += 1;
+			}
         }
         else if(str[0] == 'f'){ //process face
             if(!prepareFaces){
@@ -685,7 +708,9 @@ void Grid::read_obj_file(std::string file_name){
                 i++;
             }
             str.erase(0, pos + delimiter.length());
-            SmoothMeshTriangle* triangle_ptr = new SmoothMeshTriangle(mesh_ptr, idx0, idx1, idx2);
+            SmoothMeshTriangle* triangle_ptr;
+			if(hasTextureCoords) triangle_ptr = new SmoothUVMeshTriangle(mesh_ptr, idx0, idx1, idx2);
+			else triangle_ptr = new SmoothMeshTriangle(mesh_ptr, idx0, idx1, idx2);
             triangle_ptr->compute_normal(reverse_normal);
             objects.push_back(triangle_ptr);
 			mesh_ptr->vertex_faces[idx0].push_back(triangleCount);
