@@ -22,7 +22,9 @@ ConstantColor::ConstantColor(const ConstantColor& cc)
 
 ConstantColor& ConstantColor::operator= (const ConstantColor& rhs)
 {
+    Texture::operator=(rhs);
     color = rhs.color;
+    return (*this);
 }
 
 ConstantColor::~ConstantColor()

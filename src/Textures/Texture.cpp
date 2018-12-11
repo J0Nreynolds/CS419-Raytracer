@@ -14,7 +14,9 @@ Texture::Texture(const Texture& t)
 {}
 
 Texture& Texture::operator= (const Texture& rhs)
-{}
+{
+    return (*this);
+}
 
 Texture::~Texture()
 {}

@@ -23,10 +23,21 @@ ImageTexture::ImageTexture(const ImageTexture& cc)
 
 ImageTexture& ImageTexture::operator= (const ImageTexture& rhs)
 {
+    Texture::operator=(rhs);
+    if(image_ptr){
+        delete image_ptr;
+    }
+    image_ptr = rhs.image_ptr;
+    if(mapping_ptr){
+        delete mapping_ptr;
+    }
+    mapping_ptr = rhs.mapping_ptr->clone();
+    return (*this);
 }
 
 ImageTexture::~ImageTexture()
-{}
+{
+}
 
 ImageTexture* ImageTexture::clone() const
 {

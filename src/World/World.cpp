@@ -74,6 +74,10 @@ using namespace std;
 #include "Instance.h"
 #include "LightProbe.h"
 
+#include "Checker3D.h"
+#include "WrappedFBmTexture.h"
+#include "CubicNoise.h"
+
 World::World():
 	ambient_ptr(NULL), tracer_ptr(NULL), renderer(NULL), camera_ptr(NULL),
 	cur_mesh_cl_index(0), cur_d2_samples_cl_index(0), cur_d3_samples_cl_index(0)
@@ -110,7 +114,7 @@ World::~World(){
 void World::build(){
 	background_color = black;
 	renderer = new SDLRenderer;
-	int num_samples = 10;
+	int num_samples = 100;
 
 	MultiJittered* sampler_ptr = new MultiJittered(num_samples);
 
@@ -265,25 +269,13 @@ void World::build(){
 
 
 	Instance* instance1 = new Instance();
-
 	sphere_ptr4->set_material(matte_ptr1);
+	sphere_ptr4->set_shadows(false);
 	instance1->set_object(sphere_ptr4);
 	// instance1->translate(Vector3D(0, 0, 0));
 	instance1->scale(5000);
 	instance1->transform_texture(true);
-	sphere_ptr4->set_shadows(false);
-	instance1->compute_bounding_box();
-
 	add_object(instance1);
-
-	Matte* matte_ptr2 = new Matte;
-	matte_ptr2->set_ka(0.15);
-	matte_ptr2->set_kd(0.85);
-	matte_ptr2->set_cd(1); // white
-
-	Plane* plane_ptr1 = new Plane(Point3D(0), Normal(0, 1, 0));
-	plane_ptr1->set_material(matte_ptr2);
-	add_object(plane_ptr1);
 
 	DirectionalLight* l1 = new DirectionalLight(Vector3D(-1, -1, -1));
 	l1->set_shadows(true);
@@ -296,14 +288,18 @@ void World::build(){
 	dragon_ptr->read_obj_file("./src/dragon.obj");       // read obj file
 	add_mesh(mesh_ptr);
 
-
 	SV_Matte* matte_ptr3 = new SV_Matte;
 	matte_ptr3->set_ka(0.15);
 	matte_ptr3->set_kd(0.85);
-	SphericalMap* spherical_map_ptr1 = new SphericalMap();
-	imageTexture->set_mapping(spherical_map_ptr1);
-	// matte_ptr3->set_cd(constantColor);
-	matte_ptr3->set_cd(imageTexture);
+
+	LatticeNoise* noise = new CubicNoise();
+	noise->set_gain(0.5);
+	noise->set_lacunarity(6);
+	noise->set_num_octaves(6);
+	float expansion_number = 3.0;
+	WrappedFBmTexture* fbm_ptr = new WrappedFBmTexture(noise, RGBColor(1.0, 0.8, 1.0), expansion_number);
+
+	matte_ptr3->set_cd(fbm_ptr);
 
 	dragon_ptr->set_material(matte_ptr3);
 	dragon_ptr->setup_cells();
@@ -311,8 +307,17 @@ void World::build(){
 	instance2->translate(Vector3D(0, 1, 4));
 	instance2->scale(2.0);
 	instance2->compute_bounding_box();
-
 	grid_ptr->add_object(instance2);
+
+	SV_Matte* matte_ptr2 = new SV_Matte;
+	matte_ptr2->set_ka(0.15);
+	matte_ptr2->set_kd(0.85);
+	Checker3D* checker_ptr = new Checker3D();
+	matte_ptr2->set_cd(checker_ptr);
+	Plane* plane_ptr1 = new Plane(Point3D(0), Normal(0, 1, 0));
+	plane_ptr1->set_material(matte_ptr2);
+	add_object(plane_ptr1);
+
 	grid_ptr->setup_cells();
 	add_object(grid_ptr);
 
