@@ -46,7 +46,7 @@ void Orthographic::render_scene(World& w) {
 				 pp.x = vp.s * (c - 0.5 * vp.hres + sp.x);
 				 pp.y = vp.s * (r - 0.5 * vp.vres + sp.y);
 				 ray.o = eye + pp.x * u + pp.y * v;
-				 pixel_color += w.tracer_ptr->trace_ray(ray);
+				 pixel_color += w.tracer_ptr->trace_ray(ray, 0);
 			}
 			pixel_color /= vp.num_samples;  // average the colors
 			w.display_pixel(r, c, pixel_color);

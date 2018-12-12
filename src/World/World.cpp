@@ -122,7 +122,7 @@ void World::build(){
 	vp.set_show_out_of_gamut(false);
 	vp.set_hres(600);
 	vp.set_vres(600);
-	vp.set_pixel_size(0.5);
+	vp.set_pixel_size(2);
 	vp.set_sampler(sampler_ptr);
 	add_double2_sampler(sampler_ptr);
 
@@ -139,7 +139,7 @@ void World::build(){
 	reflective_ptr1->set_kr(1);
 	reflective_ptr1->set_cr(RGBColor(1.0, 1.0, 1.0));
 
-	float exp = 100.0;
+	float exp = 1000.0;
 	GlossyReflector* glossy = new GlossyReflector();
 	glossy->set_samples(num_samples, exp);
 	glossy->set_ka(0.0);
@@ -147,7 +147,7 @@ void World::build(){
 	glossy->set_ks(0.0);
 	glossy->set_exp(exp);
 	glossy->set_cd(RGBColor(1.0, 1.0, 0.3));
-	glossy->set_kr(0.9);
+	glossy->set_kr(0.8);
 	glossy->set_exponent(exp);
 	glossy->set_cr(RGBColor(1.0, 1.0, 0.3));
 
@@ -162,12 +162,23 @@ void World::build(){
 	add_double3_sampler(occ_sampler_ptr);
 
 	Pinhole* pinhole_ptr = new Pinhole();
-	pinhole_ptr->set_eye(-20, 2.5, 40);
-	pinhole_ptr->set_lookat(0, 2, 0);
-	pinhole_ptr->set_view_distance(1000); // set d
+	pinhole_ptr->set_eye(-5, 0.625, 10);
+	pinhole_ptr->set_lookat(0, 2, 1);
+	pinhole_ptr->set_view_distance(800); // set d
 	pinhole_ptr->set_roll_angle(0); //rotate camera
 	pinhole_ptr->compute_uvw();
 	set_camera(pinhole_ptr);
+
+	// ThinLens* thinlens_ptr = new ThinLens();
+	// thinlens_ptr->set_eye(-20, 2.5, 10);
+	// thinlens_ptr->set_lookat(0, 2, 0);
+	// thinlens_ptr->set_view_distance(1000); // set d
+	// thinlens_ptr->set_roll_angle(0); //rotate camera
+	// thinlens_ptr->set_lens_radius(10);
+	// thinlens_ptr->set_focal_plane_distance(750);
+	// thinlens_ptr->compute_uvw();
+	// thinlens_ptr->set_sampler(new MultiJittered(num_samples));
+	// set_camera(thinlens_ptr);
 
 	MultiJittered* env_sampler_ptr = new MultiJittered(num_samples);
 
@@ -273,7 +284,7 @@ void World::build(){
 	sphere_ptr4->set_shadows(false);
 	instance1->set_object(sphere_ptr4);
 	// instance1->translate(Vector3D(0, 0, 0));
-	instance1->scale(5000);
+	instance1->scale(100000);
 	instance1->transform_texture(true);
 	add_object(instance1);
 
@@ -297,14 +308,14 @@ void World::build(){
 	noise->set_lacunarity(6);
 	noise->set_num_octaves(6);
 	float expansion_number = 3.0;
-	WrappedFBmTexture* fbm_ptr = new WrappedFBmTexture(noise, RGBColor(1.0, 0.8, 1.0), expansion_number);
+	WrappedFBmTexture* fbm_ptr = new WrappedFBmTexture(noise, RGBColor(0.0, 0.8, 1.0), expansion_number);
 
 	matte_ptr3->set_cd(fbm_ptr);
 
 	dragon_ptr->set_material(matte_ptr3);
 	dragon_ptr->setup_cells();
 	instance2->set_object(dragon_ptr);
-	instance2->translate(Vector3D(0, 1, 4));
+	instance2->translate(Vector3D(1, 0.7, 2));
 	instance2->scale(2.0);
 	instance2->compute_bounding_box();
 	grid_ptr->add_object(instance2);
