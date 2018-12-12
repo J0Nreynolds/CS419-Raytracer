@@ -18,7 +18,7 @@ class Grid: public Compound {
 
 		virtual BBox get_bounding_box();
 
-		void read_obj_file(std::string file_name);
+		void read_obj_file(std::string file_name, bool flat);
 
 		void setup_cells();
 

@@ -621,7 +621,7 @@ Point3D Grid::max_coordinates(){
 	return (p1);
 }
 
-void Grid::read_obj_file(std::string file_name){
+void Grid::read_obj_file(std::string file_name, bool flat){
     std::ifstream file(file_name);
     if(!file.is_open())
     {
@@ -708,11 +708,20 @@ void Grid::read_obj_file(std::string file_name){
                 i++;
             }
             str.erase(0, pos + delimiter.length());
-            SmoothMeshTriangle* triangle_ptr;
-			if(hasTextureCoords) triangle_ptr = new SmoothUVMeshTriangle(mesh_ptr, idx0, idx1, idx2);
-			else triangle_ptr = new SmoothMeshTriangle(mesh_ptr, idx0, idx1, idx2);
-            triangle_ptr->compute_normal(reverse_normal);
-            objects.push_back(triangle_ptr);
+			if(!flat){
+				SmoothMeshTriangle* triangle_ptr;
+				if(hasTextureCoords) triangle_ptr = new SmoothUVMeshTriangle(mesh_ptr, idx0, idx1, idx2);
+				else triangle_ptr = new SmoothMeshTriangle(mesh_ptr, idx0, idx1, idx2);
+	            triangle_ptr->compute_normal(reverse_normal);
+	            objects.push_back(triangle_ptr);
+			}
+			else {
+				FlatMeshTriangle* triangle_ptr;
+				if(hasTextureCoords) triangle_ptr = new FlatUVMeshTriangle(mesh_ptr, idx0, idx1, idx2);
+				else triangle_ptr = new FlatMeshTriangle(mesh_ptr, idx0, idx1, idx2);
+	            triangle_ptr->compute_normal(reverse_normal);
+	            objects.push_back(triangle_ptr);
+			}
 			mesh_ptr->vertex_faces[idx0].push_back(triangleCount);
 			mesh_ptr->vertex_faces[idx1].push_back(triangleCount);
 			mesh_ptr->vertex_faces[idx2].push_back(triangleCount);

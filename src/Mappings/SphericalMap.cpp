@@ -9,16 +9,19 @@
 #include "SphericalMap.h"
 
 SphericalMap::SphericalMap()
+: equirectangular(false)
 {}
 
 SphericalMap::~SphericalMap()
 {}
 
 SphericalMap::SphericalMap(const SphericalMap& m)
+: equirectangular(m.equirectangular)
 {}
 
 SphericalMap& SphericalMap::operator=(const SphericalMap& rhs)
 {
+    equirectangular = rhs.equirectangular;
     return (*this);
 }
 
@@ -40,6 +43,9 @@ void SphericalMap::get_texel_coordinates(const Point3D& local_hit_point,
 
     float u = phi * invTWO_PI;
     float v = 1 - theta * invPI;
+
+    if (equirectangular)
+      u = 1 - u; //reverse inside of sphere
 
     // finally, map u and v to the texel coordinates
 

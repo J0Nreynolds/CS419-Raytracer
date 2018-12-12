@@ -15,8 +15,17 @@ class SphericalMap: public Mapping {
         SphericalMap& operator=(const SphericalMap& rhs);
 		virtual SphericalMap* clone() const;
 
+        void set_equirectangular(bool is_eq);
+
         virtual void get_texel_coordinates(const Point3D& local_hit_point,
             const int hres, const int vres, int& row, int& column) const;
+
+    private:
+        bool equirectangular;
 };
+
+inline void SphericalMap::set_equirectangular(bool is_eq){
+    equirectangular = is_eq;
+}
 
 #endif
