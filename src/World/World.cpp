@@ -78,6 +78,11 @@ using namespace std;
 #include "WrappedFBmTexture.h"
 #include "CubicNoise.h"
 
+#include "SphereCSG.h"
+#include "IntersectCSG.h"
+#include "SubtractCSG.h"
+#include "UnionCSG.h"
+
 World::World():
 	ambient_ptr(NULL), tracer_ptr(NULL), renderer(NULL), camera_ptr(NULL),
 	cur_mesh_cl_index(0), cur_d2_samples_cl_index(0), cur_d3_samples_cl_index(0)
@@ -114,7 +119,7 @@ World::~World(){
 void World::build(){
 	background_color = black;
 	renderer = new SDLRenderer;
-	int num_samples = 225;
+	int num_samples = 25;
 
 	MultiJittered* sampler_ptr = new MultiJittered(num_samples);
 
@@ -169,6 +174,12 @@ void World::build(){
 	Checker3D* checker_ptr = new Checker3D(white, black, 1.5);
 	checker_matte->set_cd(checker_ptr);
 
+	SV_Matte* checker_matte2 = new SV_Matte;
+	checker_matte->set_ka(0.7);
+	checker_matte->set_kd(0.85);
+	Checker3D* checker_ptr2 = new Checker3D(black, red, 0.75);
+	checker_matte2->set_cd(checker_ptr2);
+
 	SV_Matte* globe_mat_ptr = new SV_Matte;
 	globe_mat_ptr->set_ka(0.15);
 	globe_mat_ptr->set_kd(0.85);
@@ -189,7 +200,7 @@ void World::build(){
 	skybox_matte->set_cd(skybox);
 
 	SV_Matte* marble_matte = new SV_Matte;
-	marble_matte->set_ka(0.15);
+	marble_matte->set_ka(0.85);
 	marble_matte->set_kd(0.85);
 	LatticeNoise* noise = new CubicNoise();
 	noise->set_gain(0.5);
@@ -203,6 +214,20 @@ void World::build(){
 	emissive_ptr->scale_radiance(14.0);
 	emissive_ptr->set_ce(RGBColor(0.2, 0.2, 0.9));
 
+	Phong* phong_ptr1 = new Phong;
+	phong_ptr1->set_ka(0.15);
+	phong_ptr1->set_kd(0.85);
+	phong_ptr1->set_cd(RGBColor(1.0, 0.75, 0.00)); // orange
+	phong_ptr1->set_ks(0.15);
+	phong_ptr1->set_exp(100);
+
+	Phong* phong_ptr2 = new Phong;
+	phong_ptr2->set_ka(0.15);
+	phong_ptr2->set_kd(0.85);
+	phong_ptr2->set_cd(RGBColor(0.0, 0.25, 0.95)); // blue
+	phong_ptr2->set_ks(0.15);
+	phong_ptr2->set_exp(100);
+
 	// END MATERIALS
 
 	MultiJittered* occ_sampler_ptr = new MultiJittered(num_samples);
@@ -215,164 +240,196 @@ void World::build(){
 	set_ambient_light(occluder_ptr);
 	add_double3_sampler(occ_sampler_ptr);
 
-	ThinLens* thinlens_ptr = new ThinLens();
-	thinlens_ptr->set_eye(0, 2, 8);
-	thinlens_ptr->set_lookat(0, 1, 0);
-	thinlens_ptr->set_view_distance(1000); // set d
-	thinlens_ptr->set_roll_angle(0); //rotate camera
-	thinlens_ptr->set_lens_radius(0.10);
-	// thinlens_ptr->set_lens_radius(0);
-	thinlens_ptr->set_focal_plane_distance(7);
-	thinlens_ptr->compute_uvw();
-	thinlens_ptr->set_sampler(new MultiJittered(num_samples));
-	set_camera(thinlens_ptr);
+	// ThinLens* thinlens_ptr = new ThinLens();
+	// thinlens_ptr->set_eye(0, 2, 8);
+	// thinlens_ptr->set_lookat(0, 1, 0);
+	// thinlens_ptr->set_view_distance(1000); // set d
+	// thinlens_ptr->set_roll_angle(0); //rotate camera
+	// thinlens_ptr->set_lens_radius(0.10);
+	// // thinlens_ptr->set_lens_radius(0);
+	// thinlens_ptr->set_focal_plane_distance(7);
+	// thinlens_ptr->compute_uvw();
+	// thinlens_ptr->set_sampler(new MultiJittered(num_samples));
+	// set_camera(thinlens_ptr);
 
-	// Pinhole* pinhole_ptr = new Pinhole();
-	// pinhole_ptr->set_eye(0, 2, 8);
-	// pinhole_ptr->set_lookat(0, 1, 0);
-	// pinhole_ptr->set_view_distance(1000); // set d
-	// pinhole_ptr->set_roll_angle(0); //rotate camera
-	// pinhole_ptr->compute_uvw();
-	// set_camera(pinhole_ptr);
+	Pinhole* pinhole_ptr = new Pinhole();
+	pinhole_ptr->set_eye(0, 2, 8);
+	pinhole_ptr->set_lookat(0, 1, 0);
+	pinhole_ptr->set_view_distance(1000); // set d
+	pinhole_ptr->set_roll_angle(0); //rotate camera
+	pinhole_ptr->compute_uvw();
+	set_camera(pinhole_ptr);
 
-	MultiJittered* env_sampler_ptr = new MultiJittered(num_samples);
+	SphereCSG* sphere1 = new SphereCSG(Point3D(0,0,0), 3);
+	sphere1->set_material(marble_matte);
+	// add_object(sphere1);
 
-	Emissive* env_emissive_ptr = new Emissive();
-	env_emissive_ptr->set_ce(204.0/255, 220.0/255, 1);
-	env_emissive_ptr->scale_radiance(2);
+	SphereCSG* sphere2 = new SphereCSG(Point3D(1,0.5,0.5), 3);
+	sphere2->set_material(checker_matte2);
+	// add_object(sphere2);
 
-	EnvironmentLight* light_ptr = new EnvironmentLight;
-	light_ptr->set_material(env_emissive_ptr);
-	light_ptr->set_sampler(env_sampler_ptr);
-	light_ptr->set_shadows(true);
-	add_light(light_ptr);
-	add_double3_sampler(env_sampler_ptr);
+	UnionCSG* sphere_union = new UnionCSG(sphere1, sphere2);
+	Instance* sphere_union_instance = new Instance;
+	sphere_union_instance->set_object(sphere_union);
+	sphere_union_instance->scale(0.5);
+	sphere_union_instance->translate(Vector3D(-4,0,0));
+	// sphere_union_instance->transform_texture(true);
+	add_object(sphere_union_instance);
 
-	Instance* CS_instance = new Instance();
-	Instance* CS419_instance = new Instance();
-	Instance* skybox_instance = new Instance();
-	Instance* sphere_instance = new Instance();
-	Instance* globe_instance = new Instance();
-	Instance* teapot_instance = new Instance();
-	Instance* cow_instance = new Instance();
-	Instance* area_rect_instance = new Instance();
+	IntersectCSG* sphere_intersect = new IntersectCSG(sphere1, sphere2);
+	Instance* sphere_intersect_instance = new Instance;
+	sphere_intersect_instance->set_object(sphere_intersect);
+	sphere_intersect_instance->scale(0.5);
+	sphere_intersect_instance->translate(Vector3D(4,0,0));
+	// sphere_intersect_instance->transform_texture(true);
+	add_object(sphere_intersect_instance);
 
-	Grid* grid_ptr = new Grid();
+	SubtractCSG* sphere_subtract = new SubtractCSG(sphere1, sphere2);
+	Instance* sphere_subtract_instance = new Instance;
+	sphere_subtract_instance->set_object(sphere_subtract);
+	sphere_subtract_instance->scale(0.5);
+	sphere_subtract_instance->translate(Vector3D(0,0,0));
+	// sphere_subtract_instance->transform_texture(true);
+	add_object(sphere_subtract_instance);
 
-	Plane* plane_ptr1 = new Plane(Point3D(0), Normal(0, 1, 0));
+	// MultiJittered* env_sampler_ptr = new MultiJittered(num_samples);
+	//
+	// Emissive* env_emissive_ptr = new Emissive();
+	// env_emissive_ptr->set_ce(204.0/255, 220.0/255, 1);
+	// env_emissive_ptr->scale_radiance(2);
+	//
+	// EnvironmentLight* light_ptr = new EnvironmentLight;
+	// light_ptr->set_material(env_emissive_ptr);
+	// light_ptr->set_sampler(env_sampler_ptr);
+	// light_ptr->set_shadows(true);
+	// add_light(light_ptr);
+	// add_double3_sampler(env_sampler_ptr);
+	//
+	// Instance* CS_instance = new Instance();
+	// Instance* CS419_instance = new Instance();
+	// Instance* skybox_instance = new Instance();
+	// Instance* sphere_instance = new Instance();
+	// Instance* globe_instance = new Instance();
+	// Instance* teapot_instance = new Instance();
+	// Instance* cow_instance = new Instance();
+	// Instance* area_rect_instance = new Instance();
+	//
+	// Grid* grid_ptr = new Grid();
+	//
+	Plane* plane_ptr1 = new Plane(Point3D(0,-1.5,0), Normal(0, 1, 0));
 	plane_ptr1->set_material(checker_matte);
 	add_object(plane_ptr1);
-
-	// CS MESH
-	Mesh* mesh_ptr = new Mesh();
-	Grid* CS_ptr = new Grid(mesh_ptr);
-	CS_ptr->read_obj_file("./src/CS419-CS.obj", false);       // read obj file
-	CS_ptr->setup_cells();
-	CS_ptr->set_material(glossy);
-	add_mesh(mesh_ptr);
-
-	CS_instance->set_object(CS_ptr);
-	CS_instance->translate(Vector3D(0.2, 0.66, 1));
-	CS_instance->scale(3.5);
-	CS_instance->compute_bounding_box();
-	grid_ptr->add_object(CS_instance);
-
-	// 419 MESH
-	Mesh* mesh419_ptr = new Mesh();
-	Grid* CS419_ptr = new Grid(mesh419_ptr);
-	CS419_ptr->read_obj_file("./src/CS419-419.obj", false);       // read obj file
-	CS419_ptr->setup_cells();
-	CS419_ptr->set_material(glossy);
-	add_mesh(mesh419_ptr);
-
-	CS419_instance->set_object(CS419_ptr);
-	CS419_instance->translate(Vector3D(0, 1, 0.5));
-	CS419_instance->scale(3.5);
-	CS419_instance->compute_bounding_box();
-	grid_ptr->add_object(CS419_instance);
-
-	// SKYBOX
-	Sphere* skybox_sphere = new Sphere (Point3D(0), 1);
-	skybox_sphere->set_material(skybox_matte);
-	skybox_sphere->set_shadows(false);
-	skybox_instance->set_object(skybox_sphere);
-	skybox_instance->rotate_y(-70);
-	skybox_instance->scale(10000);
-	skybox_instance->transform_texture(true);
-	add_object(skybox_instance);
-
-	// REFLECTIVE Sphere
-	Sphere* sphere = new Sphere (Point3D(0), 1);
-	sphere->set_material(reflective_ptr);
-	sphere_instance->set_object(sphere);
-	sphere_instance->translate(Vector3D(7, 1, 2.5));
-	sphere_instance->scale(0.8);
-	sphere_instance->compute_bounding_box();
-	grid_ptr->add_object(sphere_instance);
-
-	// GLOBE Sphere
-	Sphere* globe = new Sphere (Point3D(0), 1);
-	globe->set_material(globe_mat_ptr);
-	globe_instance->set_object(globe);
-	globe_instance->rotate_y(57);
-	globe_instance->translate(Vector3D(0.6, 1, 5.5));
-	globe_instance->scale(0.85);
-	globe_instance->transform_texture(true);
-	globe_instance->compute_bounding_box();
-	grid_ptr->add_object(globe_instance);
-
-	// TEAPOT marble
-	Mesh* teapot_mesh_ptr = new Mesh();
-	Grid* teapot_ptr = new Grid(teapot_mesh_ptr);
-	teapot_ptr->read_obj_file("./src/teapot.obj", false);       // read obj file
-	add_mesh(teapot_mesh_ptr);
-	teapot_ptr->set_material(glass_ptr);
-	teapot_ptr->setup_cells();
-	teapot_instance->set_object(teapot_ptr);
-	teapot_instance->rotate_y(-120);
-	teapot_instance->translate(Vector3D(-4, 0.5, 12));
-	teapot_instance->scale(0.4);
-	teapot_instance->compute_bounding_box();
-	grid_ptr->add_object(teapot_instance);
-
-	// COW marble
-	Mesh* cow_mesh_ptr = new Mesh();
-	Grid* cow_ptr = new Grid(cow_mesh_ptr);
-	cow_ptr->read_obj_file("./src/cow.obj", false);       // read obj file
-	add_mesh(cow_mesh_ptr);
-	cow_ptr->set_material(marble_matte);
-	cow_ptr->setup_cells();
-	cow_instance->set_object(cow_ptr);
-	cow_instance->rotate_y(-80);
-	cow_instance->translate(Vector3D(1.75, 0.5, 3.9));
-	cow_instance->scale(1.25);
-	cow_instance->transform_texture(true);
-	cow_instance->compute_bounding_box();
-	grid_ptr->add_object(cow_instance);
-
-	// AREA LIGHT
-	// MultiJittered* area_sampler_ptr = new MultiJittered(num_samples);
 	//
-	// Rectangle* rectangle_ptr = new Rectangle(Point3D(-7.5, 20, -7.5), Vector3D(15, 0, 0), Vector3D(0, 0, 15));
-	// rectangle_ptr->set_material(emissive_ptr);
-	// rectangle_ptr->set_shadows(false);
-	// rectangle_ptr->set_sampler(area_sampler_ptr);
-	// add_double2_sampler(area_sampler_ptr);
+	// // CS MESH
+	// Mesh* mesh_ptr = new Mesh();
+	// Grid* CS_ptr = new Grid(mesh_ptr);
+	// CS_ptr->read_obj_file("./src/CS419-CS.obj", false);       // read obj file
+	// CS_ptr->setup_cells();
+	// CS_ptr->set_material(glossy);
+	// add_mesh(mesh_ptr);
 	//
-	// AreaLight* area_light_ptr = new AreaLight;
-	// area_light_ptr->set_object(rectangle_ptr);
-	// area_light_ptr->set_shadows(true);
-	// add_light(area_light_ptr);
-	// area_rect_instance->set_object(rectangle_ptr);
+	// CS_instance->set_object(CS_ptr);
+	// CS_instance->translate(Vector3D(0.2, 0.66, 1));
+	// CS_instance->scale(3.5);
+	// CS_instance->compute_bounding_box();
+	// grid_ptr->add_object(CS_instance);
+	//
+	// // 419 MESH
+	// Mesh* mesh419_ptr = new Mesh();
+	// Grid* CS419_ptr = new Grid(mesh419_ptr);
+	// CS419_ptr->read_obj_file("./src/CS419-419.obj", false);       // read obj file
+	// CS419_ptr->setup_cells();
+	// CS419_ptr->set_material(glossy);
+	// add_mesh(mesh419_ptr);
+	//
+	// CS419_instance->set_object(CS419_ptr);
+	// CS419_instance->translate(Vector3D(0, 1, 0.5));
+	// CS419_instance->scale(3.5);
+	// CS419_instance->compute_bounding_box();
+	// grid_ptr->add_object(CS419_instance);
+	//
+	// // SKYBOX
+	// Sphere* skybox_sphere = new Sphere (Point3D(0), 1);
+	// skybox_sphere->set_material(skybox_matte);
+	// skybox_sphere->set_shadows(false);
+	// skybox_instance->set_object(skybox_sphere);
+	// skybox_instance->rotate_y(-70);
+	// skybox_instance->scale(10000);
+	// skybox_instance->transform_texture(true);
+	// add_object(skybox_instance);
+	//
+	// // REFLECTIVE Sphere
+	// Sphere* sphere = new Sphere (Point3D(0), 1);
+	// sphere->set_material(reflective_ptr);
+	// sphere_instance->set_object(sphere);
+	// sphere_instance->translate(Vector3D(7, 1, 2.5));
+	// sphere_instance->scale(0.8);
+	// sphere_instance->compute_bounding_box();
+	// grid_ptr->add_object(sphere_instance);
+	//
+	// // GLOBE Sphere
+	// Sphere* globe = new Sphere (Point3D(0), 1);
+	// globe->set_material(globe_mat_ptr);
+	// globe_instance->set_object(globe);
+	// globe_instance->rotate_y(57);
+	// globe_instance->translate(Vector3D(0.6, 1, 5.5));
+	// globe_instance->scale(0.85);
+	// globe_instance->transform_texture(true);
+	// globe_instance->compute_bounding_box();
+	// grid_ptr->add_object(globe_instance);
+	//
+	// // TEAPOT marble
+	// Mesh* teapot_mesh_ptr = new Mesh();
+	// Grid* teapot_ptr = new Grid(teapot_mesh_ptr);
+	// teapot_ptr->read_obj_file("./src/teapot.obj", false);       // read obj file
+	// add_mesh(teapot_mesh_ptr);
+	// teapot_ptr->set_material(glass_ptr);
+	// teapot_ptr->setup_cells();
+	// teapot_instance->set_object(teapot_ptr);
+	// teapot_instance->rotate_y(-120);
+	// teapot_instance->translate(Vector3D(-4, 0.5, 12));
+	// teapot_instance->scale(0.4);
+	// teapot_instance->compute_bounding_box();
+	// grid_ptr->add_object(teapot_instance);
+	//
+	// // COW marble
+	// Mesh* cow_mesh_ptr = new Mesh();
+	// Grid* cow_ptr = new Grid(cow_mesh_ptr);
+	// cow_ptr->read_obj_file("./src/cow.obj", false);       // read obj file
+	// add_mesh(cow_mesh_ptr);
+	// cow_ptr->set_material(marble_matte);
+	// cow_ptr->setup_cells();
+	// cow_instance->set_object(cow_ptr);
+	// cow_instance->rotate_y(-80);
+	// cow_instance->translate(Vector3D(1.75, 0.5, 3.9));
+	// cow_instance->scale(1.25);
+	// cow_instance->transform_texture(true);
+	// cow_instance->compute_bounding_box();
+	// grid_ptr->add_object(cow_instance);
+	//
+	// // AREA LIGHT
+	// // MultiJittered* area_sampler_ptr = new MultiJittered(num_samples);
+	// //
+	// // Rectangle* rectangle_ptr = new Rectangle(Point3D(-7.5, 20, -7.5), Vector3D(15, 0, 0), Vector3D(0, 0, 15));
+	// // rectangle_ptr->set_material(emissive_ptr);
+	// // rectangle_ptr->set_shadows(false);
+	// // rectangle_ptr->set_sampler(area_sampler_ptr);
+	// // add_double2_sampler(area_sampler_ptr);
+	// //
+	// // AreaLight* area_light_ptr = new AreaLight;
+	// // area_light_ptr->set_object(rectangle_ptr);
+	// // area_light_ptr->set_shadows(true);
+	// // add_light(area_light_ptr);
+	// // area_rect_instance->set_object(rectangle_ptr);
+	//
+	// // grid_ptr->add_object(area_rect_instance);
+	//
+	// // SETUP GRID
+	//
+	// grid_ptr->setup_cells();
+	// add_object(grid_ptr);
 
-	// grid_ptr->add_object(area_rect_instance);
-
-	// SETUP GRID
-
-	grid_ptr->setup_cells();
-	add_object(grid_ptr);
-
-	DirectionalLight* dl = new DirectionalLight(Vector3D(0.25, -0.6, -1));
+	DirectionalLight* dl = new DirectionalLight(Vector3D(-0.25, -0.6, -1));
 	dl->set_shadows(true);
 	dl->set_ls(1.5);
 	add_light(dl);

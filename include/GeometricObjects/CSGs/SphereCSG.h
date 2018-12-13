@@ -19,7 +19,9 @@ class SphereCSG : public CSG {
 		virtual bool hit(const Ray& ray, double& t, ShadeRec& s) const;
 		virtual bool shadow_hit(const Ray& ray, float& tmin) const;
 
-        virtual std::vector<float> hit_times(const Ray& ray) const;
+        virtual Normal get_normal(const Point3D& p);
+
+        virtual TIntervalSet hit_times(const Ray& ray) const;
 
     private:
         Point3D center;

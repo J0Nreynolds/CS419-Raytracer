@@ -5,7 +5,12 @@
 //	This C++ code is licensed under the GNU General Public License Version 2.
 
 #include <vector>
+#include <boost/icl/interval_set.hpp>
+#include "Normal.h"
 #include "GeometricObject.h"
+
+
+typedef boost::icl::interval_set<double> TIntervalSet;
 
 class CSG : public GeometricObject{
 
@@ -24,7 +29,7 @@ class CSG : public GeometricObject{
 		virtual bool hit(const Ray& ray, double& t, ShadeRec& s) const = 0;
 		virtual bool shadow_hit(const Ray& ray, float& tmin) const = 0;
 
-        virtual std::vector<float> hit_times(const Ray& ray) const = 0;
+        virtual TIntervalSet hit_times(const Ray& ray) const = 0;
 
         virtual char get_cl_type() const;
 

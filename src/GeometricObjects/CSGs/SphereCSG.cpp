@@ -5,9 +5,11 @@
 
 // This file contains the definition of the class SphereCSG
 #include <algorithm>
+#include "Sphere.h"
 #include "SphereCSG.h"
 
 using namespace std;
+using namespace boost::icl;
 
 SphereCSG::SphereCSG()
 : CSG(), center(0.0), radius(1.0)
@@ -44,31 +46,38 @@ double SphereCSG::f(double x, double y, double z){
 }
 
 bool SphereCSG::hit(const Ray& ray, double& t, ShadeRec& s) const{
-    return false;
+    Sphere sphere(center, radius);
+    return sphere.hit(ray, t, s);
 }
 
 bool SphereCSG::shadow_hit(const Ray& ray, float& tmin) const{
-    return false;
+    Sphere sphere(center, radius);
+    return sphere.shadow_hit(ray, tmin);
 }
 
-vector<float> SphereCSG::hit_times(const Ray& ray) const{
-    	Vector3D	temp 	= ray.o - center;
-    	float 		a 		= ray.d * ray.d;
-    	float 		b 		= 2.0 * temp * ray.d;
-    	float 		c 		= temp * temp - radius * radius;
-    	float 		disc	= b * b - 4.0 * a * c;
 
-        vector<float> ret;
+Normal SphereCSG::get_normal(const Point3D& p){
+    Normal n = (p - center) / radius;
+    return n;
+}
+
+TIntervalSet SphereCSG::hit_times(const Ray& ray) const{
+    	Vector3D	temp 	= ray.o - center;
+    	double 		a 		= ray.d * ray.d;
+    	double 		b 		= 2.0 * temp * ray.d;
+    	double 		c 		= temp * temp - radius * radius;
+    	double 		disc	= b * b - 4.0 * a * c;
+
+        TIntervalSet ret;
     	if (disc < 0.0){
             // do nothing
         }
     	else {
-    		float e = sqrt(disc);
-    		float denom = 2.0 * a;
-    		float t1 = (-b - e) / denom;    // smaller root
-    		float t2 = (-b + e) / denom;    // larger root
-            ret.push_back(t1);
-            ret.push_back(t2);
+    		double e = sqrt(disc);
+    		double denom = 2.0 * a;
+    		double t1 = (-b - e) / denom;    // smaller root
+    		double t2 = (-b + e) / denom;    // larger root
+            ret += continuous_interval<double>(t1,t2);
     	}
 
     	return ret;

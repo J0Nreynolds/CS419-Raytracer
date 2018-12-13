@@ -12,7 +12,8 @@ INC := -I . -I ../Utilities -I ../Tracers -I ../Graphics -I ../GeometricObjects 
 	-I ../OpenCL -I ../OpenCL/CLObjects -I ../Materials -I ../Textures -I ../BRDFs \
 	-I ../OpenCL/CLMaterials -I ../OpenCL/CLBRDFs -I ../BTDFs \
 	-I ../GeometricObjects/CompoundObjects -I /Library/Frameworks/SDL2.framework/Headers \
-	-I /System/Library/Frameworks/OpenCL.framework/Headers -I ../Mappings
+	-I /System/Library/Frameworks/OpenCL.framework/Headers -I ../Mappings \
+	-I ../GeometricObjects/CSGs
 
 MAGICK := `Magick++-config --cppflags`
 
