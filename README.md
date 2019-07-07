@@ -1,6 +1,9 @@
 # CS419-Raytracer
 A raytracer built during my the Fall 2018 semester of UIUC's CS419: Production Computer Graphics. Built in C/C++, and supports OpenCL (realtime raytracing) on compatible devices with limited rendering features.
 
+
+![Final render](https://github.com/J0Nreynolds/CS419-Raytracer/blob/master/renders/thin_lens_final.png)
+
 ## Setup
 
 I followed these instructions [here](https://rageandqq.github.io/blog/2018/03/09/opencl-mac-cpp.html) (seems that MacOS OpenCL headers for C are included, but those for C++ are not) and used [this code sample](from https://gist.github.com/ddemidov/2925717) to get OpenCL working. I had to copy a distribution of the OpenCL C++ headers, `cl.hpp`, to my /System/Library/Frameworks/OpenCL.framework/Headers folder in order to include OpenCL bindings in my project.
